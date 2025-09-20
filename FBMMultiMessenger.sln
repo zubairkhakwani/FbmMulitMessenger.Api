@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36212.18
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger", "FBMMultiMessenger\FBMMultiMessenger.csproj", "{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessengerServer", "FBMMultiMessengerServer\FBMMultiMessengerServer.csproj", "{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Data", "FBMMultiMessenger.DataAccess\FBMMultiMessenger.Data.csproj", "{963024B0-C954-48C5-BF9A-011E3657B217}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Buisness", "FBMMultiMessenger.Buisness\FBMMultiMessenger.Buisness.csproj", "{11E54FB2-920A-4456-8554-6C21A2719241}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Contracts", "FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj", "{265284BF-C141-470E-8FA1-13505CAFE2EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Utility", "FBMMultiMessenger.Utility\FBMMultiMessenger.Utility.csproj", "{4BBAAF64-D168-4148-9CFB-824A305801A2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{963024B0-C954-48C5-BF9A-011E3657B217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{963024B0-C954-48C5-BF9A-011E3657B217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{963024B0-C954-48C5-BF9A-011E3657B217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{963024B0-C954-48C5-BF9A-011E3657B217}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11E54FB2-920A-4456-8554-6C21A2719241}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11E54FB2-920A-4456-8554-6C21A2719241}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11E54FB2-920A-4456-8554-6C21A2719241}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11E54FB2-920A-4456-8554-6C21A2719241}.Release|Any CPU.Build.0 = Release|Any CPU
+		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AC4C198E-DA04-4030-BBB6-CBE17EDB1E5B}
+	EndGlobalSection
+EndGlobal

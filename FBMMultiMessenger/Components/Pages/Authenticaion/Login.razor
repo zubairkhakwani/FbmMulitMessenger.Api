@@ -1,0 +1,48 @@
+﻿@page "/login"
+
+<PageTitle>FBM Robo - login</PageTitle>
+
+<div class="container-container">
+    <div class="container" id="container">
+        <div class="form-container sign-in-container">
+            <EditForm Model="RequestModel" class="signin-up" OnValidSubmit="OnValidPost" FormName="a" Enhance="true">
+                <DataAnnotationsValidator></DataAnnotationsValidator>
+
+                <h1 style="margin-bottom: 20px">Sign in</h1>
+
+                @if (!string.IsNullOrWhiteSpace(ResponseError))
+                {
+                    <h3 style="color:red; text-align: center">@ResponseError</h3>
+                }
+
+                <div class="field-container-sign-in" style="display: flex; flex-direction: column">
+                    <InputText @bind-Value="RequestModel.Email" type="email" class="input" placeholder="password">
+                    </InputText>
+                    <ValidationMessage For="@(() => RequestModel.Password)"></ValidationMessage>
+
+                </div>
+
+                <div class="field-container-sign-in">
+                    <InputText @bind-Value="RequestModel.Password" type="password" class="input" placeholder="password">
+                    </InputText>
+                    <i class="fa-solid fa-eye visibility-icon"></i>
+                    <i class="fa-solid fa-eye-slash visibility-icon hide-password"></i>
+                    <ValidationMessage For="@(() => RequestModel.Password)"></ValidationMessage>
+                </div>
+
+                <a href="#">Forgot your password?</a>
+                <button type="submit" class="sign-in-button" onclick="showLoader()">Sign In</button>
+            </EditForm>
+        </div>
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-right">
+                    <h1>If You're New !</h1>
+                    <p>Sign up and get started with us.</p>
+                    <a class="sign-in-button ghost" id="signUp" href="/register">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
