@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Contracts;
+﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;

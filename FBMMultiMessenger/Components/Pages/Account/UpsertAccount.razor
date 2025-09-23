@@ -1,0 +1,16 @@
+﻿@using FBMMultiMessenger.Components.Shared.CustomPopupform
+
+<PopupForm Model="@model" OnValidSubmit="OnValidSubmit" Setting="popupFormSettings">
+    <MudTextField @bind-Value="model.Name" Label="Name" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+    <MudTextField @bind-Value="model.Cookie" Label="Cookies" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+
+    <CustomPopupFormActions>
+
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+            <MudIcon Icon="@Icons.Material.TwoTone.Payment" Class="me-2" />
+            Add
+        </MudButton>
+
+        <MudButton OnClick="Cancel" Color="Color.Primary">Cancel</MudButton>
+    </CustomPopupFormActions>
+</PopupForm>

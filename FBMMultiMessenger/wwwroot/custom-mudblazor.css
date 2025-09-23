@@ -1,0 +1,321 @@
+﻿
+/*AutoSelect*/
+
+.mud-select.mud-autocomplete
+{
+    display : flex !important;
+}
+
+/*Table*/
+
+.table-search-filters {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.table-search-filters > div {
+    display: flex;
+    flex : 1 1 auto;
+}
+
+.table-search-filters .search-button {
+    margin-bottom: 10px;
+    flex: 1 1 auto;
+}
+
+.mud-toolbar.mud-toolbar-gutters.mud-table-toolbar
+{
+    height : auto;
+}
+
+.mud-table-root .mud-table-head .mud-table-cell {
+    font-weight: 550 !important;
+}
+
+.mud-table-root .mud-table-head {
+    background-color: #F5F5F5 !important;
+}
+
+.mud-table-cell .neeleez-table-column {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+@media (max-width: 960px) 
+{
+    .mud-sm-table .mud-table-cell:before {
+        font-weight: 550 !important;
+    }
+
+    .mud-xs-table .mud-table-cell:before {
+        font-weight: 550 !important;
+    }
+}
+
+@media (max-width: 600px) 
+{
+    .mud-table-cell .neeleez-table-column {
+        max-width: 250px !important; 
+    }
+}
+
+
+/*Form Text Field Customized*/
+
+.neeleez-field.mud-picker .mud-input-control {
+    margin: 0 !important;
+    margin-bottom: 10px !important;
+}
+
+.neeleez-field.mud-picker .mud-input-control .mud-icon-button-edge-start /* Added this because there is no option in mud picker to set Edge property of its icon button  */
+{
+    margin-left: 0;
+    margin-inline-start: 0;
+}
+
+.neeleez-field.mud-input-control {
+    margin: 0 !important;
+    margin-bottom: 10px !important;
+}
+
+.neeleez-field .mud-input-error .mud-input-outlined-border, .neeleez-field.neeleez-error .mud-input-outlined-border {
+    border: 2px solid !important;
+    border-color: red !important;
+}
+
+.neeleez-field .mud-input-helper-text.mud-input-error {
+    display: none;
+}
+
+.red-asterisk-required label::after {
+    content: " *";
+    color: red;
+}
+
+.red-asterisk-required label.mud-checkbox::after {
+    content: "" !important;
+}
+
+.red-asterisk-required .mud-checkbox p::before {
+    content: "* ";
+    color: red;
+}
+
+.neeleez-field .mud-input-adornment {
+    max-height: none !important;
+    height: 100% !important;
+    width: 70px !important;
+    justify-content: center !important;
+    background-color: #F5F5F5 !important;
+}
+
+.neeleez-field.neeleez-date-picker .mud-input-adornment {
+    max-height: 39.9px !important;
+}
+
+.neeleez-field .mud-input-adorned-start {
+    padding-left: 0px !important;
+    padding-inline-start: 0px !important;
+}
+
+.neeleez-field .mud-input-adorned-end {
+    padding-right: 0px !important;
+    padding-inline-end: 0px !important;
+}
+
+.neeleez-color-field .mud-input-adorned-start {
+    max-height: 39.9px !important;
+}
+
+/*Form Text Field end*/
+
+/*Button*/
+
+/*.mud-button-filled {
+    border-radius: 12px !Important;
+}
+
+.mud-button-outlined {
+    border-radius: 12px !Important;
+}
+*/
+/*Button end*/
+
+.custom-form-popup {
+    border-radius: 20px !important;
+    max-height: 85% !important;
+    margin-top: 5% !important;
+
+    overflow: visible !important;
+}
+
+.custom-form-popup.single-view {
+    width: fit-content !important;
+    max-width: fit-content !important;
+    max-width: 95% !important;
+}
+
+.custom-form-popup.double-view 
+{
+    max-width: 820px !important;
+    width: 820px !important;
+}
+
+.custom-form-popup .mud-dialog-title {
+    padding-bottom: 7px !important;
+}
+
+    .custom-form-popup .popup-grid
+    {
+        display : grid;
+        padding : 0px 20px;
+    }
+
+    .custom-form-popup.single-view .popup-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .custom-form-popup.double-view .popup-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .custom-form-popup .popup-grid .side {
+        padding: 0 10px;
+    }
+
+    .custom-form-popup .popup-grid .custom-form-popup-actions {
+        position: relative;
+        grid-column: span 2;
+        display: flex;
+        justify-content: right;
+        margin: 10px;
+        gap: 10px;
+    }
+
+    .custom-form-popup.double-view .popup-grid .custom-form-popup-actions {
+        grid-column: span 2;
+    }
+
+
+@media screen and (max-width: 600px) 
+{
+    .custom-form-popup.double-view .popup-grid {
+        grid-template-columns: 1fr;
+        grid-gap : 10px;
+    }
+
+    .custom-form-popup.double-view {
+        max-width: 500px !important;
+        width: 500px !important;
+    }
+
+    .custom-form-popup.double-view .popup-grid .custom-form-popup-actions {
+        grid-column: span 1;
+    }
+
+    .job-slider
+    {
+        grid-column : span 1 !important;
+    }
+}
+
+.job-slider {
+    grid-column: span 2;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    display: flex;
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.job-slider .mud-slider {
+    width: 50% !important;
+}
+
+.job-slider .mud-slider .mud-slider-track-tick-label {
+    min-width: 140px;
+}
+
+.total-figures-table{
+    box-shadow: none !important;
+}
+
+.total-figures-table td{
+    padding:6px 16px !important;
+    border-bottom:none !important;
+    min-width:140px;
+}
+
+.total-figures-table tr:nth-child(3) td h5, .total-figures-table tr:nth-child(3) td{
+    font-weight:bold !important;
+}
+
+.total-figures-table tr:nth-child(5) td h5, .total-figures-table tr:nth-child(5) td{
+    font-weight:bold !important;
+}
+
+.total-figures-table tr:nth-child(5), .total-figures-table tr:nth-child(3) {
+    background-color: #f0f0f0 !important;
+}
+
+.total-figures-table tr:nth-child(6) td p {
+    font-size:12px !important;
+}
+
+.total-figures-table tr:nth-child(6) td {
+    padding:12px !important;
+}
+
+
+/*Side drawer*/
+
+.side-drawer {
+    padding-top: 100px;
+    background-size: contain;
+    background-color: #A20202;
+    position: absolute;
+    top: 0;
+    left: 0px;
+    width: 70px !important;
+    height: 100%;
+    background-image: url('/Images/logo.png');
+    background-repeat: no-repeat;
+    background-position-x: center;
+    background-position-y: top;
+}
+
+.side-drawer .mud-drawer-content {
+    overflow-y: auto;
+}
+
+.side-drawer .mud-drawer-content .mud-tooltip-root.mud-tooltip-inline
+{
+    margin-top : 5px;
+}
+
+.MenuTooltip:not(.mud-popover-open) {
+    display: none !important;
+}
+
+/*Side drawer End*/
+
+/*Checkbox*/
+
+.checkbox-error svg > path {
+    color: #9F0303;
+}
+
+.date-picker-error .mud-input-outlined-border {
+    border: 2px solid !important;
+    border-color: #970303 !important;
+}
+
+.custom-mud-auto-complete{
+    margin:0 !important;
+}

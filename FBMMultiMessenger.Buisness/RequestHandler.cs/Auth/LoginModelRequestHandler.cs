@@ -1,5 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
-using FBMMultiMessenger.Buisness.Request;
+using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.cs
+namespace FBMMultiMessenger.Buisness.RequestHandler.cs.Auth
 {
     internal class LoginModelRequestHandler : IRequestHandler<LoginModelRequest, BaseResponse<LoginModelResponse>>
     {
@@ -20,8 +20,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs
 
         public LoginModelRequestHandler(ApplicationDbContext dbContext, IConfiguration configuration)
         {
-            this._dbContext=dbContext;
-            this._secretKey=configuration.GetValue<string>("ApiSettings:Key")!;
+            _dbContext=dbContext;
+            _secretKey=configuration.GetValue<string>("ApiSettings:Key")!;
         }
         public async Task<BaseResponse<LoginModelResponse>> Handle(LoginModelRequest request, CancellationToken cancellationToken)
         {

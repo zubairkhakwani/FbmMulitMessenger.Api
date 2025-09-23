@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Contracts.Contracts
+namespace FBMMultiMessenger.Contracts.Contracts.Auth
 {
     public class LoginHttpRequest
     {

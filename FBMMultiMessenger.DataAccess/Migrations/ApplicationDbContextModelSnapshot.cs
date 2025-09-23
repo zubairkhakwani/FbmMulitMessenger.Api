@@ -34,9 +34,24 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FbAccountId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FbUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -46,6 +61,39 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FBChatId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FbAccountId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FbUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("Chat");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
@@ -108,6 +156,22 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Account", "Account")
+                        .WithMany("Chats")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
+                {
+                    b.Navigation("Chats");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Buisness.Request
+namespace FBMMultiMessenger.Buisness.Request.Auth
 {
     public class LoginModelRequest : IRequest<BaseResponse<LoginModelResponse>>
     {

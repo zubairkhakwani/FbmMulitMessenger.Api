@@ -16,10 +16,13 @@ namespace FBMMultiMessenger.Services
     internal class BaseService : IBaseService
     {
         public IHttpClientFactory httpClient { get; set; }
+        private readonly ITokenProvider _tokenProvider;
 
-        public BaseService(IHttpClientFactory httpClientFactory)
+
+        public BaseService(IHttpClientFactory httpClientFactory, ITokenProvider tokenProvider)
         {
             httpClient = httpClientFactory;
+            this._tokenProvider=tokenProvider;
         }
         public async Task<TResponse> SendAsync<TRequest, TResponse>(ApiRequest<TRequest> apiRequest, bool withBearer = true)
             where TRequest : class
@@ -32,12 +35,12 @@ namespace FBMMultiMessenger.Services
                 message.Headers.Add("Accept", "application/json");
                 message.RequestUri = new Uri(apiRequest.Url);
 
-                //var token = tokenProvider.GetToken();
+                var token = await _tokenProvider.GetTokenAsync();
 
-                //if (token is not null && withBearer)
-                //{
-                //    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
-                //}
+                if (token is not null && withBearer)
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                }
 
                 if (apiRequest.Data != null)
                 {
@@ -77,7 +80,7 @@ namespace FBMMultiMessenger.Services
                 return APIResponse;
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 var data = BaseResponse<TResponse>.Error("Something went wrong, please try later");
                 var res = JsonConvert.SerializeObject(data);

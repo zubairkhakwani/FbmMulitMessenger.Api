@@ -1,8 +1,10 @@
-﻿using FBMMultiMessenger.Contracts.Contracts;
+﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
+using FBMMultiMessenger.Utility;
 using MediatR;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,11 +24,24 @@ namespace FBMMultiMessenger.Components.Pages.Authenticaion
         [Inject]
         public IAuthService AuthService { get; set; }
 
-        public string ResponseError;
+        [Inject]
+        public IJSRuntime JS { get; set; }
 
-        protected override void OnInitialized()
+        [Inject]
+        private NavigationManager Navigation { get; set; }
+        [Inject]
+        private ITokenProvider TokenProvider { get; set; }
+
+        public string? ResponseError;
+
+        protected override async Task OnInitializedAsync()
         {
-            base.OnInitialized();
+            string? token = await TokenProvider.GetTokenAsync();
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                Navigation.NavigateTo("/Account");
+            }
         }
 
         public async Task OnValidPost()
@@ -35,8 +50,12 @@ namespace FBMMultiMessenger.Components.Pages.Authenticaion
 
             if (request.IsSuccess)
             {
-                navManager.NavigateTo("/");
+                await JS.InvokeVoidAsync("myInterop.setItem", SD.AccessToken, request.Data!.Token);
+                navManager.NavigateTo("/Account", true);
+                return;
             }
+
+            ResponseError = request.Message;
         }
     }
 }
