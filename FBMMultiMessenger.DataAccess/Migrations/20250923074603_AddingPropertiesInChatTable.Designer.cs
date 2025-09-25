@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250923074603_AddingPropertiesInChatTable")]
+    partial class AddingPropertiesInChatTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -83,20 +86,7 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("FbListingId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FbListingLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("FbListingPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("FbListingTitle")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FbUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImagePath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsRead")
@@ -127,12 +117,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<int>("ChatId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsReceived")
                         .HasColumnType("bit");

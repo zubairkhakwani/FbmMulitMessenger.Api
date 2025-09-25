@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using System;
@@ -28,6 +29,14 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
             CreateMap<ToggleAcountStatusModelResponse, ToggleAccountStatusHttpResponse>();
             CreateMap<BaseResponse<ToggleAcountStatusModelResponse>, BaseResponse<ToggleAccountStatusHttpResponse>>();
 
+
+            CreateMap<GetAllMyAccountsChatsModelResponse, GetAllMyAccountsChatsHttpResponse>();
+            CreateMap<GetMyChatsModelResponse, GetMyChatsHttpResponse>();
+
+            CreateMap<BaseResponse<GetAllMyAccountsChatsModelResponse>, BaseResponse<GetAllMyAccountsChatsHttpResponse>>();
+
+            CreateMap<GetChatMessagesModelResponse, GetAllMyAccountsChatsHttpResponse>();
+            CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GetAllMyAccountsChatsHttpResponse>>>();
         }
     }
 }

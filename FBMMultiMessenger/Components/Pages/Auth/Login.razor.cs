@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Components.Pages.Authenticaion
+namespace FBMMultiMessenger.Components.Pages.Auth
 {
     public partial class Login
     {

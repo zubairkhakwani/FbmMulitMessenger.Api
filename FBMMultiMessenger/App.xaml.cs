@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Components.Pages.Authenticaion;
+﻿using FBMMultiMessenger.Components.Pages.Auth;
 
 namespace FBMMultiMessenger
 {

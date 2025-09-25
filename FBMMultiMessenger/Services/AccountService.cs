@@ -65,6 +65,18 @@ namespace FBMMultiMessenger.Services
 
             return await _baseService.SendAsync<ToggleAccountStatusHttpRequest, T>(request);
         }
+
+        public async Task<T> GetMyChats<T>() where T : class
+        {
+            var request = new ApiRequest<object>()
+            {
+                ApiType = SD.ApiType.GET,
+                Url = _baseUrl+ $"api/account/me/chats",
+                Data = null
+            };
+
+            return await _baseService.SendAsync<object, T>(request);
+        }
     }
 }
 

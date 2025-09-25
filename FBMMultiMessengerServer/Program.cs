@@ -1,5 +1,5 @@
 using FBMMultiMessenger.Buisness.Exntesions;
-using FBMMultiMessenger.Server.SignalR;
+using FBMMultiMessenger.Buisness.SignalR;
 using System.Reflection;
 namespace FBMMultiMessengerServer
 {
@@ -32,7 +32,7 @@ namespace FBMMultiMessengerServer
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHub<Chathub>("/chathub");
+            app.MapHub<ChatHub>("/chathub");
             app.MapControllers();
 
             app.Run();

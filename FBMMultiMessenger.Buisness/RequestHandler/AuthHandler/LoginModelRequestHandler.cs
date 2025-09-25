@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.cs.Auth
+namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
 {
     internal class LoginModelRequestHandler : IRequestHandler<LoginModelRequest, BaseResponse<LoginModelResponse>>
     {

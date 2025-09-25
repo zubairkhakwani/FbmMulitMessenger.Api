@@ -1,0 +1,87 @@
+﻿@page "/Chat"
+@layout EmptyLayout
+
+<div class="messenger-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">Marketplace Chat</h2>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search conversations">
+            </div>
+        </div>
+        <div class="chat-list">
+            @for (int i = 0; i < MyAccountChats.Count; i++)
+            {
+                var chatId = MyAccountChats[i].Id;
+                var fbChatId = MyAccountChats[i].FbChatId;
+                var chat = MyAccountChats[i];
+                var unreadCount = chat.UnReadCount;
+                var hide = unreadCount == 0 ? "hide" : "";
+
+                <div @onclick="() => LoadChatMessage(chatId, fbChatId)" class="chat-item unread">
+
+                    <div class="avatar">
+                        JD
+                        <span class="unread-badge @hide">@unreadCount</span>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name">@chat.FbLisFbListingTitle</div>
+                        <div class="chat-listing-info">
+                            <div class="listing-location">@chat.FbListingLocation</div>
+                            <div class="listing-price">$@chat.FbListingPrice</div>
+                        </div>
+                    </div>
+                    <div class="chat-time">2m</div>
+                </div>
+            }
+        </div>
+    </div>
+    @* no-chat-selected *@
+    <!-- Main Chat Area -->
+    <div class="main-chat no-chat-selected" id="mainChat">
+        <div class="chat-header">
+            <div class="avatar">JD</div>
+            <div class="header-info">
+                <h3>John Doe</h3>
+                <p>Active 2 minutes ago</p>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+
+            @if (ChatId is null)
+            {
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">💬</div>
+                    <h3>Select a conversation</h3>
+                    <p>Choose a conversation from the sidebar to start chatting with your Marketplace buyers and sellers.</p>
+                </div>
+            }
+
+            <div id="messagesList">
+                @for (int i = 0; i < MyChatMessages.Count; i++)
+                {
+                    var chatMessage = MyChatMessages[i];
+                    var receivedMessageClass = chatMessage.IsReceived ? "received" : "sent";
+
+                    <div class="message @receivedMessageClass">
+                        <div style="white-space: pre-wrap;" class="message-bubble">@chatMessage.Message</div>
+                        <div class="message-time">@chatMessage.CreatedAt.ToLocalTime().ToString("hh:mm tt")</div>
+                    </div>
+                }
+            </div>
+
+
+        </div>
+
+        <div class="input-container">
+            <textarea @bind="Message" @onkeydown="HandleKeyDownPress"  class="message-input" placeholder="Type a message..." rows="1"></textarea>
+            <button @onclick="() => SendMessage()" class="send-button">➤</button>
+        </div>
+
+    </div>
+</div>
+
+<script src="/Components/Pages/Chat/Chat.razor.js"></script>

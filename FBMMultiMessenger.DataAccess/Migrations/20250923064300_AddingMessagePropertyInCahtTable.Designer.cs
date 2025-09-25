@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250923064300_AddingMessagePropertyInCahtTable")]
+    partial class AddingMessagePropertyInCahtTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -71,7 +74,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AccountId")
+                    b.Property<int>("AccountId")
                         .HasColumnType("int");
 
                     b.Property<string>("FBChatId")
@@ -80,72 +83,24 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("FbAccountId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FbListingId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FbListingLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("FbListingPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("FbListingTitle")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FbUserId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImagePath")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccountId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Chats");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ChatMessages", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsReceived")
                         .HasColumnType("bit");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("ChatId");
+                    b.HasIndex("AccountId");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("Chat");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
@@ -214,38 +169,16 @@ namespace FBMMultiMessenger.Data.Migrations
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Account", "Account")
                         .WithMany("Chats")
-                        .HasForeignKey("AccountId");
-
-                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Account");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ChatMessages", b =>
-                {
-                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Chat", "Chat")
-                        .WithMany("ChatMessages")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
                 {
                     b.Navigation("Chats");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
-                {
-                    b.Navigation("ChatMessages");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>

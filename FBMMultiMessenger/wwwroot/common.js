@@ -1,5 +1,4 @@
-﻿
-window.myInterop = {
+﻿window.myInterop = {
     setItem: function (key, value) {
         localStorage.setItem(key, value);
     },
@@ -8,5 +7,10 @@ window.myInterop = {
     },
     removeItem: function (key) {
         localStorage.removeItem(key);
-    }
+    },
+    playNotificationSound: function (volume) {
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.volume = volume;
+        audio.play();
+    },
 };

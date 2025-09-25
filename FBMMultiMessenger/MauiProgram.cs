@@ -36,8 +36,10 @@ namespace FBMMultiMessenger
             //builder.Services.AddHttpClient<IAccountService, AccountService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<ITokenProvider, TokenProvider>();
+            builder.Services.AddScoped<IChatMessagesService, ChatMessageService>();
 
-            builder.Services.AddSingleton<ChatService>();
+
+            builder.Services.AddSingleton<SignalRChatService>();
             builder.Services.AddHttpClient();
             builder.Services.AddMudServices();
 

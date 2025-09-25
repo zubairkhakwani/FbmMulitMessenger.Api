@@ -15,6 +15,9 @@ namespace FBMMultiMessenger.Data.DB
         }
         public DbSet<User> Users { get; set; }
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<Chat> Chats { get; set; }
+        public DbSet<ChatMessages> ChatMessages { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -14,5 +14,8 @@ namespace FBMMultiMessenger.Services.IServices
         Task<T> GetMyAccounts<T>() where T : class;
 
         Task<T> ToggleAccountStatus<T>(int accountId) where T : class;
+
+
+        Task<T> GetMyChats<T>() where T : class;
     }
 }

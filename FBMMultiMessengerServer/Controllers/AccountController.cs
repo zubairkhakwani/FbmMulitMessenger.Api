@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Response;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -73,6 +75,22 @@ namespace FBMMultiMessengerServer.Controllers
 
             BaseResponse<UpsertAccountModelResponse> response = await _mediator.Send(request);
             BaseResponse<UpsertAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpsertAccountHttpResponse>>(response);
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpGet("me/chats")]
+        public async Task<BaseResponse<GetAllMyAccountsChatsHttpResponse>> GetAllMyAccountChats()
+        {
+            GetAllMyAccountsChatsModelRequest request = new GetAllMyAccountsChatsModelRequest()
+            {
+                UserId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value)
+            };
+
+            BaseResponse<GetAllMyAccountsChatsModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<GetAllMyAccountsChatsHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetAllMyAccountsChatsHttpResponse>>(response);
+
             return httpResponse;
         }
     }
