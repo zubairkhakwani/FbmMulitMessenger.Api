@@ -21,6 +21,10 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public bool IsRead { get; set; }
 
+        public bool IsTextMessage { get; set; }
+        public bool IsImageMessage { get; set; }
+        public bool IsVideoMessage { get; set; }
+        public bool IsAudioMessage { get; set; }
         public DateTime CreatedAt { get; set; }
 
         //Navigation Properties

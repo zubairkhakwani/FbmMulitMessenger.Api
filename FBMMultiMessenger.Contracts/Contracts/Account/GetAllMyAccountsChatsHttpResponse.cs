@@ -21,6 +21,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         public string ImagePath { get; set; } = null!;
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
+       
         public DateTime StartedAt { get; set; }
     }
 }

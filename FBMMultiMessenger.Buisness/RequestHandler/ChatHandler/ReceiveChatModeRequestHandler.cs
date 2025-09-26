@@ -28,20 +28,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         public async Task<BaseResponse<ReceiveChatModelResponse>> Handle(ReceiveChatModelRequest request, CancellationToken cancellationToken)
         {
             var chat = await _dbContext.Chats.FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId);
-            var chatId = chat?.Id;
+            var chatReference = chat;
             if (chat is null)
             {
                 var newChat = new Chat()
                 {
-                    AccountId = request.AccountId,
+                    //AccountId = request.AccountId,
                     UserId = request.UserId,
 
-                    FbUserId = request.FbUserId,
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
-                    FbListingTitle = request.FbListingTitle,
-                    FbListingLocation = request.FbListingLocation,
+                    FbListingTitle = string.IsNullOrWhiteSpace(request.FbListingTitle) ? "No title" : request.FbListingTitle,
+                    FbListingLocation = string.IsNullOrWhiteSpace(request.FbListingLocation) ? "No location" : request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
 
                     ImagePath = null,
@@ -52,44 +51,48 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await _dbContext.AddAsync(newChat, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                chatId = newChat.Id;
+                chatReference = newChat;
             }
 
             var newChatMessage = new ChatMessages()
             {
                 Message = request.Message,
-                ChatId = chatId!.Value,
-                IsReceived = request.IsReceived,
+                ChatId = chatReference!.Id,
+                IsReceived = true,
                 IsRead = false,
+                IsTextMessage = request.IsTextMessage,
+                IsVideoMessage = request.IsVideoMessage,
+                IsImageMessage = request.IsImageMessage,
+                IsAudioMessage = request.IsAudioMessage,
                 CreatedAt = DateTime.UtcNow
             };
 
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            if (request.IsReceived)
+
+            //Inform the UI that the message has been received.
+            var receivedChat = new ReceiveChatHttpResponse()
             {
-                var receivedChat = new ReceiveChatHttpResponse()
-                {
-                    Message = request.Message,
-                    ChatId = chatId.Value,
-                    FbUserId = request.FbUserId,
-                    FbChatId = request.FbChatId,
-                    FbAccountId = request.FbAccountId,
-                    FbListingId = request.FbListingId,
-                    FbListingTitle = request.FbListingTitle,
-                    FbListingLocation = request.FbListingLocation,
-                    FbListingPrice = request.FbListingPrice,
-                    StartedAt = DateTime.Now,
-                };
-                await _hubContext.Clients.Group("User123")
-                    .SendAsync("ReceiveMessage", receivedChat, cancellationToken);
-            }
+                Message = request.Message,
+                ChatId = chatReference.Id,
+                FbChatId = request.FbChatId,
+                FbAccountId = request.FbAccountId,
+                FbListingId = request.FbListingId,
+                FbListingTitle = chatReference.FbListingTitle!,
+                FbListingLocation = chatReference.FbListingLocation!,
+                FbListingPrice = chatReference.FbListingPrice!.Value,
+                IsTextMessage = request.IsTextMessage,
+                IsVideoMessage =request.IsVideoMessage,
+                IsImageMessage = request.IsImageMessage,
+                IsAudioMessage = request.IsAudioMessage,
+                StartedAt = DateTime.UtcNow,
+            };
+            await _hubContext.Clients.Group("User123")
+                .SendAsync("ReceiveMessage", receivedChat, cancellationToken);
 
 
-            var acionPerformed = request.IsReceived ? "received" : "send";
-
-            return BaseResponse<ReceiveChatModelResponse>.Success($"Message has been {acionPerformed} successfully", new ReceiveChatModelResponse());
+            return BaseResponse<ReceiveChatModelResponse>.Success($"Message has been received successfully", new ReceiveChatModelResponse());
         }
     }
 }

@@ -11,34 +11,30 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
     public class ReceiveChatHttpRequest
     {
 
-        [Required]
-        public int? AccountId { get; set; }
-
-        [Required]
-        public string? FbUserId { get; set; }
-
-        [Required]
+        //[Required]
         public string? FbChatId { get; set; }
 
-        [Required]
+        //[Required]
         public string? FbAccountId { get; set; }
 
-        [Required]
+        //[Required]
         public string? FbListingId { get; set; }
 
-        [Required]
+        //[Required]
         public string? FbListingTitle { get; set; }
 
-        [Required]
+        //[Required]
         public string? FbListingLocation { get; set; }
 
-        [Required]
+        //[Required]
         public decimal? FbListingPrice { get; set; }
 
-        [Required]
-        public string Message { get; set; } = null!;
-
-        public bool IsReceived { get; set; }
+        // [Required]
+        public string? Message { get; set; } = null!;
+        public bool IsTextMessage { get; set; }
+        public bool IsVideoMessage { get; set; }
+        public bool IsImageMessage { get; set; }
+        public bool IsAudioMessage { get; set; }
     }
 
     public class ReceiveChatHttpResponse
@@ -61,6 +57,11 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public string Message { get; set; } = null!;
 
         public bool IsRead { get; set; }
+
+        public bool IsTextMessage { get; set; }
+        public bool IsVideoMessage { get; set; }
+        public bool IsImageMessage { get; set; }
+        public bool IsAudioMessage { get; set; }
 
         public DateTime StartedAt { get; set; }
 

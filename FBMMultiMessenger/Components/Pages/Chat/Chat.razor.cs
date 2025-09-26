@@ -81,7 +81,8 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     FbListingPrice = receivedChat.FbListingPrice,
                     FbChatId = receivedChat.FbChatId,
                     StartedAt = receivedChat.StartedAt,
-                    IsRead = receivedChat.IsRead
+                    IsRead = receivedChat.IsRead,
+                   
                 };
 
                 MyAccountChats.Add(newChat);
@@ -104,6 +105,9 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 {
                     Message = receivedChat.Message,
                     IsReceived = true,
+                    IsTextMessage = receivedChat.IsTextMessage,
+                    IsImageMessage = receivedChat.IsImageMessage,
+                    IsVideoMessage = receivedChat.IsVideoMessage,
                     CreatedAt = DateTime.UtcNow
                 };
 

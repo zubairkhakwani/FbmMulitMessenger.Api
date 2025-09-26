@@ -38,6 +38,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 IsReceived = x.IsReceived,
                 Message = x.Message,
+                IsTextMessage =x.IsTextMessage,
+                IsImageMessage = x.IsImageMessage,
+                IsVideoMessage = x.IsVideoMessage,
+                IsAudioMessage = x.IsAudioMessage,
                 CreatedAt = x.CreatedAt
 
             }).ToList();
