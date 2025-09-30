@@ -31,7 +31,7 @@ namespace FBMMultiMessengerServer
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseStaticFiles();
             app.MapHub<ChatHub>("/chathub");
             app.MapControllers();
 

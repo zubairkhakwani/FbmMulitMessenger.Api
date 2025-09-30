@@ -143,6 +143,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsReceived")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSent")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsTextMessage")
                         .HasColumnType("bit");
 

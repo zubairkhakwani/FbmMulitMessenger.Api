@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Contracts.Chat;
+﻿using FBMMultiMessenger.Contracts.Contracts.Extension;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +9,6 @@ namespace FBMMultiMessenger.Services.IServices
 {
     public interface IChatMessagesService
     {
-        Task<T> GetChatMessages<T>(int chatId) where T : class;
-        Task<T> SendChatMessage<T>(SendChatMessageHttpRequest httpRequest) where T : class;
+        Task<T> GetChatMessages<T>(string fbChatId) where T : class;
     }
 }

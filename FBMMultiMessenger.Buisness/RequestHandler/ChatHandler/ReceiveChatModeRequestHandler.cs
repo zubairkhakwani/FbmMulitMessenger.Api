@@ -64,6 +64,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
+
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -71,7 +72,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
 
 
-            //Inform the UI that the message has been received.
+            //Inform the client that the message has been received.
             var receivedChat = new ReceiveChatHttpResponse()
             {
                 Message = request.Message,
@@ -88,6 +89,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsAudioMessage = request.IsAudioMessage,
                 StartedAt = DateTime.UtcNow,
             };
+
             await _hubContext.Clients.Group("User123")
                 .SendAsync("ReceiveMessage", receivedChat, cancellationToken);
 

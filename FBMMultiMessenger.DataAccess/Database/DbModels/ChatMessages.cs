@@ -21,6 +21,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public bool IsRead { get; set; }
 
+        public bool IsSent { get; set; } //If true then means the message was succesfully sent otherwise inform user that message failed.
         public bool IsTextMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }

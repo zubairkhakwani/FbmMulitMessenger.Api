@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FBMMultiMessenger.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.AccessControl;
@@ -13,5 +14,6 @@ namespace FBMMultiMessenger.Request
         public required ApiType ApiType { get; set; } = ApiType.GET;
         public required string Url { get; set; }
         public T? Data { get; set; }
+        public ContentType ContentType { get; set; } = ContentType.Json;
     }
 }

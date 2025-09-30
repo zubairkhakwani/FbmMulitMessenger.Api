@@ -23,14 +23,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         public async Task<BaseResponse<List<GetChatMessagesModelResponse>>> Handle(GetChatMessagesModelRequest request, CancellationToken cancellationToken)
         {
             await _dbContext.ChatMessages
-                                   .Where(cm => cm.ChatId == request.ChatId && cm.Chat.UserId == request.UserId)
-                                   .ExecuteUpdateAsync(p => p
-                                   .SetProperty(x => x.IsRead, x => true));
+                                .Where(m => m.Chat.FBChatId == request.FbChatId
+                                        &&
+                                       m.Chat.UserId == request.UserId)
+                                .ExecuteUpdateAsync(p => p
+                                .SetProperty(m => m.IsRead, m => true));
 
 
             var chatMessages = await _dbContext.ChatMessages
-                                                        .Where(cm => cm.ChatId == request.ChatId && cm.Chat.UserId == request.UserId)
+                                                        .Where(cm => cm.Chat.FBChatId == request.FbChatId
+                                                              &&
+                                                              cm.Chat.UserId == request.UserId)
                                                         .ToListAsync(cancellationToken);
+
 
 
 
@@ -42,6 +47,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsImageMessage = x.IsImageMessage,
                 IsVideoMessage = x.IsVideoMessage,
                 IsAudioMessage = x.IsAudioMessage,
+                IsSent = x.IsSent,
                 CreatedAt = x.CreatedAt
 
             }).ToList();

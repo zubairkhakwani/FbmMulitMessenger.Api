@@ -1,12 +1,15 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
+using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.SignalR;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using MudBlazor.Extensions;
 
 namespace FBMMultiMessenger.Components.Pages.Chat
 {
@@ -20,6 +23,9 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         public IChatMessagesService ChatMessagesService { get; set; }
 
         [Inject]
+        public IExtensionService ExtensionService { get; set; }
+
+        [Inject]
         public SignalRChatService SignalRChatService { get; set; }
 
         [Inject]
@@ -28,9 +34,15 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         [Inject]
         public IJSRuntime JS { get; set; }
 
+        private const int MaxMediaCount = 100;
+        private const int MaxMediaSize = 25 * 1024 * 1024; // 1024 * 1024 == 1mb hence total 25mb.
+
         private string Message = string.Empty;
-        private int? ChatId = null;
-        private string? selectedFbChatId = null;
+        private List<FileData> PreviewMediaFiles { get; set; } = new List<FileData>();
+        private List<FileData> PreviewMediaInMessagesContainer = new List<FileData>();
+        private bool IsNotified = false;
+
+        private string? SelectedFbChatId = null;
         private string currentUserId = "User123"; //TODO - Authentication
 
         public List<GetMyChatsHttpResponse> MyAccountChats = new List<GetMyChatsHttpResponse>();
@@ -63,11 +75,17 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             {
                 await SignalRChatService.ConnectAsync(currentUserId);
 
-                SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceived(msg);
+                SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceivedAsync(msg);
+                SignalRChatService.OnMessageSent += async (msg) => await HandleMessageSentAsync(msg);
             }
         }
 
-        private async Task HandleMessageReceived(ReceiveChatHttpResponse receivedChat)
+        public async Task HandleChatWithMessageAsync()
+        {
+
+        }
+
+        private async Task HandleMessageReceivedAsync(ReceiveChatHttpResponse receivedChat)
         {
             var isChatPresent = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
             if (isChatPresent is null)
@@ -82,7 +100,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     FbChatId = receivedChat.FbChatId,
                     StartedAt = receivedChat.StartedAt,
                     IsRead = receivedChat.IsRead,
-                   
                 };
 
                 MyAccountChats.Add(newChat);
@@ -90,7 +107,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
 
             //If the message that we received fbChatId is not opened we add a unread badge otherwise we add new chat so it can be displayed in the messages.
-            if (receivedChat.FbChatId != selectedFbChatId)
+            if (receivedChat.FbChatId != SelectedFbChatId)
             {
                 var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
                 if (myAccountChat is not null)
@@ -124,8 +141,64 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
         }
 
+        private async Task HandleMessageSentAsync(SendChatMessagesHttpResponse messageSent)
+        {
+            var isChatPresent = MyAccountChats.FirstOrDefault(x => x.FbChatId == messageSent.FbChatId);
+            if (isChatPresent is null)
+            {
+                //sidebar account chat
+                var newChat = new GetMyChatsHttpResponse()
+                {
+                    Id = messageSent.ChatId,
+                    FbLisFbListingTitle = messageSent.FbListingTitle,
+                    FbListingLocation = messageSent.FbListingLocation,
+                    FbListingPrice = messageSent.FbListingPrice,
+                    FbChatId = messageSent.FbChatId,
+                    StartedAt = messageSent.StartedAt,
+                    IsRead = messageSent.IsRead,
+                };
 
-        public async Task LoadChatMessage(int chatId, string fbChatId)
+                MyAccountChats.Add(newChat);
+
+            }
+
+            //If the message that we sent fbChatId is not opened we add a unread badge otherwise we add new chat so it can be displayed in the messages.
+            if (messageSent.FbChatId != SelectedFbChatId)
+            {
+                var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == messageSent.FbChatId);
+                if (myAccountChat is not null)
+                {
+                    myAccountChat.UnReadCount += 1;
+                }
+            }
+            else
+            {
+                //actual chat message
+                var receivedMessage = new GeChatMessagesHttpResponse()
+                {
+                    Message = messageSent.Message,
+                    IsReceived = false,
+                    IsSent = true,
+                    IsTextMessage = messageSent.IsTextMessage,
+                    IsImageMessage = messageSent.IsImageMessage,
+                    IsVideoMessage = messageSent.IsVideoMessage,
+                    IsAudioMessage = messageSent.IsAudioMessage,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                MyChatMessages.Add(receivedMessage);
+            }
+
+
+            //Force UI to reload, so our changes reflect.
+            await InvokeAsync(StateHasChanged);
+
+            //Display newest message on top.
+            MyAccountChats = MyAccountChats.OrderByDescending(x => x.StartedAt).ToList();
+        }
+
+
+        public async Task LoadChatMessage(string fbChatId)
         {
             var myAccountChats = MyAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
             if (myAccountChats is not null)
@@ -137,7 +210,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 await InvokeAsync(StateHasChanged);
             }
 
-            var response = await ChatMessagesService.GetChatMessages<BaseResponse<List<GeChatMessagesHttpResponse>>>(chatId);
+            var response = await ChatMessagesService.GetChatMessages<BaseResponse<List<GeChatMessagesHttpResponse>>>(fbChatId);
 
             if (response is null || !response.IsSuccess)
             {
@@ -146,47 +219,124 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 return;
             }
 
-            ChatId = chatId;
-            selectedFbChatId = fbChatId;
+            SelectedFbChatId = fbChatId;
 
             MyChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
         }
 
-        public async Task SendMessage()
+        public async Task NotifyExtension()
         {
+            var isValidRequest = IsValidRequest();
+            if (!isValidRequest)
+            {
+                return;
+            }
+
             Message = Message.Trim();
 
-            if (!string.IsNullOrWhiteSpace(Message) && ChatId != 0)
+            //This is for UI.
+            var newChat = new GeChatMessagesHttpResponse()
             {
-                //This is for UI.
-                var newChat = new GeChatMessagesHttpResponse()
-                {
+                Message = Message,
+                IsReceived = false,
+                IsSent = true,
+                IsTextMessage = !string.IsNullOrWhiteSpace(Message),
+                IsImageMessage = PreviewMediaFiles.Count > 0,
+                IsVideoMessage = false,
+                IsAudioMessage = false,
+                CreatedAt = DateTime.UtcNow,
+                Sending = true,
+                UniqueId = Guid.NewGuid().ToString()
+            };
 
-                    IsReceived = false,
-                    Message = Message,
-                    CreatedAt = DateTime.UtcNow
+            if(newChat.IsImageMessage)
+            {
+                newChat.FileData = PreviewMediaFiles;
+                PreviewMediaFiles = new();
+            }
+
+            MyChatMessages.Add(newChat);
+
+
+            //This is to call API 
+            var request = new NotifyExtensionRequest()
+            {
+                FbChatId = SelectedFbChatId!,
+                Message = Message,
+                FIles = newChat.FileData.Select(x => x.File).ToList()
+            };
+
+            var response = await ExtensionService.Notify<BaseResponse<NotifyExtensionHttpResponse>>(request);
+
+            if (response is not null && response.IsSuccess)
+            {
+                Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Success);
+                Message = string.Empty;
+                PreviewMediaFiles = new List<FileData>();
+                return;
+            }
+
+            Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Error);
+
+        }
+
+
+        public bool IsValidRequest()
+        {
+            if (PreviewMediaFiles.Count == 0 && string.IsNullOrWhiteSpace(Message))
+            {
+                return false;
+            }
+            return true;
+        }
+        public async Task HandleFileUpload(InputFileChangeEventArgs e)
+        {
+            var files = e.GetMultipleFiles();
+
+            if (files.Count > MaxMediaCount)
+            {
+                await JS.InvokeVoidAsync("myInterop.handleMediaFailed", "Unable to attach media", "You can only attach a maximum of 100 media to a single message.");
+
+                return;
+            }
+
+            var totalSize = files.Sum(f => f.Size);
+
+            if (totalSize > MaxMediaSize)
+            {
+                await JS.InvokeVoidAsync("myInterop.handleMediaFailed",
+                    "Upload Failed",
+                    $"The total size of selected files ({totalSize / (1024 * 1024)} MB) exceeds the {MaxMediaSize / (1024 * 1024)} MB limit.");
+                return;
+            }
+
+
+            foreach (var file in files)
+            {
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(MaxMediaSize).CopyToAsync(ms);
+                var buffer = ms.ToArray();
+
+                var newFile = new FileData()
+                {
+                    Id = $"File-{Guid.NewGuid()}",
+                    File = file,
+                    FileName = file.Name,
+                    FileUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}",
+                    IsVideo = file.ContentType.StartsWith("video/")
                 };
 
-                MyChatMessages.Add(newChat);
+                PreviewMediaFiles.Add(newFile);
+            }
+        }
 
 
-                //This is to call API 
-                var request = new SendChatMessageHttpRequest()
-                {
-                    ChatId = ChatId,
-                    Message = Message
-                };
-
-                var response = await ChatMessagesService.SendChatMessage<BaseResponse<SendChatMessageHttpResponse>>(request);
-
-                if (response is not null && response.IsSuccess)
-                {
-                    Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Success);
-                    Message = string.Empty;
-                    return;
-                }
-
-                Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Error);
+        public void HandleFileRemoval(string id)
+        {
+            var file = PreviewMediaFiles.FirstOrDefault(x => x.Id == id);
+            if (file is not null)
+            {
+                PreviewMediaFiles.Remove(file);
             }
         }
 

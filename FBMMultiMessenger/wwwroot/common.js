@@ -13,4 +13,15 @@
         audio.volume = volume;
         audio.play();
     },
+    handleMessageFailed: function () {
+        console.log("Message failed to send");
+    },
+
+    handleMediaFailed: function (title, message) {
+        Swal.fire({
+            icon: "error",
+            title: title || "Error",
+            text: message || "Something went wrong.",
+        });
+    }
 };

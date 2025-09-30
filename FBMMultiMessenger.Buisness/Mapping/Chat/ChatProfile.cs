@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
+using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
 using System;
 using System.Collections.Generic;
@@ -23,9 +25,15 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
             CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GeChatMessagesHttpResponse>>>();
 
 
-            CreateMap<SendChatMessageHttpRequest, SendChatMessageModelRequest>();
-            CreateMap<SendChatMessageModelResponse, SendChatMessageHttpResponse>();
-            CreateMap<BaseResponse<SendChatMessageModelResponse>, BaseResponse<SendChatMessageHttpResponse>>();
+            CreateMap<NotifyExtensionHttpRequest, NotifyExtensionModelRequest>();
+            CreateMap<NotifyExtensionModelResponse, NotifyExtensionHttpResponse>();
+            CreateMap<BaseResponse<NotifyExtensionModelResponse>, BaseResponse<NotifyExtensionHttpResponse>>();
+
+
+            CreateMap<SendChatMessagesHttpRequest, SendChatMessageModelRequest>();
+            CreateMap<SendChatMessageModelResponse, SendChatMessagesHttpResponse>();
+            CreateMap<BaseResponse<SendChatMessageModelResponse>, BaseResponse<SendChatMessagesHttpResponse>>();
+
         }
     }
 }

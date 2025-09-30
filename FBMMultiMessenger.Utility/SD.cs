@@ -16,6 +16,12 @@ namespace FBMMultiMessenger.Utility
             DELETE
         }
 
+        public enum ContentType
+        {
+            Json,
+            MultipartFormData
+        }
+
         public enum Roles
         {
             Admin = 1,

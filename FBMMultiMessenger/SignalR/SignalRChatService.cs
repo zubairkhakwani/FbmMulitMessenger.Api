@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Chat;
+using FBMMultiMessenger.Contracts.Contracts.Extension;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -14,9 +15,9 @@ namespace FBMMultiMessenger.SignalR
     {
         private HubConnection _hubConnection;
         public event Func<ReceiveChatHttpResponse, Task> OnMessageReceived;
-        public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
+        public event Func<SendChatMessagesHttpResponse, Task> OnMessageSent;
 
-        public event Action<string, string> OnMessageSent;
+        public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
         private readonly string _baseURL;
         private string _currentUserId;
@@ -41,12 +42,11 @@ namespace FBMMultiMessenger.SignalR
                 }
             });
 
-            _hubConnection.On<string, string>("MessageSent", (toUserId, message) =>
+            //TODO: CHECK IF THIS GETS CALLED WHEN YOU SEND MESSAGE VIA APP. IF YES THEN & WHY REMOVE IT.
+            _hubConnection.On<SendChatMessagesHttpResponse>("SendMessage", (messageData) =>
             {
-                OnMessageSent?.Invoke(toUserId, message);
+                OnMessageSent?.Invoke(messageData);
             });
-
-
 
             await _hubConnection.StartAsync();
             await _hubConnection.SendAsync("RegisterUser", userId);
