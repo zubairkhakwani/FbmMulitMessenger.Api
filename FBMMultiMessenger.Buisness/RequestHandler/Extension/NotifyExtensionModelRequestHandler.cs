@@ -57,12 +57,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid request, Chat does not exist");
             }
 
-            var user = chat.User;
-            var isExpired = user.Subscription.IsExpired;
+            var subscription = chat.User.Subscription;
+            var isExpired = subscription.IsExpired;
+            var startDate = subscription.StartedAt;
+            var endDate = subscription.ExpiredAt;
 
-            
-            if (isExpired)
+            if (startDate >= endDate  || isExpired)
             {
+
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Subscription has been expired");
             }
 
