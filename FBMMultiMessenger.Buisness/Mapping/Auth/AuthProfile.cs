@@ -10,15 +10,19 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Mapping.Auth
 {
-    public class LoginProfile : Profile
+    public class AuthProfile : Profile
     {
-        public LoginProfile()
+        public AuthProfile()
         {
             CreateMap<LoginHttpRequest, LoginModelRequest>();
-
             CreateMap<LoginModelResponse, LoginHttpResponse>();
-
             CreateMap<BaseResponse<LoginModelResponse>, BaseResponse<LoginHttpResponse>>();
+
+
+            CreateMap<RegisterHttpRequest, RegisterModelRequest>();
+            CreateMap<RegisterModelResponse, RegisterHttpResponse>();
+            CreateMap<BaseResponse<RegisterModelResponse>, BaseResponse<RegisterHttpResponse>>();
+
         }
     }
 }

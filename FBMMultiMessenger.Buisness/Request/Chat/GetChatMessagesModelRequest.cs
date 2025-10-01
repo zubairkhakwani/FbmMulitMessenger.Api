@@ -1,5 +1,7 @@
 ﻿using FBMMultiMessenger.Contracts.Response;
 using MediatR;
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +17,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
     }
     public class GetChatMessagesModelResponse
     {
+        public string FbChatId { get; set; } = null!;
         public string Message { get; set; } = null!;
         public bool IsReceived { get; set; } // This will tell if we send the message or we received the message
         public bool IsSent { get; set; } // This will tell whether message was send successfully to facebook via our app.
@@ -23,5 +26,16 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public List<FileDataModelResponse> FileData { get; set; } = new List<FileDataModelResponse>();
     }
+    public class FileDataModelResponse
+    {
+        public string FileUrl { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public bool IsVideo { get; set; }
+
+    }
+
+
 }

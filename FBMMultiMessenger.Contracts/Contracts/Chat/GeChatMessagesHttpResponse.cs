@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,7 +10,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
 {
     public class GeChatMessagesHttpResponse
     {
-        public string Message { get; set; } = null!;
+        public string FBChatId { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
         public bool IsReceived { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
@@ -17,7 +19,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsAudioMessage { get; set; }
         public bool IsSent { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string UniqueId { get; set; }
+        public string UniqueId { get; set; } = string.Empty;
         public bool Sending { get; set; }
         public List<FileData> FileData { get; set; } = new();
     }

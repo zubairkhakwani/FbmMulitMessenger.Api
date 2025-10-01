@@ -16,7 +16,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
 
         public string? Message { get; set; }
 
-        public List<IFormFile>? FIles { get; set; }
+        public List<IFormFile>? Files { get; set; }
     }
 
 
@@ -29,7 +29,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
         [Required]
         public string Message { get; set; } = null!;
 
-        public List<IBrowserFile>? FIles { get; set; }
+        public List<IBrowserFile>? Files { get; set; }
 
     }
 

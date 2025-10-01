@@ -14,9 +14,9 @@ const observer = new MutationObserver((mutations) => {
                 });
 
                 let lastMessage = messageList.lastElementChild;
-                lastMessage.classList.add("new-message");
+                lastMessage?.classList?.add("new-message");
                 setTimeout(() => {
-                    lastMessage.classList.remove('new-message');
+                    lastMessage?.classList?.remove('new-message');
                 }, 600)
             }
             else if (mutation.target === accountChats) {

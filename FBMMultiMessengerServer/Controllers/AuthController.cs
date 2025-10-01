@@ -31,6 +31,18 @@ namespace FBMMultiMessengerServer.Controllers
 
             return httpResponse;
         }
+
+        [HttpPost("Register")]
+        public async Task<BaseResponse<RegisterHttpResponse>> Register([FromBody] RegisterHttpRequest httpRequest)
+        {
+            RegisterModelRequest request = _mapper.Map<RegisterModelRequest>(httpRequest);
+            BaseResponse<RegisterModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<RegisterHttpResponse> httpResponse = _mapper.Map<BaseResponse<RegisterHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
     }
 }
 

@@ -10,8 +10,12 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
@@ -27,15 +31,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         }
         public async Task<BaseResponse<SendChatMessageModelResponse>> Handle(SendChatMessageModelRequest request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.Message))
+            if (request.Messages.Count == 0)
             {
                 return BaseResponse<SendChatMessageModelResponse>.Error("Please provide message to continue.");
             }
 
-
             var chat = await _dbContext.Chats
                                 .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId);
+
             var chatReference = chat;
+
             if (chat is null)
             {
                 var newChat = new Chat()
@@ -61,25 +66,39 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
                 chatReference = newChat;
             }
+                
+            var dbMessage = string.Empty;
+
+            if (request.IsImageMessage)
+            {
+                dbMessage = JsonSerializer.Serialize(request.Messages);
+            }
+            else if (request.IsTextMessage)
+            {
+                dbMessage = request.Messages.FirstOrDefault()?.Trim();
+            }
 
             var newChatMessage = new ChatMessages()
             {
-                Message = request.Message.Trim(),
+                Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
                 IsReceived = false,
                 IsRead = true,
                 IsSent = true,
-                IsTextMessage = true,
+                IsTextMessage = request.IsTextMessage,
+                IsAudioMessage = request.IsAudioMessage,
+                IsImageMessage = request.IsImageMessage,
+                IsVideoMessage = request.IsVideoMessage,
                 CreatedAt = DateTime.UtcNow
             };
-
             await _dbContext.ChatMessages.AddAsync(newChatMessage);
+
             await _dbContext.SaveChangesAsync();
 
             //Notify the Client that the message has been send. 
             var receivedChat = new ReceiveChatHttpResponse()
             {
-                Message = request.Message,
+                Message = request.Messages.FirstOrDefault()!,
                 ChatId = chatReference!.Id,
                 FbChatId = chatReference.FBChatId!,
                 FbAccountId = chatReference.FbAccountId!,
@@ -88,7 +107,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 FbListingLocation = chatReference.FbListingLocation!,
                 FbListingPrice = chatReference.FbListingPrice!.Value,
                 IsTextMessage = request.IsTextMessage,
-                IsVideoMessage =request.IsVideoMessage,
+                IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 StartedAt = DateTime.UtcNow,

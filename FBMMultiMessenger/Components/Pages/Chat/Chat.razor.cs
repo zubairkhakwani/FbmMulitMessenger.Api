@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Extensions;
+using System.Text.Json;
 
 namespace FBMMultiMessenger.Components.Pages.Chat
 {
@@ -80,10 +81,20 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
         }
 
-        public async Task HandleChatWithMessageAsync()
+        private List<FileData> GetImages(string message)
         {
+            var imagesList = JsonSerializer.Deserialize<List<string>>(message);
 
+            var fileModel = imagesList.Select(i => new FileData()
+            {
+                FileUrl = i
+
+            }).ToList();
+
+            return fileModel;
         }
+
+
 
         private async Task HandleMessageReceivedAsync(ReceiveChatHttpResponse receivedChat)
         {
@@ -106,7 +117,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             }
 
-            //If the message that we received fbChatId is not opened we add a unread badge otherwise we add new chat so it can be displayed in the messages.
+            //If the message that we received fbChatId is not opened so we add a unread badge otherwise we add new chat so it can be displayed in the messages.
             if (receivedChat.FbChatId != SelectedFbChatId)
             {
                 var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
@@ -120,13 +131,21 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 //actual chat message
                 var receivedMessage = new GeChatMessagesHttpResponse()
                 {
-                    Message = receivedChat.Message,
                     IsReceived = true,
                     IsTextMessage = receivedChat.IsTextMessage,
                     IsImageMessage = receivedChat.IsImageMessage,
                     IsVideoMessage = receivedChat.IsVideoMessage,
                     CreatedAt = DateTime.UtcNow
                 };
+
+                if (receivedChat.IsTextMessage)
+                {
+                    receivedMessage.Message = receivedChat.Message;
+                }
+                else if (receivedChat.IsImageMessage)
+                {
+                    receivedMessage.FileData = GetImages(receivedChat.Message);
+                }
 
                 MyChatMessages.Add(receivedMessage);
             }
@@ -141,60 +160,39 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
         }
 
+
+        //TODO
         private async Task HandleMessageSentAsync(SendChatMessagesHttpResponse messageSent)
         {
-            var isChatPresent = MyAccountChats.FirstOrDefault(x => x.FbChatId == messageSent.FbChatId);
-            if (isChatPresent is null)
+            var message = MyChatMessages.FirstOrDefault(x => x.FBChatId == messageSent.FbChatId
+                                                            && (messageSent.IsTextMessage  && x.Message == messageSent.Message));
+            if (message is not null)
             {
-                //sidebar account chat
-                var newChat = new GetMyChatsHttpResponse()
-                {
-                    Id = messageSent.ChatId,
-                    FbLisFbListingTitle = messageSent.FbListingTitle,
-                    FbListingLocation = messageSent.FbListingLocation,
-                    FbListingPrice = messageSent.FbListingPrice,
-                    FbChatId = messageSent.FbChatId,
-                    StartedAt = messageSent.StartedAt,
-                    IsRead = messageSent.IsRead,
-                };
-
-                MyAccountChats.Add(newChat);
-
+                message.Sending = false;
             }
 
-            //If the message that we sent fbChatId is not opened we add a unread badge otherwise we add new chat so it can be displayed in the messages.
-            if (messageSent.FbChatId != SelectedFbChatId)
-            {
-                var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == messageSent.FbChatId);
-                if (myAccountChat is not null)
-                {
-                    myAccountChat.UnReadCount += 1;
-                }
-            }
-            else
-            {
-                //actual chat message
-                var receivedMessage = new GeChatMessagesHttpResponse()
-                {
-                    Message = messageSent.Message,
-                    IsReceived = false,
-                    IsSent = true,
-                    IsTextMessage = messageSent.IsTextMessage,
-                    IsImageMessage = messageSent.IsImageMessage,
-                    IsVideoMessage = messageSent.IsVideoMessage,
-                    IsAudioMessage = messageSent.IsAudioMessage,
-                    CreatedAt = DateTime.UtcNow
-                };
 
-                MyChatMessages.Add(receivedMessage);
-            }
+
+            //TODO: When message is send from facebook not from our app so we have to inject that message.
+            //actual chat message
+            //var receivedMessage = new GeChatMessagesHttpResponse()
+            //{
+            //    Message = messageSent.Message,
+            //    IsReceived = false,
+            //    IsSent = true,
+            //    IsTextMessage = messageSent.IsTextMessage,
+            //    IsImageMessage = messageSent.IsImageMessage,
+            //    IsVideoMessage = messageSent.IsVideoMessage,
+            //    IsAudioMessage = messageSent.IsAudioMessage,
+            //    CreatedAt = DateTime.UtcNow
+            //};
+
+            //MyChatMessages.Add(receivedMessage);
+
 
 
             //Force UI to reload, so our changes reflect.
             await InvokeAsync(StateHasChanged);
-
-            //Display newest message on top.
-            MyAccountChats = MyAccountChats.OrderByDescending(x => x.StartedAt).ToList();
         }
 
 
@@ -237,6 +235,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             //This is for UI.
             var newChat = new GeChatMessagesHttpResponse()
             {
+                FBChatId = SelectedFbChatId!,
                 Message = Message,
                 IsReceived = false,
                 IsSent = true,
@@ -249,7 +248,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 UniqueId = Guid.NewGuid().ToString()
             };
 
-            if(newChat.IsImageMessage)
+            if (newChat.IsImageMessage)
             {
                 newChat.FileData = PreviewMediaFiles;
                 PreviewMediaFiles = new();
@@ -263,7 +262,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             {
                 FbChatId = SelectedFbChatId!,
                 Message = Message,
-                FIles = newChat.FileData.Select(x => x.File).ToList()
+                Files = newChat.FileData.Select(x => x.File).ToList()
             };
 
             var response = await ExtensionService.Notify<BaseResponse<NotifyExtensionHttpResponse>>(request);
@@ -280,7 +279,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         }
 
-
         public bool IsValidRequest()
         {
             if (PreviewMediaFiles.Count == 0 && string.IsNullOrWhiteSpace(Message))
@@ -289,6 +287,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
             return true;
         }
+
         public async Task HandleFileUpload(InputFileChangeEventArgs e)
         {
             var files = e.GetMultipleFiles();
@@ -329,7 +328,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 PreviewMediaFiles.Add(newFile);
             }
         }
-
 
         public void HandleFileRemoval(string id)
         {

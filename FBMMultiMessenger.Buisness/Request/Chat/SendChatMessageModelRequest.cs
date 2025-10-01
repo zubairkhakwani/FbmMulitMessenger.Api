@@ -17,7 +17,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public required string FbListingTitle { get; set; }
         public required decimal FbListingPrice { get; set; }
         public required string FbListingLocation { get; set; }
-        public required string Message { get; set; }
+        public required List<string> Messages { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }

@@ -25,9 +25,6 @@ namespace FBMMultiMessenger.Components.Pages.Auth
         public IAuthService AuthService { get; set; }
 
         [Inject]
-        public IJSRuntime JS { get; set; }
-
-        [Inject]
         private NavigationManager Navigation { get; set; }
         [Inject]
         private ITokenProvider TokenProvider { get; set; }
@@ -40,7 +37,7 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
             if (!string.IsNullOrWhiteSpace(token))
             {
-                Navigation.NavigateTo("/Account");
+                //Navigation.NavigateTo("/Account");
             }
         }
 
@@ -50,8 +47,8 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
             if (request.IsSuccess)
             {
-                await JS.InvokeVoidAsync("myInterop.setItem", SD.AccessToken, request.Data!.Token);
-                navManager.NavigateTo("/Account", true);
+                await TokenProvider.SetTokenAsync(request!.Data!.Token!);
+                navManager.NavigateTo("/Account");
                 return;
             }
 

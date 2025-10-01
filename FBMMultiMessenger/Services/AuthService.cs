@@ -27,11 +27,23 @@ namespace FBMMultiMessenger.Services
             var apiRequest = new ApiRequest<LoginHttpRequest>()
             {
                 ApiType = SD.ApiType.POST,
-                Url = "https://localhost:7095/"+"api/auth/login",
+                Url = _baseUrl+"api/auth/login",
                 Data = httpRequest
             };
 
             return await _baseService.SendAsync<LoginHttpRequest, T>(apiRequest);
+        }
+
+        public async Task<T> RegisterAsync<T>(RegisterHttpRequest httpRequest) where T : class
+        {
+            var apiRequest = new ApiRequest<RegisterHttpRequest>()
+            {
+                ApiType  = SD.ApiType.POST,
+                Url = _baseUrl+"api/auth/register",
+                Data  = httpRequest
+            };
+
+            return await _baseService.SendAsync<RegisterHttpRequest, T>(apiRequest);
         }
     }
 }

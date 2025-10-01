@@ -64,14 +64,14 @@
                 @for (int i = 0; i < MyChatMessages.Count; i++)
                 {
                     var chatMessage = MyChatMessages[i];
-                    var receivedMessageClass = chatMessage.IsReceived ? "received" : "sent";
+                    var messageClass = chatMessage.IsReceived ? "received" : "sent";
                     var isSent = !chatMessage.IsReceived;
                     var isMessageFailedToSend = !chatMessage.IsSent && !chatMessage.IsReceived;
                     var failedMessageClass = isMessageFailedToSend ? "failed" : "";
 
                     @if (chatMessage.IsTextMessage)
                     {
-                        <div class="message @receivedMessageClass @failedMessageClass">
+                        <div class="message @messageClass @failedMessageClass">
                             <div style="white-space: pre-wrap;" class="message-bubble">
                                 @chatMessage.Message
                             </div>
@@ -98,36 +98,42 @@
                             </div>
                         </div>
                     }
+
                     @if (chatMessage.IsImageMessage)
                     {
-                        @foreach (var file in chatMessage.FileData)
-                        {
-                            <div class="message @receivedMessageClass @failedMessageClass">
-                                <div style="white-space: pre-wrap;" FileData="message-bubble">
-                                    <img src="@file.FileUrl" />
-                                </div>
-                                <div class="message-footer">
-                                    <span class="message-time">@chatMessage.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
+                        var row = chatMessage.FileData.Count > 1 ? "flex-row" : "";
 
-                                    @if (isSent)
-                                    {
-                                        @if (chatMessage.Sending)
+                        <div class="@row @messageClass">
+                            @foreach (var file in chatMessage.FileData)
+                            {
+                                <div class="message @messageClass  @failedMessageClass">
+                                    <div>
+                                        <img src="@file.FileUrl" />
+                                    </div>
+                                    <div class="message-footer">
+                                        <span class="message-time">@chatMessage.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
+                                        @if (isSent)
                                         {
-                                            <span class="message-status sending">
-                                                <span class="status-icon">⏱</span> Sending...
-                                            </span>
+                                            @if (chatMessage.Sending)
+                                            {
+                                                <span class="message-status sending">
+                                                    <span class="status-icon">⏱</span> Sending...
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="message-status sent">
+                                                    <span class="status-icon">✓</span> Sent
+                                                </span>
+                                            }
                                         }
-                                        else
-                                        {
-                                            <span class="message-status sent">
-                                                <span class="status-icon">✓</span> Sent
-                                            </span>
-                                        }
-                                    }
 
+                                    </div>
                                 </div>
-                            </div>
-                        }
+                            }
+  
+                        
+                        </div>
                     }
                 }
             </div>

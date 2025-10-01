@@ -31,6 +31,9 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [Inject]
         private ISnackbar Snackbar { get; set; }
 
+        [SupplyParameterFromQuery]
+        public string? Message { get; set; }
+
         private MudTable<GetMyAccountsHttpResponse> table;
 
         protected override async Task OnInitializedAsync()
@@ -40,6 +43,11 @@ namespace FBMMultiMessenger.Components.Pages.Account
             if (string.IsNullOrWhiteSpace(token))
             {
                 Navigation.NavigateTo("/login");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Message))
+            {
+                Snackbar.Add(Message, Severity.Success);
             }
         }
         private async Task<TableData<GetMyAccountsHttpResponse>> ServerReload(TableState state, CancellationToken token)

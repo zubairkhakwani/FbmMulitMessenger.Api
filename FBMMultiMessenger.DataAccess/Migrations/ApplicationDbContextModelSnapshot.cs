@@ -171,6 +171,10 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ContactNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -197,6 +201,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
+                            ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "zbrkhakwani@gmail.com",
                             IsActive = true,
@@ -206,6 +211,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 2,
+                            ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "shaheersk12@gmail.com",
                             IsActive = true,

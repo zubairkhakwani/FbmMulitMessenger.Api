@@ -24,8 +24,8 @@ namespace FBMMultiMessenger.Data.DB
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<User>().HasData(
-                new User() { Id = 1, Name="Zubair Khakwani", Email = "zbrkhakwani@gmail.com", Password="Zubair!", IsActive = true, CreatedAt = new DateTime(2025, 9, 20) },
-                new User() { Id = 2, Name="Shaheer Khawjikzai", Email = "shaheersk12@gmail.com", Password="Shaheer1!", IsActive = true, CreatedAt = new DateTime(2025, 9, 20) }
+                new User() { Id = 1, Name="Zubair Khakwani", Email = "zbrkhakwani@gmail.com", Password="Zubair!",ContactNumber="03330337272", IsActive = true, CreatedAt = new DateTime(2025, 9, 20) },
+                new User() { Id = 2, Name="Shaheer Khawjikzai", Email = "shaheersk12@gmail.com", Password="Shaheer1!",ContactNumber="03330337272", IsActive = true, CreatedAt = new DateTime(2025, 9, 20) }
                 );
         }
     }

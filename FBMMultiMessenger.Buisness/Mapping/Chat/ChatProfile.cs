@@ -23,6 +23,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
 
             CreateMap<GetChatMessagesModelResponse, GeChatMessagesHttpResponse>();
             CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GeChatMessagesHttpResponse>>>();
+            CreateMap<FileDataModelResponse, FileData>();
 
 
             CreateMap<NotifyExtensionHttpRequest, NotifyExtensionModelRequest>();

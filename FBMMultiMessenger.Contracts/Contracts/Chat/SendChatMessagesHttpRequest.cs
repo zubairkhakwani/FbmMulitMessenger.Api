@@ -27,7 +27,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public decimal? FbListingPrice { get; set; }
 
         // [Required]
-        public string? Message { get; set; } = null!;
+        public List<string>? Messages { get; set; } = new List<string>();
+
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }

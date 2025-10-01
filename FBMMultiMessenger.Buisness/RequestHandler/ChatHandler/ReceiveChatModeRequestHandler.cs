@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
@@ -54,9 +55,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 chatReference = newChat;
             }
 
+            var dbMessage = string.Empty;
+
+            if (request.IsImageMessage)
+            {
+                dbMessage = JsonSerializer.Serialize(request.Messages);
+            }
+            else if (request.IsTextMessage)
+            {
+                dbMessage = request.Messages.FirstOrDefault()?.Trim();
+            }
+
             var newChatMessage = new ChatMessages()
             {
-                Message = request.Message,
+                Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
                 IsReceived = true,
                 IsRead = false,
@@ -75,7 +87,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             //Inform the client that the message has been received.
             var receivedChat = new ReceiveChatHttpResponse()
             {
-                Message = request.Message,
+                Message = dbMessage,
                 ChatId = chatReference.Id,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,

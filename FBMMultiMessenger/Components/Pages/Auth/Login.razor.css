@@ -42,7 +42,7 @@
     position: relative;
 }
 
-.input {
+::deep .input {
     width: 100%;
     padding: 15px 20px;
     border: 2px solid #e1e5e9;
@@ -52,14 +52,14 @@
     background: #f8f9fa;
 }
 
-    .input:focus {
+    ::deep .input:focus {
         outline: none;
         border-color: #667eea;
         background: white;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .input::placeholder {
+    ::deep .input::placeholder {
         color: #9ca3af;
     }
 
