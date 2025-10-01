@@ -1,8 +1,10 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
+using FBMMultiMessenger.Contracts.Contracts.Subscription;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.Utility;
 using MediatR;
+using MediatR.Pipeline;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System;
@@ -26,8 +28,12 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
         [Inject]
         private NavigationManager Navigation { get; set; }
+
         [Inject]
         private ITokenProvider TokenProvider { get; set; }
+
+        [Inject]
+        public ISubscriptionSerivce SubscriptionSerivce { get; set; }
 
         public string? ResponseError;
 
@@ -37,22 +43,45 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
             if (!string.IsNullOrWhiteSpace(token))
             {
-                //Navigation.NavigateTo("/Account");
+                var response = await SubscriptionSerivce.GetMySubscription<BaseResponse<GetMySubscriptionHttpResponse>>();
+                var isExpired = response.IsSubsriptionExpired;
+                var isNotActive = !response.IsSubscriptionActive;
+
+                if (isExpired || isNotActive)
+                {
+                    var message = Uri.EscapeDataString(response.Message);
+                    Navigation.NavigateTo($"/packages?isExpired={isExpired}&message={message}");
+                    return;
+                }
+
+                Navigation.NavigateTo("/Account");
             }
         }
 
+
+
         public async Task OnValidPost()
         {
-            var request = await AuthService.LoginAsync<BaseResponse<LoginHttpResponse>>(RequestModel);
+            var response = await AuthService.LoginAsync<BaseResponse<LoginHttpResponse>>(RequestModel);
 
-            if (request.IsSuccess)
+            if (response.IsSuccess)
             {
-                await TokenProvider.SetTokenAsync(request!.Data!.Token!);
+                await TokenProvider.SetTokenAsync(response!.Data!.Token!);
+                var isExpired = response.IsSubsriptionExpired;
+                var isNotActive = !response.IsSubscriptionActive;
+
+                if (isExpired || isNotActive)
+                {
+                    var message = Uri.EscapeDataString(response.Message);
+                    Navigation.NavigateTo($"/packages?isExpired={isExpired}&message={message}");
+                    return;
+                }
+
                 navManager.NavigateTo("/Account");
                 return;
             }
 
-            ResponseError = request.Message;
+            ResponseError = response.Message;
         }
     }
 }

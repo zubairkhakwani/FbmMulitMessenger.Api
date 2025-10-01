@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001071803_UpdatingSubscriptionTable")]
+    partial class UpdatingSubscriptionTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -174,7 +177,7 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime>("ExpiredAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsExpired")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<int>("LimitUsed")
@@ -195,18 +198,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Subscriptions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsExpired = false,
-                            LimitUsed = 0,
-                            MaxLimit = 5,
-                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = 2
-                        });
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>

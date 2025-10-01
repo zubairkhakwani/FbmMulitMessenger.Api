@@ -14,7 +14,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
 {
     public partial class UpsertAccount
     {
-        UpsertAccountHttpRequest model = new UpsertAccountHttpRequest();
+        public UpsertAccountHttpRequest model { get; set; } = new();
         public PopupFormSettings popupFormSettings { get; set; }
 
         [Parameter]

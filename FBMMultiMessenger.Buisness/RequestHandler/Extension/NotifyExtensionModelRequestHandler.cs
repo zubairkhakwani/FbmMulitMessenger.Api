@@ -45,15 +45,25 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
             var chat = await _dbContext.Chats
-                      .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
+                                           .Include(x => x.User)
+                                           .ThenInclude(s => s.Subscription)
+                                           .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
                                            &&
                                            c.UserId == request.UserId, cancellationToken);
-
 
 
             if (chat is null)
             {
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid request, Chat does not exist");
+            }
+
+            var user = chat.User;
+            var isExpired = user.Subscription.IsExpired;
+
+            
+            if (isExpired)
+            {
+                return BaseResponse<NotifyExtensionModelResponse>.Error("Subscription has been expired");
             }
 
 

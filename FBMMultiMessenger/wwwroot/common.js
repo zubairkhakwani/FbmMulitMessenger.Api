@@ -17,9 +17,9 @@
         console.log("Message failed to send");
     },
 
-    handleMediaFailed: function (title, message) {
+    showSweetAlert: function (title, message, icon = "error") {
         Swal.fire({
-            icon: "error",
+            icon: icon,
             title: title || "Error",
             text: message || "Something went wrong.",
         });

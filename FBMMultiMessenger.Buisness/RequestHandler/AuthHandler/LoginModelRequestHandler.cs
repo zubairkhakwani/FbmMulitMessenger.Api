@@ -26,6 +26,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
         public async Task<BaseResponse<LoginModelResponse>> Handle(LoginModelRequest request, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
+                                       .Include(s => s.Subscription)
                                        .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password);
 
             if (user is null)
@@ -48,7 +49,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 Token = token.accessToken
             };
 
-            return BaseResponse<LoginModelResponse>.Success("Logged in successfully", response);
+            var subscription = user.Subscription;
+
+            if (subscription is not null)
+            {
+                var startedAt = subscription.StartedAt;
+                var expiredAt = subscription.ExpiredAt;
+
+                if (startedAt >= expiredAt)
+                {
+                    subscription.IsExpired = true;
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            var isActive = subscription is not null;
+            var isExpired = subscription is not null &&  subscription.IsExpired;
+
+            var message = !isActive ? "Oops, Looks like you dont have any subscription yet." : isExpired ? "Your subscription has expired. Please renew to continue." : "Logged in successfully.";
+
+
+            return BaseResponse<LoginModelResponse>.Success(message, response, isExpired, isActive);
         }
     }
 }

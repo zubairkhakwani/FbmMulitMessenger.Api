@@ -13,32 +13,39 @@ namespace FBMMultiMessenger.Contracts.Response
 
         public bool IsSuccess { get; set; } = true;
 
+        public bool IsSubsriptionExpired { get; set; }
+        public bool IsSubscriptionActive { get; set; }
+
         public string Message { get; set; } = string.Empty;
 
         public T? Data { get; set; }
 
 
-        public static BaseResponse<T> Success(string message, T? result, HttpStatusCode statusCode = HttpStatusCode.OK)
+        public static BaseResponse<T> Success(string message, T? result, bool isSubscriptionExpired = false, bool isSubscriptionActive = true, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             var response = new BaseResponse<T>()
             {
                 Data = result,
                 StatusCode = statusCode,
-                Message = message
+                Message = message,
+                IsSubsriptionExpired = isSubscriptionExpired,
+                IsSubscriptionActive = isSubscriptionActive
             };
 
             return response;
         }
 
 
-        public static BaseResponse<T> Error(string message, HttpStatusCode statusCode = HttpStatusCode.BadRequest, T? result = null)
+        public static BaseResponse<T> Error(string message, bool isSubscriptionExpired = false, bool isSubscriptionActive = true, T? result = null, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var response = new BaseResponse<T>()
             {
                 Message = message,
                 StatusCode = statusCode,
                 Data = result,
-                IsSuccess = false
+                IsSuccess = false,
+                IsSubsriptionExpired = isSubscriptionExpired,
+                IsSubscriptionActive = isSubscriptionActive
             };
 
             return response;

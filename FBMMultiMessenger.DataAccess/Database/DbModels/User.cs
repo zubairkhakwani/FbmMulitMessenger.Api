@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
 
         //Navigation Property
+        public Subscription Subscription { get; set; }
         public List<Account> Accounts { get; set; } = new List<Account>();
     }
 }

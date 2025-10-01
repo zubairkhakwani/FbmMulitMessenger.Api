@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Response;
@@ -37,7 +38,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
 
             var chat = await _dbContext.Chats
-                                .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId);
+                                       .Include(u => u.User)
+                                       .ThenInclude(s => s.Subscription)
+                                       .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
             var chatReference = chat;
 
@@ -66,7 +69,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
                 chatReference = newChat;
             }
-                
+
             var dbMessage = string.Empty;
 
             if (request.IsImageMessage)
@@ -91,30 +94,36 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage = request.IsVideoMessage,
                 CreatedAt = DateTime.UtcNow
             };
-            await _dbContext.ChatMessages.AddAsync(newChatMessage);
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
-            //Notify the Client that the message has been send. 
-            var receivedChat = new ReceiveChatHttpResponse()
+            var user = chatReference.User;
+            var isExpired = user.Subscription.IsExpired;
+
+            if (!isExpired)
             {
-                Message = request.Messages.FirstOrDefault()!,
-                ChatId = chatReference!.Id,
-                FbChatId = chatReference.FBChatId!,
-                FbAccountId = chatReference.FbAccountId!,
-                FbListingId = chatReference.FbListingId!,
-                FbListingTitle = chatReference.FbListingTitle!,
-                FbListingLocation = chatReference.FbListingLocation!,
-                FbListingPrice = chatReference.FbListingPrice!.Value,
-                IsTextMessage = request.IsTextMessage,
-                IsVideoMessage = request.IsVideoMessage,
-                IsImageMessage = request.IsImageMessage,
-                IsAudioMessage = request.IsAudioMessage,
-                StartedAt = DateTime.UtcNow,
-            };
+                //Notify the Client only if subscription is active.
+                var receivedChat = new ReceiveChatHttpResponse()
+                {
+                    Message = request.Messages.FirstOrDefault()!,
+                    ChatId = chatReference!.Id,
+                    FbChatId = chatReference.FBChatId!,
+                    FbAccountId = chatReference.FbAccountId!,
+                    FbListingId = chatReference.FbListingId!,
+                    FbListingTitle = chatReference.FbListingTitle!,
+                    FbListingLocation = chatReference.FbListingLocation!,
+                    FbListingPrice = chatReference.FbListingPrice!.Value,
+                    IsTextMessage = request.IsTextMessage,
+                    IsVideoMessage = request.IsVideoMessage,
+                    IsImageMessage = request.IsImageMessage,
+                    IsAudioMessage = request.IsAudioMessage,
+                    StartedAt = DateTime.UtcNow,
+                };
 
-            await _hubContext.Clients.Group("User123")
-                .SendAsync("SendMessage", receivedChat, cancellationToken);
+                await _hubContext.Clients.Group("User123")
+                    .SendAsync("SendMessage", receivedChat, cancellationToken);
+            }
 
             return BaseResponse<SendChatMessageModelResponse>.Success("Message has been send successfully.", new SendChatMessageModelResponse());
         }
