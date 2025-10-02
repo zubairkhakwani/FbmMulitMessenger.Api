@@ -25,9 +25,12 @@ namespace FBMMultiMessenger.Components.Pages.Package
         {
             if (!string.IsNullOrWhiteSpace(Message))
             {
-                var title = !string.IsNullOrWhiteSpace(IsExpired) ? "Subscrition Expired" : "Subscription renew";
+                bool.TryParse(IsExpired, out bool isExpired);
+
+                var title = isExpired ? "Subscription Expired" : "No Active Subscription";
                 await JS.InvokeVoidAsync("myInterop.showSweetAlert", title, Message);
             }
+
         }
     }
 }

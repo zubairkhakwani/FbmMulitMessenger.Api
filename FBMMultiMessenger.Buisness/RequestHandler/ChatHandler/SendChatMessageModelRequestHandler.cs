@@ -99,7 +99,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             var user = chatReference.User;
-            var isExpired = user.Subscription.IsExpired;
+            var isExpired = false;
 
             if (!isExpired)
             {

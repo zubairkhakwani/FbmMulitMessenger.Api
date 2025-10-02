@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251002061009_AddingDummySubscriptionData")]
+    partial class AddingDummySubscriptionData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,16 +203,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
-                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = false,
-                            LimitUsed = 0,
-                            MaxLimit = 5,
-                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = 2
-                        },
-                        new
-                        {
-                            Id = 2,
                             ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = false,
                             LimitUsed = 0,

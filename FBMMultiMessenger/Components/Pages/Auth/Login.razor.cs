@@ -44,13 +44,13 @@ namespace FBMMultiMessenger.Components.Pages.Auth
             if (!string.IsNullOrWhiteSpace(token))
             {
                 var response = await SubscriptionSerivce.GetMySubscription<BaseResponse<GetMySubscriptionHttpResponse>>();
-                var isExpired = response.IsSubsriptionExpired;
-                var isNotActive = !response.IsSubscriptionActive;
+                var isRedirectRequest = response.RedirectToPackages;
+                bool isSubscriptionExpired = response.Data?.IsExpired ?? false;
 
-                if (isExpired || isNotActive)
+                if (isRedirectRequest)
                 {
                     var message = Uri.EscapeDataString(response.Message);
-                    Navigation.NavigateTo($"/packages?isExpired={isExpired}&message={message}");
+                    Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={message}");
                     return;
                 }
 
@@ -59,25 +59,26 @@ namespace FBMMultiMessenger.Components.Pages.Auth
         }
 
 
-
         public async Task OnValidPost()
         {
             var response = await AuthService.LoginAsync<BaseResponse<LoginHttpResponse>>(RequestModel);
 
+            if (response.Data is not null &&  !string.IsNullOrWhiteSpace(response.Data.Token))
+            {
+                await TokenProvider.SetTokenAsync(response.Data.Token);
+            }
+
             if (response.IsSuccess)
             {
-                await TokenProvider.SetTokenAsync(response!.Data!.Token!);
-                var isExpired = response.IsSubsriptionExpired;
-                var isNotActive = !response.IsSubscriptionActive;
-
-                if (isExpired || isNotActive)
-                {
-                    var message = Uri.EscapeDataString(response.Message);
-                    Navigation.NavigateTo($"/packages?isExpired={isExpired}&message={message}");
-                    return;
-                }
-
                 navManager.NavigateTo("/Account");
+                return;
+            }
+
+            if (!response.IsSuccess && response.RedirectToPackages)
+            {
+                var isSubscriptionExpired = response.Data?.IsSubscriptionExpired ?? false;
+
+                Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={response.Message}");
                 return;
             }
 

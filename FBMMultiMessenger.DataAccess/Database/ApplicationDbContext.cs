@@ -31,7 +31,8 @@ namespace FBMMultiMessenger.Data.DB
 
             modelBuilder.Entity<Subscription>().HasData(
 
-                new Subscription() { Id =1, UserId = 2, MaxLimit = 5, LimitUsed=0, IsExpired = false, StartedAt =new DateTime(2025, 9, 20), ExpiredAt =new DateTime(2025, 10, 20) }
+                new Subscription() { Id =1, UserId = 2, MaxLimit = 5, LimitUsed=0, StartedAt =new DateTime(2025, 9, 20), ExpiredAt =new DateTime(2025, 10, 20) },
+                new Subscription() { Id =2, UserId = 2, MaxLimit = 5, LimitUsed=0, StartedAt =new DateTime(2025, 9, 20), ExpiredAt =new DateTime(2025, 10, 20) }
                 );
         }
     }

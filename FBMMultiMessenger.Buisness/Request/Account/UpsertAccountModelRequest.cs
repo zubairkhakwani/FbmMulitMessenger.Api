@@ -20,6 +20,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 
     public class UpsertAccountModelResponse
     {
-        public int UserId { get; set; }
+        public bool IsLimitExceeded { get; set; }
+        public bool IsSubscriptionExpired { get; set; }
     }
 }

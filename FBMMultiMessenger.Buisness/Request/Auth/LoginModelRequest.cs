@@ -17,5 +17,6 @@ namespace FBMMultiMessenger.Buisness.Request.Auth
     public class LoginModelResponse
     {
         public string? Token { get; set; }
+        public bool IsSubscriptionExpired { get; set; }
     }
 }

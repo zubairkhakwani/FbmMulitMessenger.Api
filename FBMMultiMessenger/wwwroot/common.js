@@ -17,11 +17,17 @@
         console.log("Message failed to send");
     },
 
-    showSweetAlert: function (title, message, icon = "error") {
-        Swal.fire({
+    showSweetAlert: function (title, message, showFooter = false, footerText = "Help", footerLink = "#", icon = "error") {
+        const config = {
             icon: icon,
             title: title || "Error",
-            text: message || "Something went wrong.",
-        });
+            text: message || "Something went wrong."
+        };
+
+        if (showFooter) {
+            config.footer = `<a href="${footerLink}">${footerText}</a>`;
+        }
+
+        Swal.fire(config);
     }
 };

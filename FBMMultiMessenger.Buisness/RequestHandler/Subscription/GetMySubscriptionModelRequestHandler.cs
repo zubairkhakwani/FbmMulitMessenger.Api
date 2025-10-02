@@ -26,17 +26,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
 
             if (subscription is null)
             {
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oops, Looks like you dont have any subscription yet.", isSubscriptionActive: false);
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet.", redirectToPackages: true);
             }
 
-            var startedAt = subscription.StartedAt;
+            var today = DateTime.Now;
             var expiredAt = subscription.ExpiredAt;
-
-            if (startedAt >= expiredAt  && !subscription.IsExpired)
-            {
-                subscription.IsExpired = true;
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
 
             var response = new GetMySubscriptionModelResponse()
             {
@@ -44,12 +38,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
                 LimitUsed = subscription.LimitUsed,
                 StartedAt = subscription.StartedAt,
                 ExpiredAt = subscription.ExpiredAt,
-                IsExpired  = subscription.IsExpired
             };
 
-            var responseMessage = subscription.IsExpired ? "Your subscription has expired. Please renew to continue." : "Subscription Found";
+            if (today >= expiredAt)
+            {
+                response.IsExpired = true;
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, response);
+            }
 
-            return BaseResponse<GetMySubscriptionModelResponse>.Success(responseMessage, response, isSubscriptionExpired: subscription.IsExpired);
+            return BaseResponse<GetMySubscriptionModelResponse>.Success("You have an active subscription", response);
 
         }
     }

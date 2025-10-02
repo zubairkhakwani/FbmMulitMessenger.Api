@@ -35,31 +35,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
         {
             var subscription = await _dbContext.Subscriptions
                                      .FirstOrDefaultAsync(x => x.UserId == request.UserId);
+
             if (subscription is null)
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oops, It looks like you don’t have a subscription yet. Please subscribe to continue.");
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true);
             }
 
             var maxLimit = subscription.MaxLimit;
             var limitUsed = subscription.LimitUsed;
 
-            if (limitUsed>=maxLimit)
+            var response = new UpsertAccountModelResponse();
+
+            if (limitUsed >= maxLimit)
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.");
+                response.IsLimitExceeded = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
             }
 
-            var startDate = subscription.StartedAt;
+            var today = DateTime.Now;
             var expiryDate = subscription.ExpiredAt;
 
-            if (startDate >= expiryDate || !subscription.IsExpired)
+            if (today >= expiryDate)
             {
-                if (subscription.IsExpired)
-                {
-                    subscription.IsExpired = false;
-                    await _dbContext.SaveChangesAsync();
-                }
-
-                return BaseResponse<UpsertAccountModelResponse>.Error("Your subscription has expired. Please renew to continue using this feature.");
+                response.IsSubscriptionExpired = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("Your subscription has expired. Please renew to continue using this feature.", redirectToPackages: true, response);
             }
 
 
@@ -73,13 +72,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             };
 
             subscription.LimitUsed++;
+
             await _dbContext.Accounts.AddAsync(newAccount);
             await _dbContext.SaveChangesAsync();
 
-            var response = new UpsertAccountModelResponse() { UserId = newAccount.UserId };
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
-
         }
 
         public async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request)
@@ -98,7 +96,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             _dbContext.Accounts.Update(account);
             await _dbContext.SaveChangesAsync();
 
-            var response = new UpsertAccountModelResponse() { UserId = account.UserId };
+            var response = new UpsertAccountModelResponse();
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", response);
         }

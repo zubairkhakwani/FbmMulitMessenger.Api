@@ -12,31 +12,27 @@ namespace FBMMultiMessenger.Contracts.Response
         public HttpStatusCode StatusCode { get; set; }
 
         public bool IsSuccess { get; set; } = true;
-
-        public bool IsSubsriptionExpired { get; set; }
-        public bool IsSubscriptionActive { get; set; }
-
+        public bool RedirectToPackages { get; set; }
         public string Message { get; set; } = string.Empty;
 
         public T? Data { get; set; }
 
 
-        public static BaseResponse<T> Success(string message, T? result, bool isSubscriptionExpired = false, bool isSubscriptionActive = true, HttpStatusCode statusCode = HttpStatusCode.OK)
+        public static BaseResponse<T> Success(string message, T? result, bool redirectToPackages = false, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             var response = new BaseResponse<T>()
             {
                 Data = result,
                 StatusCode = statusCode,
                 Message = message,
-                IsSubsriptionExpired = isSubscriptionExpired,
-                IsSubscriptionActive = isSubscriptionActive
+                RedirectToPackages = redirectToPackages,
             };
 
             return response;
         }
 
 
-        public static BaseResponse<T> Error(string message, bool isSubscriptionExpired = false, bool isSubscriptionActive = true, T? result = null, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
+        public static BaseResponse<T> Error(string message, bool redirectToPackages = false, T? result = null, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var response = new BaseResponse<T>()
             {
@@ -44,8 +40,7 @@ namespace FBMMultiMessenger.Contracts.Response
                 StatusCode = statusCode,
                 Data = result,
                 IsSuccess = false,
-                IsSubsriptionExpired = isSubscriptionExpired,
-                IsSubscriptionActive = isSubscriptionActive
+                RedirectToPackages = redirectToPackages,
             };
 
             return response;

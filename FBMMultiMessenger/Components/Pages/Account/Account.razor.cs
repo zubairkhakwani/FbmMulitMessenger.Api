@@ -85,7 +85,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
             var parameters = new DialogParameters();
             parameters.Add("AccountId", accountId);
             parameters.Add("Name", Name);
-            parameters.Add("Cookie", Name);
+            parameters.Add("Cookie", Cookie);
             var result = await DialogService.Show<UpsertAccount>("", parameters).Result;
             if (!result.Canceled)
             {

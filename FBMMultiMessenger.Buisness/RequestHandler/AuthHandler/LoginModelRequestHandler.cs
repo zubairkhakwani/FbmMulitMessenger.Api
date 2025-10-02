@@ -27,7 +27,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
         {
             var user = await _dbContext.Users
                                        .Include(s => s.Subscription)
-                                       .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password);
+                                       .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password, cancellationToken);
 
             if (user is null)
             {
@@ -49,27 +49,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 Token = token.accessToken
             };
 
+
             var subscription = user.Subscription;
 
-            if (subscription is not null)
+            if (subscription is null)
             {
-                var startedAt = subscription.StartedAt;
-                var expiredAt = subscription.ExpiredAt;
-
-                if (startedAt >= expiredAt)
-                {
-                    subscription.IsExpired = true;
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
+                return BaseResponse<LoginModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true, response);
             }
 
-            var isActive = subscription is not null;
-            var isExpired = subscription is not null &&  subscription.IsExpired;
+            var today = DateTime.Now;
+            var expiredAt = subscription.ExpiredAt;
 
-            var message = !isActive ? "Oops, Looks like you dont have any subscription yet." : isExpired ? "Your subscription has expired. Please renew to continue." : "Logged in successfully.";
+            if (today >= expiredAt)
+            {
+                response.IsSubscriptionExpired = true;
+                return BaseResponse<LoginModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, response);
+            }
 
-
-            return BaseResponse<LoginModelResponse>.Success(message, response, isExpired, isActive);
+            return BaseResponse<LoginModelResponse>.Success("Logged in successfully", response);
         }
     }
 }

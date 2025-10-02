@@ -3,6 +3,7 @@ using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Models.Shared;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,13 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [CascadingParameter]
         public IMudDialogInstance mudDialog { get; set; }
 
+        [Inject]
+        private NavigationManager Navigation { get; set; }
+
+        [Inject]
+        private IJSRuntime JS { get; set; }
+
+
         protected override void OnInitialized()
         {
             popupFormSettings = new PopupFormSettings()
@@ -56,14 +64,26 @@ namespace FBMMultiMessenger.Components.Pages.Account
         {
             var response = await AccountService.UpsertAccountAsync<BaseResponse<UpsertAccountHttpResponse>>(model, AccountId);
 
-            if (response is not null &&  response.IsSuccess)
+            mudDialog.Close(DialogResult.Ok(true));
+
+            if (!response.IsSuccess && response.Data is not null && response.Data.IsLimitExceeded)
             {
-                mudDialog.Close(DialogResult.Ok(true));
-                Snackbar.Add(response.Message, Severity.Success);
+                await JS.InvokeVoidAsync("myInterop.showSweetAlert", "Limit Exceeded", response.Message, true, "Click here to upgrade from the available packages", "/packages");
+            }
+
+            else if (!response.IsSuccess && response.RedirectToPackages)
+            {
+                var isSubscriptionExpired = response.Data?.IsSubscriptionExpired ?? false;
+
+                Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={response.Message}");
+            }
+
+            else
+            {
+                Snackbar.Add(response?.Message ?? "Something went wrong when adding account, please try later.", Severity.Success);
                 return;
             }
 
-            Snackbar.Add(response?.Message ?? "Something went wrong when adding account, please try later.", Severity.Error);
         }
 
         public void Cancel()

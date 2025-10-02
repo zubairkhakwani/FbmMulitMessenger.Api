@@ -12,8 +12,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public int Id { get; set; }
         public int MaxLimit { get; set; }
         public int LimitUsed { get; set; }
-        public bool IsExpired { get; set; }
-        //public bool IsActive { get; set; }
+        public bool IsActive { get; set; }
         public DateTime StartedAt { get; set; }
 
         public DateTime ExpiredAt { get; set; }

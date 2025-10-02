@@ -58,14 +58,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
             var subscription = chat.User.Subscription;
-            var isExpired = subscription.IsExpired;
-            var startDate = subscription.StartedAt;
+
+            //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
+            if (subscription is null)
+            {
+                return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true);
+            }
+
+            var today = DateTime.Now;
             var endDate = subscription.ExpiredAt;
 
-            if (startDate >= endDate  || isExpired)
+            if (today >= endDate)
             {
-
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Subscription has been expired");
+                return BaseResponse<NotifyExtensionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true);
             }
 
 
