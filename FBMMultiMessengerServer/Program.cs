@@ -1,4 +1,5 @@
 using FBMMultiMessenger.Buisness.Exntesions;
+using FBMMultiMessenger.Buisness.OneSignal;
 using FBMMultiMessenger.Buisness.SignalR;
 using System.Reflection;
 namespace FBMMultiMessengerServer
@@ -18,6 +19,8 @@ namespace FBMMultiMessengerServer
             builder.Services.RegisterAutoMapper(typeof(IServiceCollectionExtension).GetTypeInfo().Assembly, typeof(Program).GetTypeInfo().Assembly);
             builder.Services.AddTokenAuth(builder.Configuration);
             builder.Services.AddSignalR();
+            builder.Services.AddScoped<OneSignalNotificationService>();
+            builder.Services.AddScoped<ChatHub>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

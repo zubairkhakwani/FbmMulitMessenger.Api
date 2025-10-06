@@ -1,64 +1,90 @@
 ﻿@page "/Chat"
 @layout EmptyLayout
 
-<div class="messenger-container">
+@{
+    var mobileView = isAndriodPlatform ? "" : "messenger-container";
+    var mobileClass = isAndriodPlatform ? "mobile" : "";
+}
+
+<div class="@mobileView">
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
-                <a href="/Account">
-                   <i class="fa-sharp fa-solid fa-arrow-left"></i>
-                </a>
-            
-                <h2 class="sidebar-title">Marketplace Chat</h2>
-            </div>
-            
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" class="search-input" placeholder="Search conversations">
-            </div>
-        </div>
-        <div class="chat-list">
-            @for (int i = 0; i < MyAccountChats.Count; i++)
-            {
-                var fbChatId = MyAccountChats[i].FbChatId;
-                var chat = MyAccountChats[i];
-                var unreadCount = chat.UnReadCount;
-                var hide = unreadCount == 0 ? "hide" : "";
+    <div class="sidebar @mobileClass" style="z-index:@SidebarZIndex">
 
-                <div @onclick="() => LoadChatMessage(fbChatId)" class="chat-item unread">
+        @if (MyAccountChats.Any())
+        {
+            <div class="sidebar-header">
+                <div style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
+                    <NavLink href="Account">
+                        <i class="fa-sharp fa-solid fa-arrow-left"></i>
+                    </NavLink>
 
-                    <div class="avatar">
-                        JD
-                        <span class="unread-badge @hide">@unreadCount</span>
-                    </div>
-
-                    <div class="chat-info">
-                        <div class="chat-name">@chat.FbLisFbListingTitle</div>
-                        <div class="chat-listing-info">
-                            <div class="listing-location">@chat.FbListingLocation</div>
-                            <div class="listing-price">$@chat.FbListingPrice</div>
-                        </div>
-                    </div>
-                    <div class="chat-time">2m</div>
+                    <h2 class="sidebar-title">Marketplace Chat</h2>
                 </div>
-            }
-        </div>
-    </div>
-    @* no-chat-selected *@
-    <!-- Main Chat Area -->
-    <div class="main-chat no-chat-selected" id="mainChat">
-        <div class="chat-header">
-            <div class="avatar">JD</div>
-            <div class="header-info">
-                <h3>John Doe</h3>
-                <p>Active 2 minutes ago</p>
+
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input skeleton" placeholder="Search conversations">
+                </div>
             </div>
-        </div>
+            <div class="chat-list">
+                @for (int i = 0; i < MyAccountChats.Count; i++)
+                {
+                    var fbChatId = MyAccountChats[i].FbChatId;
+                    var chat = MyAccountChats[i];
+                    var unreadCount = chat.UnReadCount;
+                    var hide = unreadCount == 0 ? "hide" : "";
+
+                    <div @onclick="() => LoadChatMessage(fbChatId)" class="chat-item unread">
+
+                        <div class="avatar">
+                            JD
+                            <span class="unread-badge @hide">@unreadCount</span>
+                        </div>
+
+                        <div class="chat-info">
+                            <div class="chat-name">@chat.FbLisFbListingTitle</div>
+                            <div class="chat-listing-info">
+                                <div class="listing-location">@chat.FbListingLocation</div>
+                                <div class="listing-price">$@chat.FbListingPrice</div>
+                            </div>
+                        </div>
+                        <div class="chat-time">2m</div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <ChatLoadingSkelton></ChatLoadingSkelton>
+        }
+    </div>
+
+
+    <!-- Main Chat Area -->
+    <div class="main-chat  @mobileClass" style="z-index:@MainChatZIndex" id="mainChat">
+        @if (SelectedFbChatId is not null)
+        {
+            <div class="chat-header">
+                @if (isAndriodPlatform)
+                {
+                    <div style="cursor:pointer; padding: 33px 15px 32px 20px;" @onclick="HandleMobileMainChat">
+                        <i class="fa-sharp fa-solid fa-arrow-left"></i>
+                    </div>
+                }
+
+                <div class="avatar">JD</div>
+                <div class="header-info">
+
+                    <h3>@selectedListingTitle</h3>
+                    <p>@selectedListingLocation - @selectedListingPrice</p>
+                </div>
+            </div>
+        }
+
 
         <div class="messages-container" id="messagesContainer">
 
-            @if (SelectedFbChatId is null)
+            @if (SelectedFbChatId is null && !isAndriodPlatform)
             {
                 <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon">💬</div>
@@ -66,6 +92,7 @@
                     <p>Choose a conversation from the sidebar to start chatting with your Marketplace buyers and sellers.</p>
                 </div>
             }
+
 
             <div id="messagesList">
                 @for (int i = 0; i < MyChatMessages.Count; i++)
@@ -138,8 +165,8 @@
                                     </div>
                                 </div>
                             }
-  
-                        
+
+
                         </div>
                     }
                 }
@@ -156,7 +183,7 @@
                         {
                             var file = PreviewMediaFiles[i];
 
-                            <div class="file-preview-item">
+                            <div class="c">
                                 <img class="preview-media" src="@file.FileUrl" alt="Car photo 1">
                                 @if (file.IsVideo)
                                 {
@@ -170,12 +197,16 @@
                 </div>
             }
 
-            <div class="input-container">
-                <InputFile type="file" id="fileInput" accept="image/*,video/*" multiple style="display: none;" onchange="HandleFileUpload" />
-                <label for="fileInput" class="file-upload-btn" title="Attach files">📎</label>
-                <textarea @bind="Message" @onkeydown="HandleKeyDownPress" class="message-input" placeholder="Type a message..." rows="1"></textarea>
-                <button @onclick="() => NotifyExtension()" class="send-button">➤</button>
-            </div>
+            @if (SelectedFbChatId is not null)
+            {
+                <div class="input-container">
+                    <InputFile type="file" id="fileInput" accept="image/*,video/*" multiple style="display: none;" onchange="HandleFileUpload" />
+                    <label for="fileInput" class="file-upload-btn" title="Attach files">📎</label>
+                    <textarea @bind="Message" @onkeydown="HandleKeyDownPress" class="message-input" placeholder="Type a message..." rows="1"></textarea>
+                    <button @onclick="() => NotifyExtension()" class="send-button">➤</button>
+                </div>
+            }
+
         </div>
 
     </div>

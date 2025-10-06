@@ -3,8 +3,10 @@ using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.LifecycleEvents;
 using MudBlazor.Services;
 using System.Reflection;
+
 
 namespace FBMMultiMessenger
 {
@@ -21,11 +23,17 @@ namespace FBMMultiMessenger
                 });
 
             // Load appsettings.json from root
-            using var stream = FileSystem.OpenAppPackageFileAsync("appsettings.json").Result;
-            var config = new ConfigurationBuilder()
-                .AddJsonStream(stream)
-                .Build();
-            builder.Configuration.AddConfiguration(config);
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream("FBMMultiMessenger.appsettings.json");
+
+            if (stream != null)
+            {
+                var config = new ConfigurationBuilder()
+                    .AddJsonStream(stream)
+                    .Build();
+
+                builder.Configuration.AddConfiguration(config);
+            }
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddScoped<IBaseService, BaseService>();
@@ -39,7 +47,7 @@ namespace FBMMultiMessenger
             builder.Services.AddScoped<IChatMessagesService, ChatMessageService>();
             builder.Services.AddScoped<IExtensionService, ExtensionService>();
             builder.Services.AddScoped<ISubscriptionSerivce, SubscriptionService>();
-
+            builder.Services.AddSingleton<BackButtonService>();
 
             builder.Services.AddSingleton<SignalRChatService>();
             builder.Services.AddHttpClient();
@@ -50,7 +58,14 @@ namespace FBMMultiMessenger
             builder.Logging.AddDebug();
 #endif
 
+            //builder.Services.AddOneSignal(options =>
+            //{
+            //    options.AppId = "YOUR_ONESIGNAL_APP_ID";
+            //});
+            
             return builder.Build();
         }
+
+
     }
 }

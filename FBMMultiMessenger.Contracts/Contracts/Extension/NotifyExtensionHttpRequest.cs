@@ -35,6 +35,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
 
     public class NotifyExtensionHttpResponse
     {
+        public bool IsSubscriptionExpired { get; set; }
 
     }
 }

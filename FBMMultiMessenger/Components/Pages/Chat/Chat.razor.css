@@ -17,26 +17,32 @@ body {
     height: 100vh;
     background: white;
 }
-.flex-row{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
+
+.flex-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
 }
-    .flex-row.received{
-        justify-content:flex-start;
 
+    .flex-row.received {
+        justify-content: flex-start;
     }
 
-    .flex-row.sent{
-        justify-content:flex-end;
+    .flex-row.sent {
+        justify-content: flex-end;
     }
 
-    /* Sidebar Styles */
-    .sidebar {
-        background: white;
-        border-right: 1px solid #e4e6ea;
-        display: flex;
-        flex-direction: column;
+/* Sidebar Styles */
+.sidebar {
+    background: white;
+    border-right: 1px solid #e4e6ea;
+    /*        display: flex;
+        flex-direction: column;*/
+}
+
+    .sidebar.mobile {
+        position: fixed;
+        inset: 0;
     }
 
 .sidebar-header {
@@ -190,6 +196,12 @@ body {
     background: white;
 }
 
+    .main-chat.mobile {
+        position: fixed;
+        inset: 0;
+
+    }
+
     .main-chat.no-chat-selected .chat-header,
     .main-chat.no-chat-selected .input-container {
         display: none;
@@ -201,7 +213,6 @@ body {
 
 .chat-header {
     height: 65px;
-    padding: 12px 16px;
     border-bottom: 1px solid #e4e6ea;
     background: white;
     display: flex;
@@ -473,12 +484,6 @@ body {
 }
 
 
-/* Input Wrapper */
-
-.input-wrapper {
-    background: white;
-    border-top: 1px solid #e4e6ea;
-}
 
 /* File Preview Container */
 .file-preview-container {
@@ -564,7 +569,7 @@ body {
 /* Input Wrapper */
 .input-wrapper {
     background: white;
-    border-top: 1px solid #e4e6ea;
+    /*border-top: 1px solid #e4e6ea;*/
 }
 
 /* File Preview Container */
@@ -751,13 +756,5 @@ body {
         background: #8a8d91;
     }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .messenger-container {
-        grid-template-columns: 1fr;
-    }
 
-    .sidebar {
-        display: none;
-    }
-}
+

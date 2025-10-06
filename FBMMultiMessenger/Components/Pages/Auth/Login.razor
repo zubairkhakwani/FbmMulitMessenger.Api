@@ -40,11 +40,10 @@
                 <div class="form-group">
                     <div class="password-container">
                         <InputText @bind-Value="RequestModel.Password" 
-                                   type="password" 
+                                   type="password"
+                                   id="password"
                                    class="input" 
                                    placeholder="Password" />
-                        <i class="fa-solid fa-eye visibility-icon" onclick="togglePassword()"></i>
-                        <i class="fa-solid fa-eye-slash visibility-icon hide-password" onclick="togglePassword()"></i>
                     </div>
                     <ValidationMessage For="@(() => RequestModel.Password)" 
                                        class="validation-message" />

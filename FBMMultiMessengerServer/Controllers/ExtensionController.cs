@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Azure.Core;
+using FBMMultiMessenger.Buisness.OneSignal;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
@@ -15,11 +17,13 @@ namespace FBMMultiMessenger.Server.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly OneSignalNotificationService _oneSignalNotificationService;
 
-        public ExtensionController(IMapper mapper, IMediator mediator)
+        public ExtensionController(IMapper mapper, IMediator mediator, OneSignalNotificationService oneSignalNotificationService)
         {
             this._mapper=mapper;
             this._mediator=mediator;
+            this._oneSignalNotificationService=oneSignalNotificationService;
         }
 
         [Authorize]

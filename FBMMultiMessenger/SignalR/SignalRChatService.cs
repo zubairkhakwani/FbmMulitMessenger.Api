@@ -15,7 +15,6 @@ namespace FBMMultiMessenger.SignalR
     {
         private HubConnection _hubConnection;
         public event Func<ReceiveChatHttpResponse, Task> OnMessageReceived;
-        public event Func<SendChatMessagesHttpResponse, Task> OnMessageSent;
 
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
@@ -29,34 +28,28 @@ namespace FBMMultiMessenger.SignalR
 
         public async Task ConnectAsync(string userId)
         {
-            _currentUserId = userId;
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl($"{_baseURL}chathub")
-                .Build();
-
-            _hubConnection.On<ReceiveChatHttpResponse>("ReceiveMessage", async (messageData) =>
+            try
             {
-                if (OnMessageReceived != null)
+                _currentUserId = userId;
+                _hubConnection = new HubConnectionBuilder()
+                    .WithUrl($"{_baseURL}chathub")
+                    .Build();
+
+                _hubConnection.On<ReceiveChatHttpResponse>("ReceiveMessage", async (messageData) =>
                 {
-                    await OnMessageReceived.Invoke(messageData);
-                }
-            });
+                    if (OnMessageReceived != null)
+                    {
+                        await OnMessageReceived.Invoke(messageData);
+                    }
+                });
 
-            //TODO: CHECK IF THIS GETS CALLED WHEN YOU SEND MESSAGE VIA APP. IF YES THEN & WHY REMOVE IT.
-            _hubConnection.On<SendChatMessagesHttpResponse>("SendMessage", (messageData) =>
+                await _hubConnection.StartAsync();
+                await _hubConnection.SendAsync("RegisterUser", userId);
+
+            }
+            catch (Exception ex)
             {
-                OnMessageSent?.Invoke(messageData);
-            });
-
-            await _hubConnection.StartAsync();
-            await _hubConnection.SendAsync("RegisterUser", userId);
-        }
-
-        public async Task SendMessageToSpecificUser(string toUserId, string message)
-        {
-            if (_hubConnection.State == HubConnectionState.Connected)
-            {
-                await _hubConnection.SendAsync("SendMessageToUser", _currentUserId, toUserId, message);
+                Console.WriteLine("Something went wrong when connecting user to signalR");
             }
         }
 

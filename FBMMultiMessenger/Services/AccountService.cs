@@ -14,12 +14,10 @@ namespace FBMMultiMessenger.Services
     internal class AccountService : IAccountService
     {
         private readonly IBaseService _baseService;
-        private readonly string _baseUrl;
 
-        public AccountService(IBaseService baseService, IConfiguration configuration)
+        public AccountService(IBaseService baseService)
         {
             this._baseService=baseService;
-            this._baseUrl = configuration.GetValue<string>("Urls:BaseUrl")!;
 
         }
         public async Task<T> UpsertAccountAsync<T>(UpsertAccountHttpRequest httpRequest, int? accountId) where T : class
@@ -36,7 +34,7 @@ namespace FBMMultiMessenger.Services
             var request = new ApiRequest<UpsertAccountHttpRequest>()
             {
                 ApiType = apiType,
-                Url = _baseUrl+url,
+                Url = url,
                 Data = httpRequest
             };
 
@@ -48,7 +46,7 @@ namespace FBMMultiMessenger.Services
             var request = new ApiRequest<object>()
             {
                 ApiType = SD.ApiType.GET,
-                Url = _baseUrl+"api/account/me",
+                Url ="api/account/me",
                 Data = null
             };
             return await _baseService.SendAsync<object, T>(request);
@@ -59,7 +57,7 @@ namespace FBMMultiMessenger.Services
             var request = new ApiRequest<ToggleAccountStatusHttpRequest>()
             {
                 ApiType = SD.ApiType.PUT,
-                Url = _baseUrl+$"api/account/{accountId}/status",
+                Url = $"api/account/{accountId}/status",
                 Data = null
             };
 
@@ -71,7 +69,7 @@ namespace FBMMultiMessenger.Services
             var request = new ApiRequest<object>()
             {
                 ApiType = SD.ApiType.GET,
-                Url = _baseUrl+ $"api/account/me/chats",
+                Url = "api/account/me/chats",
                 Data = null
             };
 

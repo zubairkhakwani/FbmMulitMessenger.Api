@@ -1,0 +1,41 @@
+﻿<div class="mobile-top-row">
+        <div class="icon-container">
+            <a class="nav-link" href="/Account" >
+                  <i class="fa-solid fa-store"></i>
+             </a>
+        </div>
+
+        <div class="icon-container">
+        <a class="nav-link" href="/Chat">
+                    <i class="fa fa-comments"> </i>
+                </a>
+        </div>
+</div>
+
+@code
+{
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+}
+
+<script>
+    (function () {
+        let iconContainers = document.querySelectorAll(".icon-container");
+        iconContainers = [...iconContainers];
+        iconContainers.forEach((iconContainer) => {
+            iconContainer.addEventListener('click', function () {
+                iconContainers.forEach((icon) => {
+                    if(icon.classList.contains("active")){
+                        icon.classList.remove("active");
+                    }
+                });
+
+               iconContainer.classList.add("active");
+            });
+        });
+   })();
+ 
+
+</script>

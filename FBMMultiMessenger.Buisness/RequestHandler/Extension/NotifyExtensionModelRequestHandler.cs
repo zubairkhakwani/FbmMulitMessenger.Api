@@ -26,13 +26,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ChatHub _chatHub;
+
         private readonly IWebHostEnvironment _webHostEnvironment;
         private string baseUrl;
 
-        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
+        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
         {
             _dbContext=dbContext;
             _hubContext = hubContext;
+            _chatHub = chatHub;
             this._webHostEnvironment=webHostEnvironment;
             baseUrl  = configuration.GetValue<string>("Urls:BaseUrl")!;
         }
@@ -58,11 +61,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
             var subscription = chat.User.Subscription;
+            var response = new NotifyExtensionModelResponse();
 
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
             if (subscription is null)
             {
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true);
+                return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
             }
 
             var today = DateTime.Now;
@@ -70,6 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
             if (today >= endDate)
             {
+                response.IsSubscriptionExpired = true;
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true);
             }
 
@@ -84,7 +89,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
 
-            //Notify extension that a user is trying to send a message
+            //Notify extension that a user is trying to send a message from our app. 
             var sendChatMessage = new NotifyExtensionDTO()
             {
                 IsMessageFromApp = true,
@@ -94,9 +99,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 MediaPaths = mediaPaths
             };
 
-            await _hubContext.Clients.All.SendAsync("SendMessage", sendChatMessage, cancellationToken);
+            await _hubContext.Clients.Group("Extension_User_123")
+                .SendAsync("SendMessage", sendChatMessage, cancellationToken);
 
-            return BaseResponse<NotifyExtensionModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyExtensionModelResponse());
+           // await _hubContext.Clients.All.SendAsync("SendMessage", sendChatMessage, cancellationToken);
+
+            return BaseResponse<NotifyExtensionModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }
 
         public List<string> HandleMediaFiles(List<IFormFile> files, string wwwRootPath)

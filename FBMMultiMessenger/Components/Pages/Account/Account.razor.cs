@@ -3,15 +3,13 @@ using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using MudBlazor;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
+using OneSignalSDK.DotNet.Core.Notifications;
 using Color = MudBlazor.Color;
+using OneSignalSDK.DotNet;
+using Microsoft.Extensions.Configuration;
+using OneSignalSDK.DotNet.Core.Debug;
+
 
 namespace FBMMultiMessenger.Components.Pages.Account
 {
@@ -31,6 +29,9 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [Inject]
         private ISnackbar Snackbar { get; set; }
 
+        [Inject]
+        private IConfiguration Configuration { get; set; }
+
         [SupplyParameterFromQuery]
         public string? Message { get; set; }
 
@@ -38,6 +39,14 @@ namespace FBMMultiMessenger.Components.Pages.Account
 
         protected override async Task OnInitializedAsync()
         {
+            if (DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                //Initialize one signal for push notifiactions
+                InitializeOneSignal();
+            }
+
+
+
             string? token = await TokenProvider.GetTokenAsync();
 
             if (string.IsNullOrWhiteSpace(token))
@@ -50,6 +59,39 @@ namespace FBMMultiMessenger.Components.Pages.Account
                 Snackbar.Add(Message, Severity.Success);
             }
         }
+        private void InitializeOneSignal()
+        {
+            var appId = Configuration.GetValue<string>("OneSignal:AppId")!;
+            OneSignal.Debug.LogLevel = LogLevel.VERBOSE;
+
+            OneSignal.Initialize(appId);
+
+            OneSignal.Notifications.RequestPermissionAsync(true);
+
+            OneSignal.Notifications.Clicked += OnNotificationClicked;
+
+            // Optional
+            var playerId = OneSignal.User.PushSubscription.Id;
+            System.Diagnostics.Debug.WriteLine($"OneSignal Player ID: {playerId}");
+        }
+
+        private void OnNotificationClicked(object sender, NotificationClickedEventArgs e)
+        {
+            var data = e.Notification.AdditionalData;
+            var isFbChatId = data.TryGetValue("chatId", out var fbChatIdObj);
+
+            if (data != null && isFbChatId)
+            {
+                string fbChatId = fbChatIdObj!.ToString()!;
+
+                // Navigate to specific chat
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    Navigation.NavigateTo($"/chat?isNotification=true&fbChatId={fbChatId}");
+                });
+            }
+        }
+
         private async Task<TableData<GetMyAccountsHttpResponse>> ServerReload(TableState state, CancellationToken token)
         {
             var response = await AccountService.GetMyAccounts<BaseResponse<List<GetMyAccountsHttpResponse>>>();

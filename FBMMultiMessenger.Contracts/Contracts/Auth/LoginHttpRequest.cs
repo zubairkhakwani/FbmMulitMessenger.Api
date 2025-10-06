@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Auth
 
     public class LoginHttpResponse
     {
+        public int UserId { get; set; }
         public string? Token { get; set; }
         public bool IsSubscriptionExpired { get; set; }
     }

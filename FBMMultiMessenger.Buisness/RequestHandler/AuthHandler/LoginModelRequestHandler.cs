@@ -46,6 +46,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
 
             var response = new LoginModelResponse()
             {
+                UserId = user.Id,
                 Token = token.accessToken
             };
 

@@ -3,15 +3,10 @@ using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Components.Pages.Auth
 {
-    public partial class Register
+    public partial class Register 
     {
         //[SupplyParameterFromForm]
         public RegisterHttpRequest RequestModel { get; set; } = new();

@@ -11,38 +11,27 @@ namespace FBMMultiMessenger.Buisness.SignalR
     public class ChatHub : Hub
     {
         private static Dictionary<string, string> _connections = new Dictionary<string, string>();
-        private readonly IMediator _mediator;
-
-        public ChatHub(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
         public async Task RegisterUser(string userId)
         {
             _connections[userId] = Context.ConnectionId;
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
         }
 
-        public async Task SendMessageToUser(string fromUserId, string toUserId, string message)
+        public async Task MessageReceived(string toUserId, ReceiveChatHttpResponse message)
         {
             if (_connections.ContainsKey(toUserId))
             {
-                await Clients.Client(_connections[toUserId]).SendAsync("ReceiveMessage", fromUserId, message);
-            }
-
-            if (_connections.ContainsKey(fromUserId))
-            {
-                await Clients.Client(_connections[fromUserId]).SendAsync("SendMessage", toUserId, message);
+                await Clients.Client(_connections[toUserId]).SendAsync("ReceiveMessage", message);
             }
         }
 
         // Notify extension about the message
-        public async Task SendMessageToExtension(NotifyExtensionHttpRequest messageRequest)
+        public async Task NotifyExtension(string toExptensionId, NotifyExtensionDTO messageRequest)
         {
             // Send to the registered extension
-            if (_connections.ContainsKey("Extension_User_123"))
+            if (_connections.ContainsKey(toExptensionId))
             {
-                await Clients.Client(_connections["Extension_User_123"])
+                await Clients.Client(_connections[toExptensionId])
                     .SendAsync("SendMessage", messageRequest);
             }
         }

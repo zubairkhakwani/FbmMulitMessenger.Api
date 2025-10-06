@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    height:100vh;
 }
 
 .login-container {
@@ -11,14 +11,27 @@
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     width: 500px;
-    position: relative;
+    animation: slideUp 0.5s ease;
+}
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .login-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     text-align: center;
-    padding: 40px 30px 30px;
+    padding: 28px 10px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
     .login-header h1 {
@@ -123,7 +136,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-bottom: 25px;
 }
 
     .sign-in-button:hover {
@@ -156,6 +168,7 @@
     .divider span {
         background: rgba(255, 255, 255, 0.95);
         padding: 0 15px;
+        position: relative;
     }
 
 .signup-link {
@@ -186,10 +199,24 @@
     display: block;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
+    .login-header {
+        display: flex;
+        border-radius: 0;
+        flex-basis: 35%;
+        text-align: center;
+        flex-direction: column;
+        justify-content: center;
+    }
+
     .login-container {
-        width: 90%;
-        margin: 20px;
+        display: flex;
+        gap: 2rem;
+        width: 100%;
+        height: 100%;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
     }
 
     .login-form {

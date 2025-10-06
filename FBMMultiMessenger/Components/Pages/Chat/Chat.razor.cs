@@ -2,6 +2,7 @@
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Services;
 using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.SignalR;
 using Microsoft.AspNetCore.Components;
@@ -9,8 +10,8 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudBlazor.Extensions;
 using System.Text.Json;
+
 
 namespace FBMMultiMessenger.Components.Pages.Chat
 {
@@ -35,6 +36,18 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         [Inject]
         public IJSRuntime JS { get; set; }
 
+        [Inject]
+        private NavigationManager Navigation { get; set; }
+
+        [Inject]
+        private BackButtonService BackButtonService { get; set; }
+
+        [SupplyParameterFromQuery]
+        public string IsNotification { get; set; } //this bit tells if the user opens the notification from his app and we have to show him the right chat.
+
+        [SupplyParameterFromQuery]
+        public string FbChatId { get; set; }
+
         private const int MaxMediaCount = 100;
         private const int MaxMediaSize = 25 * 1024 * 1024; // 1024 * 1024 == 1mb hence total 25mb.
 
@@ -45,16 +58,47 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         private string? SelectedFbChatId = null;
         private string currentUserId = "User123"; //TODO - Authentication
+        private bool isAndriodPlatform;
+        private int SidebarZIndex = 100;
+        private int MainChatZIndex = 0;
+        private string selectedListingTitle = "John Doe";
+        private string selectedListingLocation = "London";
+        private string selectedListingPrice = "100";
 
         public List<GetMyChatsHttpResponse> MyAccountChats = new List<GetMyChatsHttpResponse>();
         public List<GeChatMessagesHttpResponse> MyChatMessages = new List<GeChatMessagesHttpResponse>();
 
         protected override async Task OnInitializedAsync()
         {
+            isAndriodPlatform =  DeviceInfo.Platform != DevicePlatform.WinUI;
+
+            BackButtonService.BackButtonPressed+= OnBackButtonPressed;
+
+            if (!string.IsNullOrWhiteSpace(IsNotification) && !string.IsNullOrWhiteSpace(FbChatId))
+            {
+                await LoadChatMessage(FbChatId);
+            }
+
             await ConnectToSignalR();
 
             await GetAccountChats();
 
+        }
+
+        private void OnBackButtonPressed()
+        {
+            // Handles the Android back button press behavior.
+            // If the sidebar is currently active (visible above the main chat), navigate back to the Account page.
+            // Otherwise, if the user is viewing chat messages, toggle back to the sidebar view instead.
+
+            if (SidebarZIndex > MainChatZIndex)
+            {
+                Navigation.NavigateTo("/Account");
+                return;
+            }
+
+            HandleMobileMainChat();
+            StateHasChanged();
         }
 
         public async Task GetAccountChats()
@@ -77,7 +121,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 await SignalRChatService.ConnectAsync(currentUserId);
 
                 SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceivedAsync(msg);
-                SignalRChatService.OnMessageSent += async (msg) => await HandleMessageSentAsync(msg);
             }
         }
 
@@ -93,8 +136,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             return fileModel;
         }
-
-
 
         private async Task HandleMessageReceivedAsync(ReceiveChatHttpResponse receivedChat)
         {
@@ -113,17 +154,19 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     IsRead = receivedChat.IsRead,
                 };
 
-                MyAccountChats.Add(newChat);
+                MyAccountChats.Insert(0, newChat);
 
             }
 
-            //If the message that we received fbChatId is not opened so we add a unread badge otherwise we add new chat so it can be displayed in the messages.
+            //If the message that we received fbChatId is not opened so we add a unread badge and show it on top of the chats,otherwise we add new chat so it can be displayed in the messages.
             if (receivedChat.FbChatId != SelectedFbChatId)
             {
                 var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
                 if (myAccountChat is not null)
                 {
+                    MyAccountChats.Remove(myAccountChat);
                     myAccountChat.UnReadCount += 1;
+                    MyAccountChats.Insert(0, myAccountChat); //new message should display on top.
                 }
             }
             else
@@ -150,54 +193,25 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 MyChatMessages.Add(receivedMessage);
             }
 
+            //Display newest message on top.
+            //MyAccountChats =  MyAccountChats.OrderByDescending(x => x.StartedAt).ToList();
 
             //Force UI to reload, so our changes reflect.
             await InvokeAsync(StateHasChanged);
-
-            //Display newest message on top.
-            MyAccountChats =  MyAccountChats.OrderByDescending(x => x.StartedAt).ToList();
 
             await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
         }
 
-
-        //TODO
-        private async Task HandleMessageSentAsync(SendChatMessagesHttpResponse messageSent)
+        public async Task LoadChatMessage(string fbChatId)
         {
-            var message = MyChatMessages.FirstOrDefault(x => x.FBChatId == messageSent.FbChatId
-                                                            && (messageSent.IsTextMessage  && x.Message == messageSent.Message));
-            if (message is not null)
+            HandleSelectedChat(fbChatId);
+
+            if (isAndriodPlatform)
             {
-                message.Sending = false;
+                HandleMobileSideBar();
             }
 
 
-
-            //TODO: When message is send from facebook not from our app so we have to inject that message.
-            //actual chat message
-            //var receivedMessage = new GeChatMessagesHttpResponse()
-            //{
-            //    Message = messageSent.Message,
-            //    IsReceived = false,
-            //    IsSent = true,
-            //    IsTextMessage = messageSent.IsTextMessage,
-            //    IsImageMessage = messageSent.IsImageMessage,
-            //    IsVideoMessage = messageSent.IsVideoMessage,
-            //    IsAudioMessage = messageSent.IsAudioMessage,
-            //    CreatedAt = DateTime.UtcNow
-            //};
-
-            //MyChatMessages.Add(receivedMessage);
-
-
-
-            //Force UI to reload, so our changes reflect.
-            await InvokeAsync(StateHasChanged);
-        }
-
-
-        public async Task LoadChatMessage(string fbChatId)
-        {
             var myAccountChats = MyAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
             if (myAccountChats is not null)
             {
@@ -267,16 +281,22 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             var response = await ExtensionService.Notify<BaseResponse<NotifyExtensionHttpResponse>>(request);
 
-            if (response is not null && response.IsSuccess)
+            if (!response.IsSuccess && response.RedirectToPackages)
             {
-                Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Success);
+                var isSubscriptionExpired = response.Data?.IsSubscriptionExpired ?? false;
+                Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={response.Message}");
+                return;
+            }
+
+            else if (response.IsSuccess)
+            {
+                //Snackbar.Add(response.Message, Severity.Success);
                 Message = string.Empty;
                 PreviewMediaFiles = new List<FileData>();
                 return;
             }
 
             Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Error);
-
         }
 
         public bool IsValidRequest()
@@ -351,9 +371,41 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         }
 
+        private void HandleSelectedChat(string fbChatId)
+        {
+            // Updates the main chat header with the listing details (title, location, and price)
+            // of the chat selected by the user.
+
+            var chat = MyAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
+            if (chat is not null)
+            {
+                selectedListingTitle = chat.FbLisFbListingTitle;
+                selectedListingLocation = chat.FbListingLocation;
+                selectedListingPrice  = chat.FbListingPrice.ToString();
+            }
+        }
+
+        private void HandleMobileMainChat()
+        {
+            // Displays the sidebar view on mobile by resetting the selected chat
+            // and bringing the sidebar to the front.
+            SelectedFbChatId = null;
+            SidebarZIndex = 100;
+            MainChatZIndex = 0;
+        }
+
+        private void HandleMobileSideBar()
+        {
+            // Displays the main chat view on mobile by bringing the chat section
+            // to the front and hiding the sidebar.
+            SidebarZIndex = 0;
+            MainChatZIndex = 100;
+
+        }
+
         public void Dispose()
         {
-            SignalRChatService?.DisconnectAsync();
+            BackButtonService.BackButtonPressed -= OnBackButtonPressed;
         }
     }
 }

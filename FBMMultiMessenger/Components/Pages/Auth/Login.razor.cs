@@ -2,16 +2,8 @@
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
-using FBMMultiMessenger.Utility;
-using MediatR;
-using MediatR.Pipeline;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using OneSignalSDK.DotNet;
 
 namespace FBMMultiMessenger.Components.Pages.Auth
 {
@@ -26,11 +18,13 @@ namespace FBMMultiMessenger.Components.Pages.Auth
         [Inject]
         public IAuthService AuthService { get; set; }
 
+
         [Inject]
         private NavigationManager Navigation { get; set; }
 
         [Inject]
         private ITokenProvider TokenProvider { get; set; }
+
 
         [Inject]
         public ISubscriptionSerivce SubscriptionSerivce { get; set; }
@@ -49,15 +43,13 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
                 if (isRedirectRequest)
                 {
-                    var message = Uri.EscapeDataString(response.Message);
-                    Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={message}");
+                    Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={response.Message}");
                     return;
                 }
 
                 Navigation.NavigateTo("/Account");
             }
         }
-
 
         public async Task OnValidPost()
         {
@@ -66,6 +58,13 @@ namespace FBMMultiMessenger.Components.Pages.Auth
             if (response.Data is not null &&  !string.IsNullOrWhiteSpace(response.Data.Token))
             {
                 await TokenProvider.SetTokenAsync(response.Data.Token);
+
+                //Tell OneSignal this device now belongs to this user
+                if (DeviceInfo.Platform == DevicePlatform.Android)
+                {
+                    // Running on Android (either emulator or physical device)
+                    OneSignal.Login(response.Data.UserId.ToString());
+                }
             }
 
             if (response.IsSuccess)

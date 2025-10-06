@@ -12,19 +12,17 @@ namespace FBMMultiMessenger.Services
     internal class SubscriptionService : ISubscriptionSerivce
     {
         private readonly IBaseService _baseService;
-        private readonly string _baseUrl;
 
-        public SubscriptionService(IBaseService baseService, IConfiguration configuration)
+        public SubscriptionService(IBaseService baseService)
         {
             this._baseService=baseService;
-            this._baseUrl = configuration.GetValue<string>("Urls:BaseUrl")!;
         }
         public async Task<T> GetMySubscription<T>() where T : class
         {
             var apiRequest = new ApiRequest<object>()
             {
                 ApiType = Utility.SD.ApiType.GET,
-                Url =_baseUrl+"api/subscription/me"
+                Url ="api/subscription/me"
 
             };
             return await _baseService.SendAsync<object, T>(apiRequest);

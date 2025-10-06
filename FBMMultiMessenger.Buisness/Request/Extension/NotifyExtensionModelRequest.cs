@@ -20,5 +20,6 @@ namespace FBMMultiMessenger.Buisness.Request.Extension
 
     public class NotifyExtensionModelResponse
     {
+        public bool IsSubscriptionExpired { get; set; }
     }
 }

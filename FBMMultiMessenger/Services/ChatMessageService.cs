@@ -14,20 +14,17 @@ namespace FBMMultiMessenger.Services
     internal class ChatMessageService : IChatMessagesService
     {
         private readonly IBaseService _baseService;
-        private readonly string _baseUrl;
 
-        public ChatMessageService(IBaseService baseService, IConfiguration configuration)
+        public ChatMessageService(IBaseService baseService)
         {
             this._baseService=baseService;
-            this._baseUrl = configuration.GetValue<string>("Urls:BaseUrl")!;
-
         }
         public async Task<T> GetChatMessages<T>(string fbChatId) where T : class
         {
             var request = new ApiRequest<object>()
             {
                 ApiType = SD.ApiType.GET,
-                Url = _baseUrl+$"api/chat/{fbChatId}/chatmessages",
+                Url = $"api/chat/{fbChatId}/chatmessages",
                 Data = null
             };
 

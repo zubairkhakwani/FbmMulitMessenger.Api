@@ -15,19 +15,18 @@ namespace FBMMultiMessenger.Services
     internal class AuthService : IAuthService
     {
         private readonly IBaseService _baseService;
-        private readonly string _baseUrl;
 
-        public AuthService(IBaseService baseService, IConfiguration configuration)
+        public AuthService(IBaseService baseService)
         {
             this._baseService=baseService;
-            this._baseUrl = configuration.GetValue<string>("Urls:BaseUrl")!;
+
         }
         public async Task<T> LoginAsync<T>(LoginHttpRequest httpRequest) where T : class
         {
             var apiRequest = new ApiRequest<LoginHttpRequest>()
             {
                 ApiType = SD.ApiType.POST,
-                Url = _baseUrl+"api/auth/login",
+                Url ="api/auth/login",
                 Data = httpRequest
             };
 
@@ -39,7 +38,7 @@ namespace FBMMultiMessenger.Services
             var apiRequest = new ApiRequest<RegisterHttpRequest>()
             {
                 ApiType  = SD.ApiType.POST,
-                Url = _baseUrl+"api/auth/register",
+                Url = "api/auth/register",
                 Data  = httpRequest
             };
 

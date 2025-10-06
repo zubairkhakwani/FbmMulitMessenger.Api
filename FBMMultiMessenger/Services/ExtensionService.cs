@@ -15,20 +15,17 @@ namespace FBMMultiMessenger.Services
     internal class ExtensionService : IExtensionService
     {
         private readonly IBaseService _baseService;
-        private readonly string _baseUrl;
 
-        public ExtensionService(IBaseService baseService, IConfiguration configuration)
+        public ExtensionService(IBaseService baseService)
         {
             this._baseService=baseService;
-            this._baseUrl = configuration.GetValue<string>("Urls:BaseUrl")!;
-
         }
         public async Task<T> Notify<T>(NotifyExtensionRequest httpRequest) where T : class
         {
             var request = new ApiRequest<NotifyExtensionRequest>()
             {
                 ApiType = SD.ApiType.POST,
-                Url = _baseUrl+"api/extension/notify",
+                Url ="api/extension/notify",
                 Data = httpRequest,
                 ContentType = ContentType.MultipartFormData
             };
