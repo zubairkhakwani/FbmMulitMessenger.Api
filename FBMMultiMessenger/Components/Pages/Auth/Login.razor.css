@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height:100vh;
+    height: 100vh;
 }
 
 .login-container {
@@ -11,8 +11,9 @@
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     width: 500px;
-    animation: slideUp 0.5s ease;
+    animation: slideUp 0.3s ease;
 }
+
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -26,7 +27,7 @@
 }
 
 .login-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
     color: white;
     text-align: center;
     padding: 28px 10px;
@@ -128,7 +129,7 @@
 .sign-in-button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -140,7 +141,8 @@
 
     .sign-in-button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 8px 25px rgba(8, 102, 255, 0.5);
+        background: linear-gradient(135deg, #0A74FF 0%, #053464 100%);
     }
 
     .sign-in-button:active {
@@ -221,5 +223,25 @@
 
     .login-form {
         padding: 30px 20px;
+    }
+}
+
+.loader {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
     }
 }

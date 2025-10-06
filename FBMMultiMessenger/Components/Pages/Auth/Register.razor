@@ -18,7 +18,7 @@
                       id="registerForm">
 
                 <DataAnnotationsValidator />
-                 @if (!string.IsNullOrWhiteSpace(ResponseError))
+                @if (!string.IsNullOrWhiteSpace(ResponseError))
                 {
                     <div class="error-message">@ResponseError</div>
                 }
@@ -30,13 +30,12 @@
                                    class="input"
                                    id="username"
                                    placeholder="Username"
-                                   @bind-Value="RequestModel.Name"
-                                    />
+                                   @bind-Value="RequestModel.Name" />
                         <i class="fa-solid fa-user input-icon"></i>
-                                <ValidationMessage For="@(() => RequestModel.Name)"
-                                       class="validation-message" />
+                        <ValidationMessage For="@(() => RequestModel.Name)"
+                                           class="validation-message" />
                     </div>
-                     <div class="input-wrapper">
+                    <div class="input-wrapper">
                         <InputText type="tel"
                                    class="input"
                                    id="contactNumber"
@@ -45,8 +44,8 @@
                                    inputmode="numeric"
                                    @bind-Value="RequestModel.ContactNumber" />
                         <i class="fa-solid fa-phone input-icon"></i>
-                              <ValidationMessage For="@(() => RequestModel.ContactNumber)"
-                                       class="validation-message" />
+                        <ValidationMessage For="@(() => RequestModel.ContactNumber)"
+                                           class="validation-message" />
                     </div>
                 </div>
 
@@ -60,8 +59,8 @@
                                    placeholder="Email address"
                                    @bind-Value="RequestModel.Email" />
                         <i class="fa-solid fa-envelope input-icon"></i>
-                          <ValidationMessage For="@(() => RequestModel.Email)"
-                                       class="validation-message" />
+                        <ValidationMessage For="@(() => RequestModel.Email)"
+                                           class="validation-message" />
                     </div>
                 </div>
 
@@ -74,10 +73,10 @@
                                    placeholder="Password"
                                    @bind-Value="RequestModel.Password" />
                         <i class="fa-solid fa-lock input-icon"></i>
-                              <ValidationMessage For="@(() => RequestModel.Password)"
-                                       class="validation-message" />
+                        <ValidationMessage For="@(() => RequestModel.Password)"
+                                           class="validation-message" />
                     </div>
-            
+
                     <div class="input-wrapper password-container">
                         <InputText type="password"
                                    class="input"
@@ -85,8 +84,8 @@
                                    placeholder="Confirm Password"
                                    @bind-Value="RequestModel.ConfirmPassword" />
                         <i class="fa-solid fa-lock input-icon"></i>
-                              <ValidationMessage For="@(() => RequestModel.ConfirmPassword)"
-                                       class="validation-message" />
+                        <ValidationMessage For="@(() => RequestModel.ConfirmPassword)"
+                                           class="validation-message" />
                     </div>
                 </div>
 
@@ -100,7 +99,17 @@
                 </div> *@
 
                 <!-- Register Button -->
-                <button type="submit" class="register-button">Create Account</button>
+                @if (ShowLoader)
+                {
+                    <button disabled type="submit" class="register-button">
+                        <div class="loader"></div>
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="register-button">Create Account</button>
+                }
+
             </EditForm>
 
             <!-- Divider -->

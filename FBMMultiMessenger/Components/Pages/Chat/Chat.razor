@@ -4,17 +4,23 @@
 @{
     var mobileView = isAndriodPlatform ? "" : "messenger-container";
     var mobileClass = isAndriodPlatform ? "mobile" : "";
+    var sideBarHeight = isAndriodPlatform ? "auto" : "650px";
+    var messageContainerHeight = SelectedFbChatId is null ? "100vh" : "calc(100vh - 135px)"; // 135 px is the height of selected message header and the message input so in result we end up in a perfect scroll if needed
 }
 
 <div class="@mobileView">
     <!-- Sidebar -->
-    <div class="sidebar @mobileClass" style="z-index:@SidebarZIndex">
+    <div class="sidebar @mobileClass" style="z-index:@SidebarZIndex;">
 
-        @if (MyAccountChats.Any())
+        @if (FilteredAccountChats.Count == 0 && IsLoading)
+        {
+            <ChatLoadingSkelton></ChatLoadingSkelton>
+        }
+        else if (FilteredAccountChats.Any() && !IsLoading)
         {
             <div class="sidebar-header">
-                <div style="display:flex; gap:10px; margin-bottom:8px; align-items:center;">
-                    <NavLink href="Account">
+                <div style="display:flex;align-items:center;">
+                    <NavLink style="padding: 20px 10px 20px 20px;" href="Account">
                         <i class="fa-sharp fa-solid fa-arrow-left"></i>
                     </NavLink>
 
@@ -23,14 +29,14 @@
 
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input skeleton" placeholder="Search conversations">
+                    <input @onkeyup="FilterChat" @bind="FilterKeyword" type="text" class="search-input skeleton" placeholder="Search conversations">
                 </div>
             </div>
-            <div class="chat-list">
-                @for (int i = 0; i < MyAccountChats.Count; i++)
+            <div class="chat-list" style="height:@sideBarHeight">
+                @for (int i = 0; i < FilteredAccountChats.Count; i++)
                 {
-                    var fbChatId = MyAccountChats[i].FbChatId;
-                    var chat = MyAccountChats[i];
+                    var fbChatId = AccountChats[i].FbChatId;
+                    var chat = AccountChats[i];
                     var unreadCount = chat.UnReadCount;
                     var hide = unreadCount == 0 ? "hide" : "";
 
@@ -55,8 +61,9 @@
         }
         else
         {
-            <ChatLoadingSkelton></ChatLoadingSkelton>
+            <p>No chats found.</p>
         }
+
     </div>
 
 
@@ -67,7 +74,7 @@
             <div class="chat-header">
                 @if (isAndriodPlatform)
                 {
-                    <div style="cursor:pointer; padding: 33px 15px 32px 20px;" @onclick="HandleMobileMainChat">
+                    <div style="cursor:pointer; padding: 33px 0px 32px 20px;" @onclick="HandleMobileMainChat">
                         <i class="fa-sharp fa-solid fa-arrow-left"></i>
                     </div>
                 }
@@ -82,7 +89,7 @@
         }
 
 
-        <div class="messages-container" id="messagesContainer">
+        <div class="messages-container" id="messagesContainer" style="height:@messageContainerHeight">
 
             @if (SelectedFbChatId is null && !isAndriodPlatform)
             {
@@ -95,9 +102,9 @@
 
 
             <div id="messagesList">
-                @for (int i = 0; i < MyChatMessages.Count; i++)
+                @for (int i = 0; i < ChatMessages.Count; i++)
                 {
-                    var chatMessage = MyChatMessages[i];
+                    var chatMessage = ChatMessages[i];
                     var messageClass = chatMessage.IsReceived ? "received" : "sent";
                     var isSent = !chatMessage.IsReceived;
                     var isMessageFailedToSend = !chatMessage.IsSent && !chatMessage.IsReceived;

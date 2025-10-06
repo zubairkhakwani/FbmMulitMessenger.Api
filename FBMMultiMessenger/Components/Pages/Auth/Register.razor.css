@@ -27,7 +27,7 @@ body {
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     width: 700px;
     position: relative;
-    animation: slideUp 0.5s ease;
+    animation: slideUp 0.3s ease;
 }
 
 @keyframes slideUp {
@@ -43,7 +43,7 @@ body {
 }
 
 .register-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
     color: white;
     text-align: center;
     padding: 28px 10px;
@@ -175,7 +175,7 @@ body {
 .register-button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -187,7 +187,8 @@ body {
 
     .register-button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 8px 25px rgba(8, 102, 255, 0.5);
+        background: linear-gradient(135deg, #0A74FF 0%, #053464 100%);
     }
 
     .register-button:active {
@@ -278,5 +279,24 @@ body {
 
     .register-header h1 {
         font-size: 24px;
+    }
+}
+.loader {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
     }
 }

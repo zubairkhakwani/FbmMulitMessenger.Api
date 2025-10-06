@@ -6,7 +6,7 @@ using MudBlazor;
 
 namespace FBMMultiMessenger.Components.Pages.Auth
 {
-    public partial class Register 
+    public partial class Register
     {
         //[SupplyParameterFromForm]
         public RegisterHttpRequest RequestModel { get; set; } = new();
@@ -24,10 +24,12 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
         [Inject]
         public ITokenProvider TokenProvider { get; set; }
+        private bool ShowLoader = false;
 
 
         public async Task OnValidSubmit()
         {
+            ShowLoader = true;
             var registerResponse = await AuthService.RegisterAsync<BaseResponse<RegisterHttpResponse>>(RequestModel);
 
             if (registerResponse.IsSuccess)
@@ -51,6 +53,7 @@ namespace FBMMultiMessenger.Components.Pages.Auth
                 Snackbar.Add(!string.IsNullOrWhiteSpace(loginResponse.Message) ? loginResponse.Message : "Something went wrong while letting you in.", Severity.Error);
             }
 
+            ShowLoader = false;
             ResponseError =  registerResponse.Message;
         }
     }

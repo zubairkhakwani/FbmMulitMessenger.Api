@@ -1,26 +1,27 @@
 ﻿@{
     var mobileTopRowClass = isMobilePlatform ? "mobile" : "";
 }
-<div class="top-row ps-3 navbar navbar-dark @mobileTopRowClass">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">FBMMultiMessenger</a>
-    </div>
-</div>
+
 
 @if (!isMobilePlatform)
 {
+    <div class="top-row ps-3 navbar navbar-dark @mobileTopRowClass">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="">FBMMultiMessenger</a>
+        </div>
+    </div>
     <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
     <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
         <nav class="flex-column">
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="/Account" Match="NavLinkMatch.All">
-                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Account Management
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Accounts 
                 </NavLink>
                 <NavLink class="nav-link" href="/Chat" Match="NavLinkMatch.All">
                     <i class="fa fa-comments">
 
-                    </i><span style="margin-left:10px;">Chat</span>
+                    </i><span style="margin-left:10px;">Chats</span>
 
                 </NavLink>
             </div>

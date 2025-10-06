@@ -15,14 +15,8 @@
         background-color: rgba(255, 255, 255, 0.5);
     }
 
-.top-row {
-    background-color: rgba(0,0,0,0.4);
-}
 
-    .top-row.mobile {
-        background-color:transparent;
-    }
-
+    
 .navbar-brand {
     font-size: 1.1rem;
 }
