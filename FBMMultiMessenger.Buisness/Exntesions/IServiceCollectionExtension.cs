@@ -5,12 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Exntesions
 {
@@ -34,7 +30,6 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddAutoMapper(assemblies);
             return services;
         }
-
 
         public static IServiceCollection AddSwagger(this IServiceCollection services)
         {

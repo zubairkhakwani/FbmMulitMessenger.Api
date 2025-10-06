@@ -5,6 +5,9 @@ html, body {
 
 a, .btn-link {
     color: #006bb7;
+    -webkit-user-drag: none !important;
+    -webkit-user-select: none !important; 
+    user-select: none !important;
 }
 
 .btn-primary {

@@ -1,0 +1,85 @@
+﻿@page "/Account"
+
+<MudPaper Elevation="0" Style="display: flex; flex-direction: column;" Height="100%" Width="100%">
+    <div class="neeleez-page-header">
+        <MudText Typo="Typo.h3" Color="Color.Primary">Account Management</MudText>
+        <div class="neeleez-page-header--actions">
+            <MudButton OnClick="AddNewAccount" StartIcon="@Icons.Material.Filled.Add" Color="Color.Error" Variant="Variant.Filled" ButtonType="ButtonType.Submit">Add Account</MudButton>
+        </div>
+    </div>
+
+    <MudDivider Light="true" Style="margin-top : 30px; width : 100%; background-color : #B4B6B9; height : 2px;" />
+    <MudTable ServerData="ServerReload" Dense="true" Hover="true" @ref="table">
+        @*     <ToolBarContent>
+            <MudSpacer />
+            <MudTextField T="string" Placeholder="Search" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent> *@
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Cookie</MudTh>
+            <MudTh>Activated</MudTh>
+            <MudTh>CreatedAt</MudTh>
+            <MudTh>Actions</MudTh>
+
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Account Name">@context.Name</MudTd>
+            <MudTd DataLabel="Account Cookie">@context.Cookie</MudTd>
+            <MudTd DataLabel="Account Cookie">@context.IsActive</MudTd>
+            <MudTd DataLabel="Account Created At">@context.CreatedAt</MudTd>
+            <MudTd DataLabel="Actions" Title="Actions" Class="col-ignore stick-action-column">
+                @{
+                    var lockIcon = context.IsActive ? @Icons.Material.Filled.Lock : @Icons.Material.Filled.LockOpen;
+                    var lockIconColor = context.IsActive ? Color.Error : Color.Success;
+                    var stateOfAccount = context.IsActive ? "Deactivate" : "Activate";
+
+                }
+                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined">
+                    <MudMenu Icon="@Icons.Material.Filled.MoreHoriz" Dense="true" AnchorOrigin="Origin.BottomLeft" Style="align-self: auto;">
+                        <MudPaper Style="min-width: 200px; max-width: 235px; box-shadow:none !important; padding:0 8px;">
+                            <MudButton OnClick="@(e => ToggleAccountStatus(context.Id, context.IsActive))"
+                                       Size="Size.Small"
+                                       StartIcon="@lockIcon"
+                                       Color="@lockIconColor"
+                                       Variant="Variant.Text"
+                                       Class="px-3 py-1 mb-1"
+                                       FullWidth="true"
+                                       Style="justify-content: flex-start; text-transform: none; min-height: 32px;">
+                                <span style="margin-left: 8px;">@stateOfAccount</span>
+                            </MudButton>
+
+                            <MudButton OnClick="@(e => EditAccount(context.Id, context.Name, context.Cookie))"
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.ReceiptLong"
+                                       Color="Color.Success"
+                                       Variant="Variant.Text"
+                                       Class="px-3 py-1 mb-1"
+                                       FullWidth="true"
+                                       Style="justify-content: flex-start; text-transform: none; min-height: 32px;">
+                                <span style="margin-left: 8px;">Edit</span>
+                            </MudButton>
+
+                        </MudPaper>
+                    </MudMenu>
+                </MudButtonGroup>
+
+
+
+
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText>No matching records found</MudText>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudText>Loading...</MudText>
+        </LoadingContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+
+</MudPaper>
+
+

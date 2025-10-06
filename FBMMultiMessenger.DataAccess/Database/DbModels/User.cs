@@ -12,11 +12,13 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public required string Name { get; set; }
         public required string Email { get; set; }
         public required string Password { get; set; }
+        public required string ContactNumber { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
 
         //Navigation Property
+        public Subscription Subscription { get; set; }
         public List<Account> Accounts { get; set; } = new List<Account>();
     }
 }

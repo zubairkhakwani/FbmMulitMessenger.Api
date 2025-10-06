@@ -14,10 +14,16 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(User))]
         public int UserId { get; set; }
         public required string Name { get; set; }
+        public string? FbUserId { get; set; }
+        public string? FbAccountId { get; set; }
         public required string Cookie { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
 
         //Navigation Properties
         public User User { get; set; } = null!;
+        public List<Chat> Chats { get; set; } = new List<Chat>();
     }
 }

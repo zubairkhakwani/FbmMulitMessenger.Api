@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36212.18
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger", "FBMMultiMessenger\FBMMultiMessenger.csproj", "{0CDCFCE5-6EDE-4B78-900F-1547F3162E82}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessengerServer", "FBMMultiMessengerServer\FBMMultiMessengerServer.csproj", "{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Server", "FBMMultiMessengerServer\FBMMultiMessenger.Server.csproj", "{1511DFBA-E5A6-42DA-813D-FC55574C0AA9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Data", "FBMMultiMessenger.DataAccess\FBMMultiMessenger.Data.csproj", "{963024B0-C954-48C5-BF9A-011E3657B217}"
 EndProject

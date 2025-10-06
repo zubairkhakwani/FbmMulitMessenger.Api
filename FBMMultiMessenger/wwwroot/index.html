@@ -4,10 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>FBMMultiMessenger</title>
-    <base href="/" />
+    <base href="/Account" />
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="FBMMultiMessenger.styles.css" />
+
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="custom-mudblazor.css" rel="stylesheet" />
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="icon" href="data:,">
 </head>
 
@@ -15,7 +21,7 @@
 
     <div class="status-bar-safe-area"></div>
 
-    <div id="app">Loading...</div>
+    <div id="app"><img src="splash1.png"  alt="Getting things ready for you..."></div>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.
@@ -24,7 +30,9 @@
     </div>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
-
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="common.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>
