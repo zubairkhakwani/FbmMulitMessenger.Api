@@ -3,6 +3,7 @@ using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Notification;
 using FBMMultiMessenger.Services;
 using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.SignalR;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using OneSignalSDK.DotNet;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 
@@ -44,6 +46,9 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         [Inject]
         private BackButtonService BackButtonService { get; set; }
 
+        [Inject]
+        private OneSignalService OneSignalService { get; set; }
+
         [SupplyParameterFromQuery]
         public string IsNotification { get; set; } //this bit tells if the user opens the notification from his app and we have to show him the right chat.
 
@@ -67,7 +72,16 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         private string currentUserId = "User123"; //TODO - Authentication
         private bool isAndriodPlatform;
 
-        private string FilterKeyword = string.Empty;
+        private string _filterKeyword = string.Empty;
+        private string FilterKeyword
+        {
+            get => _filterKeyword;
+            set
+            {
+                _filterKeyword = value;
+                FilterChat();
+            }
+        }
 
         //For Mobile layout we overlap the side bar and messages
         private int SidebarZIndex = 100;
@@ -87,7 +101,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         protected override async Task OnInitializedAsync()
         {
             isAndriodPlatform =  DeviceInfo.Platform != DevicePlatform.WinUI;
-            //isAndriodPlatform = true;
+
             BackButtonService.BackButtonPressed+= OnBackButtonPressed;
 
             if (!string.IsNullOrWhiteSpace(IsNotification) && !string.IsNullOrWhiteSpace(FbChatId))
@@ -99,6 +113,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             await GetAccountChats();
 
+            await HandlePushNotifacitonAsync();
         }
 
         private void OnBackButtonPressed()
@@ -131,15 +146,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             FilteredAccountChats = AccountChats = response?.Data?.Chats ?? new List<GetMyChatsHttpResponse>();
         }
 
-        public async Task ConnectToSignalR()
-        {
-            if (!SignalRChatService.IsConnected)
-            {
-                await SignalRChatService.ConnectAsync(currentUserId);
 
-                SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceivedAsync(msg);
-            }
-        }
 
         private List<FileData> GetImages(string message)
         {
@@ -432,14 +439,36 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         }
 
+        private async Task HandlePushNotifacitonAsync()
+        {
+            if (isAndriodPlatform)
+            {
+                await OneSignalService.AskNotificationPermissionAsync();
+                OneSignalService.OnNotificationClicked();
+
+                // Optional
+                var playerId = OneSignal.User.PushSubscription.Id;
+                Console.WriteLine("Player Id :", playerId);
+            }
+        }
+        public async Task ConnectToSignalR()
+        {
+            if (!SignalRChatService.IsConnected)
+            {
+                await SignalRChatService.ConnectAsync(currentUserId);
+
+                SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceivedAsync(msg);
+            }
+        }
         private void FilterChat()
         {
-            FilteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
+            var filteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
                                         ||
                                         x.FbListingPrice.ToString().Contains(FilterKeyword)
                                         ||
                                         x.FbListingLocation.ToLower().Contains(FilterKeyword)).ToList();
 
+            FilteredAccountChats = new List<GetMyChatsHttpResponse>(filteredAccountChats);
 
             StateHasChanged();
 

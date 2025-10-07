@@ -5,7 +5,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
     height: 100vh;
     overflow: hidden;
@@ -453,23 +453,45 @@ body {
     background: #f8f9fa;
 }
 
+.empty-state-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    text-align: center;
+}
+
 .empty-state-icon {
     width: 120px;
     height: 120px;
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 50%, #ec4899 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 48px;
     margin-bottom: 24px;
-    color: #1877f2;
+    color: #ffff;
+}
+
+.empty-state-icon-sidebar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    margin-bottom: 24px;
+    color: #ffff;
 }
 
 .empty-state h3 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #1c1e21;
+    font-size: 32px;
+    font-weight: bold;
+    color: #1f2937;
     margin-bottom: 8px;
 }
 
@@ -477,7 +499,13 @@ body {
     font-size: 16px;
     color: #65676b;
     max-width: 400px;
-    line-height: 1.5;
+    line-height: 1.6;
+}
+
+.empty-state-sidebar p {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: bold;
 }
 
 

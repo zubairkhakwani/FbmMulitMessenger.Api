@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Notification;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
 using OneSignalSDK.DotNet;
@@ -28,6 +29,10 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
         [Inject]
         public ISubscriptionSerivce SubscriptionSerivce { get; set; }
+
+        [Inject]
+        private OneSignalService OneSignalService { get; set; }
+
 
         public string? ResponseError;
         private bool ShowLoader = false;
@@ -64,10 +69,10 @@ namespace FBMMultiMessenger.Components.Pages.Auth
                 await TokenProvider.SetTokenAsync(response.Data.Token);
 
                 //Tell OneSignal this device now belongs to this user
-                if (DeviceInfo.Platform == DevicePlatform.Android)
+                if (DeviceInfo.Platform != DevicePlatform.WinUI)
                 {
                     // Running on Android (either emulator or physical device)
-                    OneSignal.Login(response.Data.UserId.ToString());
+                    OneSignalService.Login(response.Data.UserId.ToString());
                 }
             }
 
