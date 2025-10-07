@@ -31,14 +31,15 @@
 
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input @onkeyup="FilterChat" @bind="FilterKeyword" type="text" class="search-input" placeholder="Search conversations">
+                    <input @bind-value="FilterKeyword"
+                           @bind-value:event="oninput" type="text" class="search-input" placeholder="Search conversations">
                 </div>
             </div>
             <div class="chat-list" style="height:@sideBarHeight">
                 @for (int i = 0; i < FilteredAccountChats.Count; i++)
                 {
-                    var fbChatId = AccountChats[i].FbChatId;
-                    var chat = AccountChats[i];
+                    var fbChatId = FilteredAccountChats[i].FbChatId;
+                    var chat = FilteredAccountChats[i];
                     var unreadCount = chat.UnReadCount;
                     var hide = unreadCount == 0 ? "hide" : "";
 
@@ -74,7 +75,8 @@
 
                 <div class="search-box">
                     <span class="search-icon">🔍</span>
-                    <input type="text" class="search-input" placeholder="Search conversations">
+                    <input @bind-value="FilterKeyword"
+                           @bind-value:event="oninput" type="text" class="search-input" placeholder="Search conversations">
                 </div>
             </div>
             <div class="empty-state-sidebar">

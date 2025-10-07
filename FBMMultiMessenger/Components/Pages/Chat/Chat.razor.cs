@@ -72,7 +72,16 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         private string currentUserId = "User123"; //TODO - Authentication
         private bool isAndriodPlatform;
 
-        private string FilterKeyword = string.Empty;
+        private string _filterKeyword = string.Empty;
+        private string FilterKeyword
+        {
+            get => _filterKeyword;
+            set
+            {
+                _filterKeyword = value;
+                FilterChat();
+            }
+        }
 
         //For Mobile layout we overlap the side bar and messages
         private int SidebarZIndex = 100;
@@ -134,7 +143,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 return;
             }
 
-            FilteredAccountChats = AccountChats = /*response?.Data?.Chats ??*/ new List<GetMyChatsHttpResponse>();
+            FilteredAccountChats = AccountChats = response?.Data?.Chats ?? new List<GetMyChatsHttpResponse>();
         }
 
 
@@ -453,12 +462,13 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         }
         private void FilterChat()
         {
-            FilteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
+            var filteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
                                         ||
                                         x.FbListingPrice.ToString().Contains(FilterKeyword)
                                         ||
                                         x.FbListingLocation.ToLower().Contains(FilterKeyword)).ToList();
 
+            FilteredAccountChats = new List<GetMyChatsHttpResponse>(filteredAccountChats);
 
             StateHasChanged();
 
