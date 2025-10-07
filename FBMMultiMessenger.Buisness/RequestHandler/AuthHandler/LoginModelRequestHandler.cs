@@ -26,7 +26,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
         public async Task<BaseResponse<LoginModelResponse>> Handle(LoginModelRequest request, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
-                                       .Include(s => s.Subscription)
+                                       .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password, cancellationToken);
 
             if (user is null)
@@ -51,15 +51,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
             };
 
 
-            var subscription = user.Subscription;
+            var subscriptions = user.Subscriptions;
 
-            if (subscription is null)
+            if (subscriptions is null)
             {
                 return BaseResponse<LoginModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true, response);
             }
 
             var today = DateTime.Now;
-            var expiredAt = subscription.ExpiredAt;
+            var expiredAt = subscriptions.LastOrDefault()!.ExpiredAt;
 
             if (today >= expiredAt)
             {

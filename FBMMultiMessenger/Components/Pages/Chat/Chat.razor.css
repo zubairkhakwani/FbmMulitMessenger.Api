@@ -214,7 +214,6 @@ body {
     background: white;
     display: flex;
     align-items: center;
-    margin-left: 1rem;
 }
 
     .chat-header .avatar {
@@ -222,6 +221,7 @@ body {
         height: 40px;
         font-size: 14px;
         margin-right: 12px;
+        margin-left: 12px;
     }
 
 .header-info h3 {
@@ -498,6 +498,7 @@ body {
 
 .file-preview-item {
     position: relative;
+    height: 75px;
     aspect-ratio: 1;
     border-radius: 8px;
     overflow: hidden;

@@ -44,9 +44,6 @@ namespace FBMMultiMessenger.Components.Pages.Account
                 //Initialize one signal for push notifiactions
                 InitializeOneSignal();
             }
-
-
-
             string? token = await TokenProvider.GetTokenAsync();
 
             if (string.IsNullOrWhiteSpace(token))
@@ -78,16 +75,26 @@ namespace FBMMultiMessenger.Components.Pages.Account
         private void OnNotificationClicked(object sender, NotificationClickedEventArgs e)
         {
             var data = e.Notification.AdditionalData;
-            var isFbChatId = data.TryGetValue("chatId", out var fbChatIdObj);
+            var hasFbChatIdKey = data.TryGetValue("chatId", out var fbChatIdObj);
+            var hasSubscriptionExpiredKey = data.TryGetValue("isSubscriptionExpired", out var subscriptionExpiredObj);
+            var messageKey = data.TryGetValue("message", out var message);
 
-            if (data != null && isFbChatId)
+            if (data != null && hasFbChatIdKey && hasSubscriptionExpiredKey)
             {
                 string fbChatId = fbChatIdObj!.ToString()!;
+                bool isParsed = bool.TryParse(subscriptionExpiredObj!.ToString(), out bool isSubscriptionExpired);
 
                 // Navigate to specific chat
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    Navigation.NavigateTo($"/chat?isNotification=true&fbChatId={fbChatId}");
+                    if (!isSubscriptionExpired)
+                    {
+                        Navigation.NavigateTo($"/chat?isNotification=true&fbChatId={fbChatId}");
+                    }
+                    else
+                    {
+                        Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={message!.ToString()}");
+                    }
                 });
             }
         }

@@ -5,8 +5,10 @@
     var mobileView = isAndriodPlatform ? "" : "messenger-container";
     var mobileClass = isAndriodPlatform ? "mobile" : "";
     var sideBarHeight = isAndriodPlatform ? "auto" : "650px";
-    var messageContainerHeight = SelectedFbChatId is null ? "100vh" : "calc(100vh - 135px)"; // 135 px is the height of selected message header and the message input so in result we end up in a perfect scroll if needed
+    var messageContainerHeight = SelectedFbChatId is null ? "100vh" : "calc(100vh - 130px)"; // 130 px is the height of selected message header and the message input so in result we end up in a perfect scroll if needed
+    var avatarMargin = isAndriodPlatform ? "0px" : "12px";
 }
+
 
 <div class="@mobileView">
     <!-- Sidebar -->
@@ -74,12 +76,12 @@
             <div class="chat-header">
                 @if (isAndriodPlatform)
                 {
-                    <div style="cursor:pointer; padding: 33px 0px 32px 20px;" @onclick="HandleMobileMainChat">
+                    <div style="cursor:pointer; padding: 33px 12px 32px 20px;" @onclick="HandleMobileMainChat">
                         <i class="fa-sharp fa-solid fa-arrow-left"></i>
                     </div>
                 }
 
-                <div class="avatar">JD</div>
+                <div class="avatar" style="margin-left:@avatarMargin">JD</div>
                 <div class="header-info">
 
                     <h3>@selectedListingTitle</h3>
@@ -190,8 +192,8 @@
                         {
                             var file = PreviewMediaFiles[i];
 
-                            <div class="c">
-                                <img class="preview-media" src="@file.FileUrl" alt="Car photo 1">
+                            <div class="file-preview-item">
+                                <img class="preview-media" src="@file.FileUrl" alt="@file.FileName">
                                 @if (file.IsVideo)
                                 {
                                     <div class="video-indicator">▶️</div>

@@ -14,7 +14,7 @@ namespace FBMMultiMessenger.Buisness.OneSignal
             _appId =  configuration.GetValue<string>("OneSignal:AppId")!;
             _restApiKey =  configuration.GetValue<string>("OneSignal:ApiKey")!;
         }
-        public async Task SendMessageNotification(string userId, string message, string senderName, string chatId)
+        public async Task SendMessageNotification(string userId, string message, string senderName, string chatId, bool isSubscriptionExpired = false)
         {
             var client = new OneSignalClient(_restApiKey);
 
@@ -23,16 +23,18 @@ namespace FBMMultiMessenger.Buisness.OneSignal
                 AppId = Guid.Parse(_appId),
                 IncludeExternalUserIds = new List<string> { userId },
                 Headings = new Dictionary<string, string>
-            {
-                { "en", $"New message from {senderName}" }
-            },
+                {
+                    { "en", $"New message from {senderName}" }
+                },
                 Contents = new Dictionary<string, string>
-            {
-                { "en", message }
-            },
+                {
+                    { "en", message }
+                },
                 Data = new Dictionary<string, string>
                 {
                     { "chatId", chatId },
+                    { "isSubscriptionExpired", isSubscriptionExpired.ToString() },
+                    {"message",message },
                     { "type", "new_message" }
                 }
             };

@@ -38,6 +38,8 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
             if (!string.IsNullOrWhiteSpace(token))
             {
+                ShowLoader = true;
+
                 var response = await SubscriptionSerivce.GetMySubscription<BaseResponse<GetMySubscriptionHttpResponse>>();
                 var isRedirectRequest = response.RedirectToPackages;
                 bool isSubscriptionExpired = response.Data?.IsExpired ?? false;

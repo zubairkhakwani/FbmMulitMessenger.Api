@@ -39,7 +39,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var chat = await _dbContext.Chats
                                        .Include(u => u.User)
-                                       .ThenInclude(s => s.Subscription)
+                                       .ThenInclude(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
             var chatReference = chat;

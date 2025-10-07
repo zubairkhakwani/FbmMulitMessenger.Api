@@ -30,7 +30,6 @@ namespace FBMMultiMessenger.Components.Pages.Package
                 var title = isExpired ? "Subscription Expired" : "No Active Subscription";
                 await JS.InvokeVoidAsync("myInterop.showSweetAlert", title, Message);
             }
-
         }
     }
 }

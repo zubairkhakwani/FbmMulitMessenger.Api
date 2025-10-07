@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Contracts.Contracts.Account;
+﻿
+using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
@@ -49,10 +50,14 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         [SupplyParameterFromQuery]
         public string FbChatId { get; set; }
 
+
+        //For Media files
         private const int MaxMediaCount = 100;
         private const int MaxMediaSize = 25 * 1024 * 1024; // 1024 * 1024 == 1mb hence total 25mb.
 
+        //The actual message 
         private string Message = string.Empty;
+
         private List<FileData> PreviewMediaFiles { get; set; } = new List<FileData>();
         private List<FileData> PreviewMediaInMessagesContainer = new List<FileData>();
         private bool IsNotified = false;
@@ -68,7 +73,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         private int SidebarZIndex = 100;
         private int MainChatZIndex = 0;
 
-        //Selected Message Header ==> this can be done by javascript
+        //Selected Message Header
         private string selectedListingTitle = "John Doe";
         private string selectedListingLocation = "London";
         private string selectedListingPrice = "100";
@@ -82,7 +87,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         protected override async Task OnInitializedAsync()
         {
             isAndriodPlatform =  DeviceInfo.Platform != DevicePlatform.WinUI;
-
+            //isAndriodPlatform = true;
             BackButtonService.BackButtonPressed+= OnBackButtonPressed;
 
             if (!string.IsNullOrWhiteSpace(IsNotification) && !string.IsNullOrWhiteSpace(FbChatId))
@@ -322,43 +327,55 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         public async Task HandleFileUpload(InputFileChangeEventArgs e)
         {
-            var files = e.GetMultipleFiles();
-
-            if (files.Count > MaxMediaCount)
+            try
             {
-                await JS.InvokeVoidAsync("myInterop.handleMediaFailed", "Unable to attach media", "You can only attach a maximum of 100 media to a single message.");
+                var files = e.GetMultipleFiles();
 
-                return;
-            }
-
-            var totalSize = files.Sum(f => f.Size);
-
-            if (totalSize > MaxMediaSize)
-            {
-                await JS.InvokeVoidAsync("myInterop.handleMediaFailed",
-                    "Upload Failed",
-                    $"The total size of selected files ({totalSize / (1024 * 1024)} MB) exceeds the {MaxMediaSize / (1024 * 1024)} MB limit.");
-                return;
-            }
-
-
-            foreach (var file in files)
-            {
-                using var ms = new MemoryStream();
-                await file.OpenReadStream(MaxMediaSize).CopyToAsync(ms);
-                var buffer = ms.ToArray();
-
-                var newFile = new FileData()
+                if (files.Count > MaxMediaCount)
                 {
-                    Id = $"File-{Guid.NewGuid()}",
-                    File = file,
-                    FileName = file.Name,
-                    FileUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}",
-                    IsVideo = file.ContentType.StartsWith("video/")
-                };
+                    await JS.InvokeVoidAsync("myInterop.handleMediaFailed", "Unable to attach media", "You can only attach a maximum of 100 media to a single message.");
 
-                PreviewMediaFiles.Add(newFile);
+                    return;
+                }
+
+                var totalSize = files.Sum(f => f.Size);
+
+                if (totalSize > MaxMediaSize)
+                {
+                    await JS.InvokeVoidAsync("myInterop.handleMediaFailed",
+                        "Upload Failed",
+                        $"The total size of selected files ({totalSize / (1024 * 1024)} MB) exceeds the {MaxMediaSize / (1024 * 1024)} MB limit.");
+                    return;
+                }
+
+
+                foreach (var file in files)
+                {
+                    //if base64 is needed you can uncomment.
+                    using var ms = new MemoryStream();
+                    await file.OpenReadStream(MaxMediaSize).CopyToAsync(ms);
+                    var buffer = ms.ToArray();
+                    var bas64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+
+                    // get a blob URL 
+                    // var objectUrl = await JS.InvokeAsync<string>("myInterop.createObjectURL", file);
+                    var newFile = new FileData()
+                    {
+                        Id = $"File-{Guid.NewGuid()}",
+                        File = file,
+                        FileName = file.Name,
+                        FileUrl = bas64,
+                        IsVideo = file.ContentType.StartsWith("video/")
+                    };
+
+                    PreviewMediaFiles.Add(newFile);
+                }
             }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Failed to select your file", Severity.Error);
+            }
+
         }
 
         public void HandleFileRemoval(string id)

@@ -49,7 +49,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
             var chat = await _dbContext.Chats
                                            .Include(x => x.User)
-                                           .ThenInclude(s => s.Subscription)
+                                           .ThenInclude(s => s.Subscriptions)
                                            .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
                                            &&
                                            c.UserId == request.UserId, cancellationToken);
@@ -60,17 +60,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid request, Chat does not exist");
             }
 
-            var subscription = chat.User.Subscription;
+            var subscriptions = chat.User.Subscriptions;
             var response = new NotifyExtensionModelResponse();
 
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
-            if (subscription is null)
+            if (subscriptions is null)
             {
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
             }
 
             var today = DateTime.Now;
-            var endDate = subscription.ExpiredAt;
+            var endDate = subscriptions?.LastOrDefault()?.ExpiredAt;
 
             if (today >= endDate)
             {
@@ -102,7 +102,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             await _hubContext.Clients.Group("Extension_User_123")
                 .SendAsync("SendMessage", sendChatMessage, cancellationToken);
 
-           // await _hubContext.Clients.All.SendAsync("SendMessage", sendChatMessage, cancellationToken);
+            // await _hubContext.Clients.All.SendAsync("SendMessage", sendChatMessage, cancellationToken);
 
             return BaseResponse<NotifyExtensionModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }

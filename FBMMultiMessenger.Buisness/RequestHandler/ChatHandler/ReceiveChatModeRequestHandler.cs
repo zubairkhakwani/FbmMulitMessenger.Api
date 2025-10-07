@@ -34,8 +34,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         }
         public async Task<BaseResponse<ReceiveChatModelResponse>> Handle(ReceiveChatModelRequest request, CancellationToken cancellationToken)
         {
-            var chat = await _dbContext.Chats.FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId);
+            var chat = await _dbContext.Chats
+                                       .Include(u => u.User)
+                                       .ThenInclude(s => s.Subscriptions)
+                                       .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
+
             var chatReference = chat;
+
             if (chat is null)
             {
                 var newChat = new Chat()
@@ -89,28 +94,33 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            var subscriptions = chatReference?.User?.Subscriptions;
+            var today = DateTime.Now;
+            var endDate = subscriptions?.LastOrDefault()?.ExpiredAt;
+
+            if (subscriptions is null || today >= endDate)
+            {
+                var responseMessage = string.Empty;
+                if (subscriptions is null)
+                {
+                    responseMessage = "user does not have any active subscription. No notification was sent and the UI was not updated. ";
+                }
+                else
+                {
+                    await SendMobileNotificationAsync(request, isSubscriptionExpired: true);
+                    responseMessage = "user's subscription has expired";
+                }
+                return BaseResponse<ReceiveChatModelResponse>.Success($"Message received, but the {responseMessage}. ", new ReceiveChatModelResponse());
+            }
 
             // will send notification to andriod level via one signal.
-            var count = request.Messages.Count;
-            string message = request switch
-            {
-                { IsImageMessage: true } => $"You have received {count} images",
-                { IsVideoMessage: true } => $"You have received {count} videos",
-                { IsAudioMessage: true } => $"You have received {count} videos",
-                _ => request.Messages.FirstOrDefault()!
-            };
+            await SendMobileNotificationAsync(request);
 
-            await _oneSignalNotificationService.SendMessageNotification(
-                userId: request.UserId.ToString(),
-                message: message,
-                senderName: "FBM MULTI MESSENGER",
-                chatId: request.FbChatId
-            );
 
             //Inform the client that the message has been received via signalR.
             var receivedChat = new ReceiveChatHttpResponse()
             {
-                Message = message,
+                Message = dbMessage,
                 ChatId = chat.Id,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
@@ -125,12 +135,44 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 StartedAt = DateTime.UtcNow,
             };
 
-            //TODO;
+            //TODO
             await _hubContext.Clients.Group("User123")
                 .SendAsync("ReceiveMessage", receivedChat, cancellationToken);
 
 
             return BaseResponse<ReceiveChatModelResponse>.Success($"Message has been received successfully", new ReceiveChatModelResponse());
+        }
+        private async Task SendMobileNotificationAsync(ReceiveChatModelRequest request, bool isSubscriptionExpired = false)
+        {
+            string message = string.Empty;
+
+            if (!isSubscriptionExpired)
+            {
+                var count = request.Messages.Count;
+
+                string receivedMessage = request switch
+                {
+                    { IsImageMessage: true } => $"You have received {count} images",
+                    { IsVideoMessage: true } => $"You have received {count} videos",
+                    { IsAudioMessage: true } => $"You have received {count} videos",
+                    _ => request.Messages.FirstOrDefault()!
+                };
+                message = receivedMessage;
+            }
+            else
+            {
+                message = "New messages waiting! Renew your subscription to view them.";
+                request.FbChatId = string.Empty;
+            }
+
+
+            await _oneSignalNotificationService.SendMessageNotification(
+                userId: request.UserId.ToString(),
+                message: message,
+                senderName: "FBM MULTI MESSENGER",
+                chatId: request.FbChatId,
+                isSubscriptionExpired: isSubscriptionExpired
+            );
         }
     }
 }
