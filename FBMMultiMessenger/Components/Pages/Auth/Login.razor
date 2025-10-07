@@ -3,6 +3,11 @@
 
 <PageTitle>FBMMultiMessenger - Login</PageTitle>
 
+@{
+    var state = ShowLoader ? "" : "";
+}
+
+
 <div class="page-container">
     <div class="login-container">
         <!-- Header -->
@@ -13,10 +18,10 @@
 
         <!-- Login Form -->
         <div class="login-form">
-            <EditForm Model="RequestModel" 
-                      class="signin-form" 
-                      OnValidSubmit="OnValidPost" 
-                      FormName="a" 
+            <EditForm Model="RequestModel"
+                      class="signin-form"
+                      OnValidSubmit="OnValidPost"
+                      FormName="a"
                       Enhance="true">
 
                 <DataAnnotationsValidator />
@@ -28,24 +33,24 @@
 
                 <!-- Email Field -->
                 <div class="form-group">
-                    <InputText @bind-Value="RequestModel.Email" 
-                               type="email" 
-                               class="input" 
+                    <InputText @bind-Value="RequestModel.Email"
+                               type="email"
+                               class="input"
                                placeholder="Email address" />
-                    <ValidationMessage For="@(() => RequestModel.Email)" 
+                    <ValidationMessage For="@(() => RequestModel.Email)"
                                        class="validation-message" />
                 </div>
 
                 <!-- Password Field -->
                 <div class="form-group">
                     <div class="password-container">
-                        <InputText @bind-Value="RequestModel.Password" 
+                        <InputText @bind-Value="RequestModel.Password"
                                    type="password"
                                    id="password"
-                                   class="input" 
+                                   class="input"
                                    placeholder="Password" />
                     </div>
-                    <ValidationMessage For="@(() => RequestModel.Password)" 
+                    <ValidationMessage For="@(() => RequestModel.Password)"
                                        class="validation-message" />
                 </div>
 
@@ -55,7 +60,19 @@
                 </div>
 
                 <!-- Sign In Button -->
-                <button type="submit" class="sign-in-button">Sign In</button>
+                @if (ShowLoader)
+                {
+                    <button disabled type="submit" class="sign-in-button">
+                        <div class="loader"></div>
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="sign-in-button">
+                        SignIn
+                    </button>
+                }
+
             </EditForm>
 
             <!-- Divider -->

@@ -9,7 +9,7 @@
         for (const mutation of mutations) {
             if (mutation.type === "childList") {
                 if (mutation.target === messageList) {
-                    
+
                     messageContainer.scrollTo({
                         top: messageContainer.scrollHeight,
                         behavior: "smooth"
@@ -33,7 +33,7 @@
 
 
     function AddEvenListenerToAccountChats() {
-      
+
         document.querySelectorAll('.chat-item').forEach(item => {
             console.log(item);
             item.addEventListener('click', function () {
@@ -44,13 +44,7 @@
                 }
                 //Make the chat selected.
                 item.classList.add('active');
-
-
-                messageContainer.style.height = "calc(100vh - 135px)";
             });
         });
     }
-
-
-
 })();

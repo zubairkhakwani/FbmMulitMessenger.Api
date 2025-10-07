@@ -2,13 +2,12 @@
 
 <MudPaper Elevation="0" Style="display: flex; flex-direction: column;" Height="100%" Width="100%">
     <div class="neeleez-page-header">
-        <MudText Typo="Typo.h3" Color="Color.Primary">Account Management</MudText>
+        <h3 class="page-title">Account Management</h3>
         <div class="neeleez-page-header--actions">
-            <MudButton OnClick="AddNewAccount" StartIcon="@Icons.Material.Filled.Add" Color="Color.Error" Variant="Variant.Filled" ButtonType="ButtonType.Submit">Add Account</MudButton>
+            <button @onclick="AddNewAccount" class="add-account-btn">+ Add Account</button>
         </div>
     </div>
 
-    <MudDivider Light="true" Style="margin-top : 30px; width : 100%; background-color : #B4B6B9; height : 2px;" />
     <MudTable ServerData="ServerReload" Dense="true" Hover="true" @ref="table">
         @*     <ToolBarContent>
             <MudSpacer />
@@ -80,6 +79,9 @@
         </PagerContent>
     </MudTable>
 
+    <button @onclick="AddNewAccount" class="add-new-account-container">
+        <i class="fa-solid fa-plus"></i>
+    </button>
 </MudPaper>
 
 

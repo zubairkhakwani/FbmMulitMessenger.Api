@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Contracts.Contracts.Account;
+﻿
+using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 
@@ -48,30 +50,44 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         [SupplyParameterFromQuery]
         public string FbChatId { get; set; }
 
+
+        //For Media files
         private const int MaxMediaCount = 100;
         private const int MaxMediaSize = 25 * 1024 * 1024; // 1024 * 1024 == 1mb hence total 25mb.
 
+        //The actual message 
         private string Message = string.Empty;
+
         private List<FileData> PreviewMediaFiles { get; set; } = new List<FileData>();
         private List<FileData> PreviewMediaInMessagesContainer = new List<FileData>();
         private bool IsNotified = false;
+        private bool IsLoading = true;
 
         private string? SelectedFbChatId = null;
         private string currentUserId = "User123"; //TODO - Authentication
         private bool isAndriodPlatform;
+
+        private string FilterKeyword = string.Empty;
+
+        //For Mobile layout we overlap the side bar and messages
         private int SidebarZIndex = 100;
         private int MainChatZIndex = 0;
+
+        //Selected Message Header
         private string selectedListingTitle = "John Doe";
         private string selectedListingLocation = "London";
         private string selectedListingPrice = "100";
 
-        public List<GetMyChatsHttpResponse> MyAccountChats = new List<GetMyChatsHttpResponse>();
-        public List<GeChatMessagesHttpResponse> MyChatMessages = new List<GeChatMessagesHttpResponse>();
+
+        public List<GetMyChatsHttpResponse> FilteredAccountChats = new List<GetMyChatsHttpResponse>();
+        public List<GetMyChatsHttpResponse> AccountChats = new List<GetMyChatsHttpResponse>();
+
+        public List<GeChatMessagesHttpResponse> ChatMessages = new List<GeChatMessagesHttpResponse>();
 
         protected override async Task OnInitializedAsync()
         {
             isAndriodPlatform =  DeviceInfo.Platform != DevicePlatform.WinUI;
-
+            //isAndriodPlatform = true;
             BackButtonService.BackButtonPressed+= OnBackButtonPressed;
 
             if (!string.IsNullOrWhiteSpace(IsNotification) && !string.IsNullOrWhiteSpace(FbChatId))
@@ -104,6 +120,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         public async Task GetAccountChats()
         {
             var response = await AccountService.GetMyChats<BaseResponse<GetAllMyAccountsChatsHttpResponse>>();
+            IsLoading = false;
             if (response is null ||  !response.IsSuccess)
             {
                 Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Error);
@@ -111,7 +128,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 return;
             }
 
-            MyAccountChats = response?.Data?.Chats ?? new List<GetMyChatsHttpResponse>();
+            FilteredAccountChats = AccountChats = response?.Data?.Chats ?? new List<GetMyChatsHttpResponse>();
         }
 
         public async Task ConnectToSignalR()
@@ -139,7 +156,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         private async Task HandleMessageReceivedAsync(ReceiveChatHttpResponse receivedChat)
         {
-            var isChatPresent = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
+            var isChatPresent = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
             if (isChatPresent is null)
             {
                 //sidebar account chat
@@ -154,19 +171,19 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     IsRead = receivedChat.IsRead,
                 };
 
-                MyAccountChats.Insert(0, newChat);
+                FilteredAccountChats.Insert(0, newChat);
 
             }
 
             //If the message that we received fbChatId is not opened so we add a unread badge and show it on top of the chats,otherwise we add new chat so it can be displayed in the messages.
             if (receivedChat.FbChatId != SelectedFbChatId)
             {
-                var myAccountChat = MyAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
+                var myAccountChat = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
                 if (myAccountChat is not null)
                 {
-                    MyAccountChats.Remove(myAccountChat);
+                    FilteredAccountChats.Remove(myAccountChat);
                     myAccountChat.UnReadCount += 1;
-                    MyAccountChats.Insert(0, myAccountChat); //new message should display on top.
+                    FilteredAccountChats.Insert(0, myAccountChat); //new message should display on top.
                 }
             }
             else
@@ -190,7 +207,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     receivedMessage.FileData = GetImages(receivedChat.Message);
                 }
 
-                MyChatMessages.Add(receivedMessage);
+                ChatMessages.Add(receivedMessage);
             }
 
             //Display newest message on top.
@@ -212,7 +229,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
 
 
-            var myAccountChats = MyAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
+            var myAccountChats = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
             if (myAccountChats is not null)
             {
                 //Making the unread messages to read
@@ -233,7 +250,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             SelectedFbChatId = fbChatId;
 
-            MyChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
+            ChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
         }
 
         public async Task NotifyExtension()
@@ -268,7 +285,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 PreviewMediaFiles = new();
             }
 
-            MyChatMessages.Add(newChat);
+            ChatMessages.Add(newChat);
 
 
             //This is to call API 
@@ -310,43 +327,55 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         public async Task HandleFileUpload(InputFileChangeEventArgs e)
         {
-            var files = e.GetMultipleFiles();
-
-            if (files.Count > MaxMediaCount)
+            try
             {
-                await JS.InvokeVoidAsync("myInterop.handleMediaFailed", "Unable to attach media", "You can only attach a maximum of 100 media to a single message.");
+                var files = e.GetMultipleFiles();
 
-                return;
-            }
-
-            var totalSize = files.Sum(f => f.Size);
-
-            if (totalSize > MaxMediaSize)
-            {
-                await JS.InvokeVoidAsync("myInterop.handleMediaFailed",
-                    "Upload Failed",
-                    $"The total size of selected files ({totalSize / (1024 * 1024)} MB) exceeds the {MaxMediaSize / (1024 * 1024)} MB limit.");
-                return;
-            }
-
-
-            foreach (var file in files)
-            {
-                using var ms = new MemoryStream();
-                await file.OpenReadStream(MaxMediaSize).CopyToAsync(ms);
-                var buffer = ms.ToArray();
-
-                var newFile = new FileData()
+                if (files.Count > MaxMediaCount)
                 {
-                    Id = $"File-{Guid.NewGuid()}",
-                    File = file,
-                    FileName = file.Name,
-                    FileUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}",
-                    IsVideo = file.ContentType.StartsWith("video/")
-                };
+                    await JS.InvokeVoidAsync("myInterop.handleMediaFailed", "Unable to attach media", "You can only attach a maximum of 100 media to a single message.");
 
-                PreviewMediaFiles.Add(newFile);
+                    return;
+                }
+
+                var totalSize = files.Sum(f => f.Size);
+
+                if (totalSize > MaxMediaSize)
+                {
+                    await JS.InvokeVoidAsync("myInterop.handleMediaFailed",
+                        "Upload Failed",
+                        $"The total size of selected files ({totalSize / (1024 * 1024)} MB) exceeds the {MaxMediaSize / (1024 * 1024)} MB limit.");
+                    return;
+                }
+
+
+                foreach (var file in files)
+                {
+                    //if base64 is needed you can uncomment.
+                    using var ms = new MemoryStream();
+                    await file.OpenReadStream(MaxMediaSize).CopyToAsync(ms);
+                    var buffer = ms.ToArray();
+                    var bas64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer)}";
+
+                    // get a blob URL 
+                    // var objectUrl = await JS.InvokeAsync<string>("myInterop.createObjectURL", file);
+                    var newFile = new FileData()
+                    {
+                        Id = $"File-{Guid.NewGuid()}",
+                        File = file,
+                        FileName = file.Name,
+                        FileUrl = bas64,
+                        IsVideo = file.ContentType.StartsWith("video/")
+                    };
+
+                    PreviewMediaFiles.Add(newFile);
+                }
             }
+            catch (Exception ex)
+            {
+                Snackbar.Add("Failed to select your file", Severity.Error);
+            }
+
         }
 
         public void HandleFileRemoval(string id)
@@ -376,7 +405,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             // Updates the main chat header with the listing details (title, location, and price)
             // of the chat selected by the user.
 
-            var chat = MyAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
+            var chat = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == fbChatId);
             if (chat is not null)
             {
                 selectedListingTitle = chat.FbLisFbListingTitle;
@@ -403,6 +432,18 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         }
 
+        private void FilterChat()
+        {
+            FilteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
+                                        ||
+                                        x.FbListingPrice.ToString().Contains(FilterKeyword)
+                                        ||
+                                        x.FbListingLocation.ToLower().Contains(FilterKeyword)).ToList();
+
+
+            StateHasChanged();
+
+        }
         public void Dispose()
         {
             BackButtonService.BackButtonPressed -= OnBackButtonPressed;
