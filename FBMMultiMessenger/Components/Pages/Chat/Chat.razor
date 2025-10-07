@@ -1,5 +1,8 @@
-﻿@page "/Chat"
+﻿@page "/"
+@page "/Chat"
 @layout EmptyLayout
+
+@attribute [Authorize(Policy = "ValidSubscription")]
 
 @{
     var mobileView = isAndriodPlatform ? "" : "messenger-container";

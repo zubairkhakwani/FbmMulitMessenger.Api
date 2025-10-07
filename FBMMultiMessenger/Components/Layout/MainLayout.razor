@@ -1,34 +1,50 @@
-﻿@inherits LayoutComponentBase
+﻿@using FBMMultiMessenger.Helpers
+@inherits LayoutComponentBase
+@inject NavigationManager navigationManager
 
-<FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
 
-<MudThemeProvider />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
-
-<div class="page">
-    
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-    <main>
-
-        @if (isMobilePlatform)
-        {
-            <MobileTopRow></MobileTopRow>
+<Microsoft.AspNetCore.Components.Authorization.AuthorizeView Policy="ValidSubscription">
+    <NotAuthorized>
+        @{
+            AuthenticationHelper.HandleUnAuthorizedAccess(context, navigationManager);
         }
-        else
-        {
-            <div class="top-row px-4">
+    </NotAuthorized>
+    <Authorizing>
+        <p>auth is happening..........</p>
+    </Authorizing>
+    <Authorized>
+        <FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
+
+            <MudThemeProvider />
+            <MudPopoverProvider />
+            <MudDialogProvider />
+            <MudSnackbarProvider />
+
+            <div class="page">
+
+                <div class="sidebar">
+                    <NavMenu />
+                </div>
+                <main>
+
+                    @if (isMobilePlatform)
+                    {
+                        <MobileTopRow></MobileTopRow>
+                    }
+                    else
+                    {
+                        <div class="top-row px-4">
+                        </div>
+                    }
+
+                    <article class="content px-4">
+                        @Body
+                    </article>
+                </main>
             </div>
-        }
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
 
 
-</FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
+        </FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
+    </Authorized>
+    
+</Microsoft.AspNetCore.Components.Authorization.AuthorizeView>

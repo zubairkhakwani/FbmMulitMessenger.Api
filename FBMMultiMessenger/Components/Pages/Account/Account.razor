@@ -1,5 +1,7 @@
 ﻿@page "/Account"
 
+@attribute [Authorize(Policy = "ValidSubscription")]
+
 <MudPaper Elevation="0" Style="display: flex; flex-direction: column;" Height="100%" Width="100%">
     <div class="neeleez-page-header">
         <h3 class="page-title">Account Management</h3>

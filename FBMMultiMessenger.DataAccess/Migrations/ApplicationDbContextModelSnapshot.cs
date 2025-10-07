@@ -191,8 +191,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Subscriptions");
 
@@ -205,7 +204,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 5,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            UserId = 2
+                            UserId = 1
                         },
                         new
                         {
@@ -318,8 +317,8 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
-                        .WithOne("Subscription")
-                        .HasForeignKey("FBMMultiMessenger.Data.Database.DbModels.Subscription", "UserId")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -340,8 +339,7 @@ namespace FBMMultiMessenger.Data.Migrations
                 {
                     b.Navigation("Accounts");
 
-                    b.Navigation("Subscription")
-                        .IsRequired();
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,8 +1,10 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Helpers;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using OneSignalSDK.DotNet;
 
 namespace FBMMultiMessenger.Components.Pages.Auth
@@ -24,6 +26,9 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
         [Inject]
         private ITokenProvider TokenProvider { get; set; }
+
+        [Inject]
+        AuthenticationStateProvider AuthenticationStateProvider { get; set; }
 
 
         [Inject]
@@ -62,6 +67,7 @@ namespace FBMMultiMessenger.Components.Pages.Auth
             if (response.Data is not null &&  !string.IsNullOrWhiteSpace(response.Data.Token))
             {
                 await TokenProvider.SetTokenAsync(response.Data.Token);
+                ((CustomAuthenticationStateProvider)AuthenticationStateProvider).NotifyStateChanged();
 
                 //Tell OneSignal this device now belongs to this user
                 if (DeviceInfo.Platform == DevicePlatform.Android)

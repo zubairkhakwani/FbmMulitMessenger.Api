@@ -14,21 +14,20 @@ namespace FBMMultiMessenger.Components.Pages.Package
         [SupplyParameterFromQuery]
         public string? IsExpired { get; set; }
 
-        [SupplyParameterFromQuery]
-        public string? Message { get; set; }
-
         [Inject]
         public IJSRuntime JS { get; set; }
 
 
         protected override async Task OnInitializedAsync()
         {
-            if (!string.IsNullOrWhiteSpace(Message))
+            if (!string.IsNullOrWhiteSpace(IsExpired))
             {
                 bool.TryParse(IsExpired, out bool isExpired);
 
                 var title = isExpired ? "Subscription Expired" : "No Active Subscription";
-                await JS.InvokeVoidAsync("myInterop.showSweetAlert", title, Message);
+                var message = isExpired ? "Your subscription has expired. Please renew to continue." : "Oh Snap, Looks like you don't have any subscription yet.";
+                
+                await JS.InvokeVoidAsync("myInterop.showSweetAlert", title, message);
             }
         }
     }

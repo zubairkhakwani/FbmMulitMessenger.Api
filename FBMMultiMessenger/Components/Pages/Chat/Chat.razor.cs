@@ -95,10 +95,11 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 await LoadChatMessage(FbChatId);
             }
 
-            await ConnectToSignalR();
+            var taskSignalR = ConnectToSignalR();
 
-            await GetAccountChats();
+            var taskAccountsQuery = GetAccountChats();
 
+            await Task.WhenAll(taskSignalR, taskAccountsQuery);
         }
 
         private void OnBackButtonPressed()

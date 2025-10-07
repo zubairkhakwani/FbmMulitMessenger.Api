@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250927075002_RenamingBitToIsSent")]
-    partial class RenamingBitToIsSent
+    [Migration("20251007101206_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -166,6 +166,61 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.ToTable("ChatMessages");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LimitUsed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxLimit")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Subscriptions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = false,
+                            LimitUsed = 0,
+                            MaxLimit = 5,
+                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = false,
+                            LimitUsed = 0,
+                            MaxLimit = 5,
+                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            UserId = 2
+                        });
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
                 {
                     b.Property<int>("Id")
@@ -173,6 +228,10 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContactNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -200,6 +259,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
+                            ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "zbrkhakwani@gmail.com",
                             IsActive = true,
@@ -209,6 +269,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 2,
+                            ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "shaheersk12@gmail.com",
                             IsActive = true,
@@ -256,6 +317,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("Chat");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
                 {
                     b.Navigation("Chats");
@@ -269,6 +341,8 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

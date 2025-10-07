@@ -26,7 +26,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
 
             if (subscription is null)
             {
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet.", redirectToPackages: true);
+                var failResponse = new GetMySubscriptionModelResponse();
+                failResponse.HasActiveSubscription = false;
+                failResponse.IsExpired = false;
+
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true, failResponse);
             }
 
             var today = DateTime.Now;
@@ -42,10 +46,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
 
             if (today >= expiredAt)
             {
+                response.HasActiveSubscription = false;
                 response.IsExpired = true;
+
                 return BaseResponse<GetMySubscriptionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, response);
             }
 
+            response.HasActiveSubscription = true;
             return BaseResponse<GetMySubscriptionModelResponse>.Success("You have an active subscription", response);
 
         }

@@ -19,6 +19,8 @@ namespace FBMMultiMessenger.Buisness.Helpers
             var key = Encoding.ASCII.GetBytes(model.Key);
             var accessTokenId = "JTI"+Guid.NewGuid().ToString();
 
+            var expiryDate = DateTime.Now.AddDays(7);
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
@@ -26,9 +28,10 @@ namespace FBMMultiMessenger.Buisness.Helpers
                   new Claim("Id",model.UserId.ToString()!),
                   new Claim(ClaimTypes.Name,model.Name!),
                   new Claim(ClaimTypes.Email,model.Email!),
-                  new Claim(JwtRegisteredClaimNames.Jti,accessTokenId),
+                  new Claim(JwtRegisteredClaimNames.Jti, accessTokenId),
+                  new Claim(ClaimTypes.Expiration, expiryDate.ToString()),
                 }),
-                Expires = DateTime.Now.AddDays(7),
+                Expires = expiryDate,
                 SigningCredentials = new(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
