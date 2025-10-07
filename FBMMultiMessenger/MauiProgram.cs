@@ -1,4 +1,5 @@
-﻿using Blazored.LocalStorage;
+﻿using FBMMultiMessenger.Notification;
+using Blazored.LocalStorage;
 using FBMMultiMessenger.AuthorizationPolicies.ActiveSubscriptionPolicy;
 using FBMMultiMessenger.Helpers;
 using FBMMultiMessenger.Services;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using MudBlazor.Services;
+using OneSignalSDK.DotNet;
 using System.Reflection;
 
 
@@ -56,6 +58,8 @@ namespace FBMMultiMessenger
             builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
             builder.Services.AddSingleton<SignalRChatService>();
+            builder.Services.AddScoped<OneSignalService>();
+
             builder.Services.AddHttpClient();
             builder.Services.AddMudServices();
             builder.Services.AddBlazoredLocalStorage();
@@ -76,14 +80,13 @@ namespace FBMMultiMessenger
             builder.Logging.AddDebug();
 #endif
 
-            //builder.Services.AddOneSignal(options =>
-            //{
-            //    options.AppId = "YOUR_ONESIGNAL_APP_ID";
-            //});
-            
+            if (DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                var appId = builder.Configuration.GetValue<string>("OneSignal:AppId")!;
+                OneSignal.Initialize(appId);
+            }
+
             return builder.Build();
         }
-
-
     }
 }
