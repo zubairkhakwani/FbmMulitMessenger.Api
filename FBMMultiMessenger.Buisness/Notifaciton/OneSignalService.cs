@@ -2,14 +2,14 @@
 using OneSignal.RestAPIv3.Client;
 using OneSignal.RestAPIv3.Client.Resources.Notifications;
 
-namespace FBMMultiMessenger.Buisness.OneSignal
+namespace FBMMultiMessenger.Buisness.Notifaciton
 {
-    public class OneSignalNotificationService
+    public class OneSignalService
     {
         private readonly string _appId;
         private readonly string _restApiKey;
 
-        public OneSignalNotificationService(IConfiguration configuration)
+        public OneSignalService(IConfiguration configuration)
         {
             _appId =  configuration.GetValue<string>("OneSignal:AppId")!;
             _restApiKey =  configuration.GetValue<string>("OneSignal:ApiKey")!;

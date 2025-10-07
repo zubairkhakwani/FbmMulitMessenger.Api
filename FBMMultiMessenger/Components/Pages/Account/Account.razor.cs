@@ -9,6 +9,7 @@ using Color = MudBlazor.Color;
 using OneSignalSDK.DotNet;
 using Microsoft.Extensions.Configuration;
 using OneSignalSDK.DotNet.Core.Debug;
+using FBMMultiMessenger.Notification;
 
 
 namespace FBMMultiMessenger.Components.Pages.Account
@@ -29,8 +30,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [Inject]
         private ISnackbar Snackbar { get; set; }
 
-        [Inject]
-        private IConfiguration Configuration { get; set; }
+
 
         [SupplyParameterFromQuery]
         public string? Message { get; set; }
@@ -39,11 +39,6 @@ namespace FBMMultiMessenger.Components.Pages.Account
 
         protected override async Task OnInitializedAsync()
         {
-            if (DeviceInfo.Platform == DevicePlatform.Android)
-            {
-                //Initialize one signal for push notifiactions
-                InitializeOneSignal();
-            }
             string? token = await TokenProvider.GetTokenAsync();
 
             if (string.IsNullOrWhiteSpace(token))
@@ -54,48 +49,6 @@ namespace FBMMultiMessenger.Components.Pages.Account
             if (!string.IsNullOrWhiteSpace(Message))
             {
                 Snackbar.Add(Message, Severity.Success);
-            }
-        }
-        private void InitializeOneSignal()
-        {
-            var appId = Configuration.GetValue<string>("OneSignal:AppId")!;
-            OneSignal.Debug.LogLevel = LogLevel.VERBOSE;
-
-            OneSignal.Initialize(appId);
-
-            OneSignal.Notifications.RequestPermissionAsync(true);
-
-            OneSignal.Notifications.Clicked += OnNotificationClicked;
-
-            // Optional
-            var playerId = OneSignal.User.PushSubscription.Id;
-            System.Diagnostics.Debug.WriteLine($"OneSignal Player ID: {playerId}");
-        }
-
-        private void OnNotificationClicked(object sender, NotificationClickedEventArgs e)
-        {
-            var data = e.Notification.AdditionalData;
-            var hasFbChatIdKey = data.TryGetValue("chatId", out var fbChatIdObj);
-            var hasSubscriptionExpiredKey = data.TryGetValue("isSubscriptionExpired", out var subscriptionExpiredObj);
-            var messageKey = data.TryGetValue("message", out var message);
-
-            if (data != null && hasFbChatIdKey && hasSubscriptionExpiredKey)
-            {
-                string fbChatId = fbChatIdObj!.ToString()!;
-                bool isParsed = bool.TryParse(subscriptionExpiredObj!.ToString(), out bool isSubscriptionExpired);
-
-                // Navigate to specific chat
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    if (!isSubscriptionExpired)
-                    {
-                        Navigation.NavigateTo($"/chat?isNotification=true&fbChatId={fbChatId}");
-                    }
-                    else
-                    {
-                        Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={message!.ToString()}");
-                    }
-                });
             }
         }
 

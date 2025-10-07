@@ -1,5 +1,5 @@
 ﻿using Azure.Core;
-using FBMMultiMessenger.Buisness.OneSignal;
+using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
@@ -24,9 +24,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
-        private readonly OneSignalNotificationService _oneSignalNotificationService;
+        private readonly OneSignalService _oneSignalNotificationService;
 
-        public ReceiveChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, OneSignalNotificationService oneSignalNotificationService)
+        public ReceiveChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, OneSignalService oneSignalNotificationService)
         {
             this._dbContext=dbContext;
             this._hubContext = hubContext;
@@ -107,13 +107,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 }
                 else
                 {
+                    // will send notification to andriod level via one signal.
                     await SendMobileNotificationAsync(request, isSubscriptionExpired: true);
                     responseMessage = "user's subscription has expired";
                 }
                 return BaseResponse<ReceiveChatModelResponse>.Success($"Message received, but the {responseMessage}. ", new ReceiveChatModelResponse());
             }
 
-            // will send notification to andriod level via one signal.
             await SendMobileNotificationAsync(request);
 
 
