@@ -41,7 +41,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
         }
         public async Task<BaseResponse<NotifyExtensionModelResponse>> Handle(NotifyExtensionModelRequest request, CancellationToken cancellationToken)
         {
-
             if (string.IsNullOrWhiteSpace(request.Message) && request.Files is null && request?.Files?.Count == 0)
             {
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Please enter a message or attach a file to send.");
@@ -54,23 +53,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                                            &&
                                            c.UserId == request.UserId, cancellationToken);
 
-
             if (chat is null)
             {
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid request, Chat does not exist");
             }
 
-            var subscriptions = chat.User.Subscriptions;
+            var today = DateTime.UtcNow;
+            var activeSubscription = chat.User.Subscriptions
+                                                            .Where(x => x.StartedAt <= today
+                                                                   &&
+                                                                   x.ExpiredAt > today)
+                                                            .OrderByDescending(x => x.StartedAt)
+                                                            .FirstOrDefault();
+
             var response = new NotifyExtensionModelResponse();
 
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
-            if (subscriptions is null)
+            if (activeSubscription is null)
             {
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
             }
 
-            var today = DateTime.Now;
-            var endDate = subscriptions?.LastOrDefault()?.ExpiredAt;
+
+            var endDate = activeSubscription?.ExpiredAt;
 
             if (today >= endDate)
             {
@@ -82,7 +87,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             List<string> mediaPaths = new List<string>();
 
             //Handle Media
-            if (request!.Files is not null)
+            if (request!.Files is not null && request.Files.Count != 0)
             {
                 string wwwRootPath = _webHostEnvironment.WebRootPath;
                 mediaPaths = HandleMediaFiles(request.Files, wwwRootPath);

@@ -11,6 +11,9 @@ main {
 .sidebar {
     background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
 }
+.navbar {
+    padding-bottom: 1rem !important;
+}
 
 .top-row {
     border-bottom: 1px solid #d6d5d5;

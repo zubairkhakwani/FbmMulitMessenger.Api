@@ -94,14 +94,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var subscriptions = chatReference?.User?.Subscriptions;
-            var today = DateTime.Now;
-            var endDate = subscriptions?.LastOrDefault()?.ExpiredAt;
+            var today = DateTime.UtcNow;
+            var activeSubscription = chatReference?.User?.Subscriptions
+                                                                  .Where(x => x.StartedAt <= today
+                                                                    &&
+                                                                   x.ExpiredAt > today)
+                                                                  .OrderByDescending(x => x.StartedAt)
+                                                                  .FirstOrDefault();
 
-            if (subscriptions is null || today >= endDate)
+            var endDate = activeSubscription?.ExpiredAt;
+
+            if (activeSubscription is null || today >= endDate)
             {
                 var responseMessage = string.Empty;
-                if (subscriptions is null)
+                if (activeSubscription is null)
                 {
                     responseMessage = "user does not have any active subscription. No notification was sent and the UI was not updated. ";
                 }
