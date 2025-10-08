@@ -2,16 +2,39 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager navigationManager
 
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(MauiProgram).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)">
+            <AuthorizeRouteView RouteData="@routeData">
                 <NotAuthorized>
                     @{
                         AuthenticationHelper.HandleUnAuthorizedAccess(context, navigationManager);
                     }
                 </NotAuthorized>
                 <Authorizing>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
+                    <p>authorizinggg..........</p>
                     <p>authorizinggg..........</p>
                 </Authorizing>
             </AuthorizeRouteView>

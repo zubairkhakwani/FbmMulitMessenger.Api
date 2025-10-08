@@ -1,24 +1,8 @@
 ﻿@using FBMMultiMessenger.Helpers
 @inherits LayoutComponentBase
-@inject NavigationManager navigationManager
 
 
-<Microsoft.AspNetCore.Components.Authorization.AuthorizeView Policy="ValidSubscription">
-    <NotAuthorized>
-        @{
-            AuthenticationHelper.HandleUnAuthorizedAccess(context, navigationManager);
-        }
-    </NotAuthorized>
-    <Authorizing>
-        <p>auth is happening..........</p>
-    </Authorizing>
-    <Authorized>
-        <FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
-
-            <MudThemeProvider />
-            <MudPopoverProvider />
-            <MudDialogProvider />
-            <MudSnackbarProvider />
+ <FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
 
             <div class="page">
 
@@ -44,7 +28,4 @@
             </div>
 
 
-        </FBMMultiMessenger.Components.Shared.CustomErrorBoundary>
-    </Authorized>
-    
-</Microsoft.AspNetCore.Components.Authorization.AuthorizeView>
+</FBMMultiMessenger.Components.Shared.CustomErrorBoundary> 

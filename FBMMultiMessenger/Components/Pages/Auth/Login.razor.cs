@@ -42,27 +42,6 @@ namespace FBMMultiMessenger.Components.Pages.Auth
         public string? ResponseError;
         private bool ShowLoader = false;
 
-        protected override async Task OnInitializedAsync()
-        {
-            string? token = await TokenProvider.GetTokenAsync();
-
-            if (!string.IsNullOrWhiteSpace(token))
-            {
-                ShowLoader = true;
-
-                var response = await SubscriptionSerivce.GetMySubscription<BaseResponse<GetMySubscriptionHttpResponse>>();
-                var isRedirectRequest = response.RedirectToPackages;
-                bool isSubscriptionExpired = response.Data?.IsExpired ?? false;
-
-                if (isRedirectRequest)
-                {
-                    Navigation.NavigateTo($"/packages?isExpired={isSubscriptionExpired}&message={response.Message}");
-                    return;
-                }
-
-                Navigation.NavigateTo("/Chat");
-            }
-        }
 
         public async Task OnValidPost()
         {

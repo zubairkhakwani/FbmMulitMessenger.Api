@@ -4,12 +4,7 @@ using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Services.IServices;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using OneSignalSDK.DotNet.Core.Notifications;
 using Color = MudBlazor.Color;
-using OneSignalSDK.DotNet;
-using Microsoft.Extensions.Configuration;
-using OneSignalSDK.DotNet.Core.Debug;
-using FBMMultiMessenger.Notification;
 
 
 namespace FBMMultiMessenger.Components.Pages.Account
@@ -64,7 +59,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
             }
             else
             {
-                Snackbar.Add(response?.Message??"Something went wrong when wrong while fetching your accounts details", Severity.Error);
+                Snackbar.Add(response?.Message ?? "Something went wrong when wrong while fetching your accounts details", Severity.Error);
             }
 
             table.Items = data;
@@ -115,7 +110,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
 
             var resposne = await AccountService.ToggleAccountStatus<BaseResponse<ToggleAccountStatusHttpResponse>>(accountId);
 
-            if (resposne is not null &&  resposne.IsSuccess)
+            if (resposne is not null && resposne.IsSuccess)
             {
                 Snackbar.Add(resposne.Message, Severity.Success);
                 await table.ReloadServerData();

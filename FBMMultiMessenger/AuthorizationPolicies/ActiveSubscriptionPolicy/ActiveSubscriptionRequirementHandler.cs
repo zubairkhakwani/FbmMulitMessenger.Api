@@ -13,12 +13,22 @@ namespace FBMMultiMessenger.AuthorizationPolicies.ActiveSubscriptionPolicy
             SubscriptionSerivce = subscriptionSerivce;
         }
 
+        private static DateTime _lastChecked = DateTime.MinValue;
+        private static bool _lastResult = false;
+        private static readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
+
         public ISubscriptionSerivce SubscriptionSerivce { get; }
 
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ActiveSubscriptionRequirement requirement)
         {
             if (!context.User.Identity.IsAuthenticated)
             {
+                return;
+            }
+
+            if (DateTime.Now - _lastChecked < _cacheDuration && _lastResult)
+            {
+                context.Succeed(requirement);
                 return;
             }
 
@@ -41,9 +51,14 @@ namespace FBMMultiMessenger.AuthorizationPolicies.ActiveSubscriptionPolicy
 
             if (hasActiveSubscription && !isSubscriptionExpired)
             {
-                await Task.Delay(5000);
+                _lastResult = true;
+                _lastChecked = DateTime.Now;
+
                 context.Succeed(requirement);
             }
+
+            _lastResult = false;
+            _lastChecked = DateTime.Now;
         }
     }
 }
