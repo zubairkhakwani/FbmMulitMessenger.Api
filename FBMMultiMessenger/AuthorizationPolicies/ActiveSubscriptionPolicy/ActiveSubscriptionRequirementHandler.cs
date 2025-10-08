@@ -15,7 +15,7 @@ namespace FBMMultiMessenger.AuthorizationPolicies.ActiveSubscriptionPolicy
 
         private static DateTime _lastChecked = DateTime.MinValue;
         private static bool _lastResult = false;
-        private static readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(60);
 
         public ISubscriptionSerivce SubscriptionSerivce { get; }
 
