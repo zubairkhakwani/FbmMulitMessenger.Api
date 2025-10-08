@@ -1,0 +1,165 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Mobile Sidebar */
+.mobile-sidebar {
+    height: 100vh;
+    background: white;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mobile Menu Header */
+.mobile-menu-header {
+    padding: 24px 20px;
+    background: linear-gradient(135deg, #0084ff 0%, #00a5ff 100%);
+    color: white;
+}
+
+.mobile-menu-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+    .mobile-menu-title-row :hover {
+        color: inherit;
+    }
+
+/* Mobile Close Button */
+.mobile-close-btn {
+    color: white;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+    .mobile-close-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+.mobile-menu-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.mobile-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-user-icon {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #0084ff;
+    font-weight: 600;
+}
+
+.mobile-user-name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Mobile Divider */
+.mobile-divider {
+    height: 1px;
+    background: #e4e6eb;
+    margin: 0;
+}
+
+/* Mobile Actions Section */
+.mobile-actions-section {
+    padding: 12px 0;
+    flex: 1;
+}
+
+.mobile-section-title {
+    padding: 12px 20px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #65676b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mobile-menu-item {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: #050505;
+    text-decoration: none;
+    width: 100%;
+    background: none;
+    font-family: inherit;
+    font-size: 15px;
+}
+
+    .mobile-menu-item:hover {
+        background: #f2f3f5;
+    }
+
+.mobile-menu-icon {
+    width: 36px;
+    height: 36px;
+    background: #e4e6eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.mobile-logout-btn {
+    margin-top: auto;
+    padding: 14px 20px;
+    background: #fff0f0;
+    color: #dc3545;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+    .mobile-logout-btn:hover {
+        background: #ffe5e5;
+    }
+
+    .mobile-logout-btn .mobile-menu-icon {
+        background: #dc3545;
+        color: white;
+    }

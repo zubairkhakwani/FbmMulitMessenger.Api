@@ -5,12 +5,14 @@
 }
 
 main {
+    position: relative;
     flex: 1;
 }
 
 .sidebar {
-    background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%);
+    background: var( --primary-bg-clr);
 }
+
 .navbar {
     padding-bottom: 1rem !important;
 }
