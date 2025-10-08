@@ -114,6 +114,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             await GetAccountChats();
 
             await HandlePushNotifacitonAsync();
+
         }
 
         private void OnBackButtonPressed()
@@ -258,6 +259,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             SelectedFbChatId = fbChatId;
 
             ChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
+            await JS.InvokeVoidAsync("registerEnterHandler", DotNetObjectReference.Create(this));
         }
 
         public async Task NotifyExtension()
@@ -293,13 +295,13 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
 
             ChatMessages.Add(newChat);
-
+            Message = string.Empty;
 
             //This is to call API 
             var request = new NotifyExtensionRequest()
             {
                 FbChatId = SelectedFbChatId!,
-                Message = Message,
+                Message = newChat.Message,
                 Files = newChat.FileData.Select(x => x.File).ToList()
             };
 
@@ -315,10 +317,11 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             else if (response.IsSuccess)
             {
                 //Snackbar.Add(response.Message, Severity.Success);
-                Message = string.Empty;
+                //Message = string.Empty;
                 PreviewMediaFiles = new List<FileData>();
                 return;
             }
+
 
             Snackbar.Add(response?.Message ?? "Hmm, looks like something went wrong please contact administrator.", Severity.Error);
         }
@@ -394,17 +397,13 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             }
         }
 
-        public async Task HandleKeyDownPress(KeyboardEventArgs e)
-        {
-            //if (e.Key == "Enter" && e.ShiftKey)
-            //{
-            //    Message+="\n";
-            //}
-            //if (e.Key == "Enter")
-            //{
-            //    await SendMessage();
-            //}
 
+        [JSInvokable]
+        public async Task HandleEnterKey(string message)
+        {
+            Message = message;
+            await NotifyExtension();
+            await InvokeAsync(StateHasChanged);
         }
 
         private void HandleSelectedChat(string fbChatId)

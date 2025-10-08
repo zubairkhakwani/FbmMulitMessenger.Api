@@ -21,23 +21,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
         }
         public async Task<BaseResponse<GetMySubscriptionModelResponse>> Handle(GetMySubscriptionModelRequest request, CancellationToken cancellationToken)
         {
-            var subscription = await _dbContext.Subscriptions
-                                               .FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken);
+            var activeSubscription = await _dbContext.Subscriptions
+                                               .Where(x => x.StartedAt <= DateTime.UtcNow && x.ExpiredAt > DateTime.UtcNow
+                                                      && x.UserId == request.UserId)
+                                               .OrderByDescending(x => x.StartedAt)
+                                               .FirstOrDefaultAsync(cancellationToken);
 
-            if (subscription is null)
+            if (activeSubscription is null)
             {
                 return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet.", redirectToPackages: true);
             }
 
             var today = DateTime.Now;
-            var expiredAt = subscription.ExpiredAt;
+            var expiredAt = activeSubscription.ExpiredAt;
 
             var response = new GetMySubscriptionModelResponse()
             {
-                MaxLimit = subscription.MaxLimit,
-                LimitUsed = subscription.LimitUsed,
-                StartedAt = subscription.StartedAt,
-                ExpiredAt = subscription.ExpiredAt,
+                MaxLimit = activeSubscription.MaxLimit,
+                LimitUsed = activeSubscription.LimitUsed,
+                StartedAt = activeSubscription.StartedAt,
+                ExpiredAt = activeSubscription.ExpiredAt,
             };
 
             if (today >= expiredAt)
