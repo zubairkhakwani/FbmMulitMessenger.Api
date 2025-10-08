@@ -49,16 +49,18 @@ namespace FBMMultiMessenger.AuthorizationPolicies.ActiveSubscriptionPolicy
                 identity?.AddClaim(new Claim("isSubscriptionExpired", $"{isSubscriptionExpired}"));
             }
 
-            if (hasActiveSubscription && !isSubscriptionExpired)
+            if (!hasActiveSubscription)
             {
-                _lastResult = true;
+                _lastResult = false;
                 _lastChecked = DateTime.Now;
 
-                context.Succeed(requirement);
+                return;
             }
 
-            _lastResult = false;
+            _lastResult = true;
             _lastChecked = DateTime.Now;
+
+            context.Succeed(requirement);
         }
     }
 }

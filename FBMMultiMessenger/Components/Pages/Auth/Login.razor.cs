@@ -42,6 +42,10 @@ namespace FBMMultiMessenger.Components.Pages.Auth
         public string? ResponseError;
         private bool ShowLoader = false;
 
+        protected override async Task OnInitializedAsync()
+        {
+            
+        }
 
         public async Task OnValidPost()
         {
