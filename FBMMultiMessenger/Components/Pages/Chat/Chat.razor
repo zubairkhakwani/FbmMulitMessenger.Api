@@ -1,6 +1,8 @@
 ﻿@page "/"
 @page "/Chat"
+@using Microsoft.AspNetCore.Authorization
 @layout EmptyLayout
+
 
 @attribute [Authorize(Policy = "ValidSubscription")]
 
@@ -241,7 +243,7 @@
                 <div class="input-container">
                     <InputFile type="file" id="fileInput" accept="image/*,video/*" multiple style="display: none;" onchange="HandleFileUpload" />
                     <label for="fileInput" class="file-upload-btn" title="Attach files">📎</label>
-                    <textarea @bind="Message"  class="message-input" placeholder="Type a message..." rows="1"></textarea>
+                    <textarea @bind="Message" class="message-input" placeholder="Type a message..." rows="1"></textarea>
                     <button @onclick="() => NotifyExtension()" class="send-button">➤</button>
                 </div>
             }
@@ -251,4 +253,8 @@
     </div>
 </div>
 
+@if (isAndriodPlatform && SidebarZIndex > MainChatZIndex)
+{
+    <MobileNav></MobileNav>
+}
 <script src="/Components/Pages/Chat/Chat.razor.js"></script>

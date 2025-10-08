@@ -1,5 +1,4 @@
-﻿
-using FBMMultiMessenger.Contracts.Contracts.Account;
+﻿using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
@@ -9,11 +8,9 @@ using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.SignalR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using OneSignalSDK.DotNet;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 
@@ -97,7 +94,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         public List<GetMyChatsHttpResponse> AccountChats = new List<GetMyChatsHttpResponse>();
 
         public List<GeChatMessagesHttpResponse> ChatMessages = new List<GeChatMessagesHttpResponse>();
-
         protected override async Task OnInitializedAsync()
         {
             isAndriodPlatform =  DeviceInfo.Platform != DevicePlatform.WinUI;
@@ -116,6 +112,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             await Task.WhenAll(taskSignalR, taskAccountsQuery);
             await HandlePushNotifacitonAsync();
 
+            await JS.InvokeVoidAsync("registerEnterHandler", DotNetObjectReference.Create(this));
         }
 
         private void OnBackButtonPressed()
@@ -219,10 +216,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 ChatMessages.Add(receivedMessage);
             }
 
-            //Display newest message on top.
-            //MyAccountChats =  MyAccountChats.OrderByDescending(x => x.StartedAt).ToList();
-
-            //Force UI to reload, so our changes reflect.
             await InvokeAsync(StateHasChanged);
 
             await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
@@ -260,7 +253,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             SelectedFbChatId = fbChatId;
 
             ChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
-            await JS.InvokeVoidAsync("registerEnterHandler", DotNetObjectReference.Create(this));
         }
 
         public async Task NotifyExtension()
@@ -435,7 +427,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             // Displays the main chat view on mobile by bringing the chat section
             // to the front and hiding the sidebar.
             SidebarZIndex = 0;
-            MainChatZIndex = 100;
+            MainChatZIndex = 110;
 
         }
 
