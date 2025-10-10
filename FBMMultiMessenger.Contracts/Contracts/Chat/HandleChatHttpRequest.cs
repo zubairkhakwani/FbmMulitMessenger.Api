@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Chat
 {
-    public class ReceiveChatHttpRequest
+    public class HandleChatHttpRequest
     {
 
         //[Required]
@@ -30,14 +31,17 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public decimal? FbListingPrice { get; set; }
 
         // [Required]
-        public List<string>? Messages { get; set; } = null!;
+        public List<string>? Messages { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+
+        public bool IsSent { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
+
     }
 
-    public class ReceiveChatHttpResponse
+    public class HandleChatHttpResponse
     {
         public int ChatId { get; set; }
         public string FbUserId { get; set; } = null!;
@@ -62,6 +66,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+
+        public bool IsSent { get; set; }
 
         public DateTime StartedAt { get; set; }
 

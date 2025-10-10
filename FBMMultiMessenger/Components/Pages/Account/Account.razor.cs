@@ -25,7 +25,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [Inject]
         private ISnackbar Snackbar { get; set; }
 
-
+        private bool IsMobilePlatform = true;
 
         [SupplyParameterFromQuery]
         public string? Message { get; set; }
@@ -67,6 +67,12 @@ namespace FBMMultiMessenger.Components.Pages.Account
         }
         public async Task AddNewAccount()
         {
+            if (IsMobilePlatform)
+            {
+                Navigation.NavigateTo("/create/account");
+                return;
+            }
+
             var parameters = new DialogParameters();
 
             var result = await DialogService.Show<UpsertAccount>("", parameters).Result;
@@ -79,16 +85,22 @@ namespace FBMMultiMessenger.Components.Pages.Account
 
         public async Task EditAccount(int accountId, string Name, string Cookie)
         {
+            if (IsMobilePlatform)
+            {
+                Navigation.NavigateTo($"/edit/{accountId}/account/{Name}/{Cookie}");
+                return;
+            }
+
             var parameters = new DialogParameters();
-            parameters.Add("AccountId", accountId);
+            parameters.Add("AccountId", accountId.ToString());
             parameters.Add("Name", Name);
             parameters.Add("Cookie", Cookie);
+
             var result = await DialogService.Show<UpsertAccount>("", parameters).Result;
             if (!result.Canceled)
             {
                 await table.ReloadServerData();
             }
-
         }
 
         public async Task ToggleAccountStatus(int accountId, bool isActive)

@@ -104,7 +104,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             if (!isExpired)
             {
                 //Notify the Client only if subscription is active.
-                var receivedChat = new ReceiveChatHttpResponse()
+                var receivedChat = new HandleChatHttpResponse()
                 {
                     Message = request.Messages.FirstOrDefault()!,
                     ChatId = chatReference!.Id,

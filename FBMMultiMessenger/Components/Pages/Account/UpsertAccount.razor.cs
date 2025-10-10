@@ -19,7 +19,7 @@ namespace FBMMultiMessenger.Components.Pages.Account
         public PopupFormSettings popupFormSettings { get; set; }
 
         [Parameter]
-        public int? AccountId { get; set; }
+        public string? AccountId { get; set; }
 
         [Parameter]
         public string Name { get; set; }
@@ -43,28 +43,45 @@ namespace FBMMultiMessenger.Components.Pages.Account
         [Inject]
         private IJSRuntime JS { get; set; }
 
+        private bool IsMobilePlatform = true;
+
+        private string Title = "Create Account";
+        private string SubTitle = "Join our comunity today";
+        private string Heading = "Get Started";
+        private string Description = "Fill in your details to create your account";
+        private string ButtonText = "Create Account";
 
         protected override void OnInitialized()
         {
-            popupFormSettings = new PopupFormSettings()
+            if (!IsMobilePlatform)
             {
-                Title = $"{(AccountId is null ? "Add" : "Edit")} Account",
-                Icon = Icons.Material.TwoTone.Payments,
-                ContentHeight = "390px",
-                PopupView = PopupView.Single
-            };
+                popupFormSettings = new PopupFormSettings()
+                {
+                    Title = $"{(AccountId is null ? "Add" : "Edit")} Account",
+                    Icon = Icons.Material.TwoTone.Payments,
+                    ContentHeight = "390px",
+                    PopupView = PopupView.Single
+                };
+            }
             if (AccountId is not null)
             {
                 model.Name = Name;
                 model.Cookie = Cookie;
+                Title = "Edit Account";
+                SubTitle = "Update your account details";
+                Heading = "Update Information";
+                Description = "Modify your account information below";
+                ButtonText = "Update Account";
             }
         }
 
         public async Task OnValidSubmit()
         {
-            var response = await AccountService.UpsertAccountAsync<BaseResponse<UpsertAccountHttpResponse>>(model, AccountId);
+            int? accountId = string.IsNullOrWhiteSpace(AccountId) ? null : Convert.ToInt32(AccountId);
 
-            mudDialog.Close(DialogResult.Ok(true));
+            var response = await AccountService.UpsertAccountAsync<BaseResponse<UpsertAccountHttpResponse>>(model, accountId);
+
+            mudDialog?.Close(DialogResult.Ok(true));
 
             if (!response.IsSuccess && response.Data is not null && response.Data.IsLimitExceeded)
             {
@@ -81,6 +98,10 @@ namespace FBMMultiMessenger.Components.Pages.Account
             else
             {
                 Snackbar.Add(response?.Message ?? "Something went wrong when adding account, please try later.", Severity.Success);
+                if (IsMobilePlatform)
+                {
+                    Navigation.NavigateTo("/Account");
+                }
                 return;
             }
 

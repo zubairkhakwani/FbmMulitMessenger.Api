@@ -50,17 +50,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 Token = token.accessToken
             };
 
+            var today = DateTime.Now;
+            var activeSubscription = user.Subscriptions?
+                                                .Where(x => x.StartedAt <= today && x.ExpiredAt > today)
+                                                .OrderByDescending(x => x.StartedAt)
+                                                .FirstOrDefault();
 
-            var subscriptions = user.Subscriptions;
-
-            if (subscriptions is null)
+            if (activeSubscription is null)
             {
                 return BaseResponse<LoginModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true, response);
             }
 
-            var today = DateTime.Now;
-            var expiredAt = subscriptions.LastOrDefault()!.ExpiredAt;
-
+            var expiredAt = activeSubscription.ExpiredAt;
             if (today >= expiredAt)
             {
                 response.IsSubscriptionExpired = true;

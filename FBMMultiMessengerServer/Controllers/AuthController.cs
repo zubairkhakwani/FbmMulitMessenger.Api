@@ -3,10 +3,9 @@ using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Response;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessengerServer.Controllers
+namespace FBMMultiMessenger.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -17,8 +16,8 @@ namespace FBMMultiMessengerServer.Controllers
 
         public AuthController(IMediator mediator, IMapper mapper)
         {
-            this._mediator=mediator;
-            this._mapper=mapper;
+            _mediator=mediator;
+            _mapper=mapper;
         }
 
         [HttpPost("Login")]

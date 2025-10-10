@@ -144,12 +144,25 @@
                     var isMessageFailedToSend = !chatMessage.IsSent && !chatMessage.IsReceived;
                     var failedMessageClass = isMessageFailedToSend ? "failed" : "";
 
-                    @if (chatMessage.IsTextMessage)
+                    @if (chatMessage.IsTextMessage || chatMessage.IsAudioMessage)
                     {
                         <div class="message @messageClass @failedMessageClass">
                             <div style="white-space: pre-wrap;" class="message-bubble">
+                                @if (chatMessage.IsAudioMessage)
+                                {
+                                    <audio controls>
+                                        <source src="@chatMessage.Message" type="audio/mpeg">
+                                        Your browser does not support the audio tag.
+                                    </audio>
+                                }
+                                else
+                                {
                                 @chatMessage.Message
+                                }
                             </div>
+
+
+
                             <div class="message-footer">
                                 <span class="message-time">@chatMessage.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
 
@@ -167,14 +180,13 @@
                                             <span class="status-icon">✓</span> Sent
                                         </span>
                                     }
-
                                 }
 
                             </div>
                         </div>
                     }
 
-                    @if (chatMessage.IsImageMessage)
+                    @if (chatMessage.FileData.Any())
                     {
                         var row = chatMessage.FileData.Count > 1 ? "flex-row" : "";
 
@@ -183,7 +195,17 @@
                             {
                                 <div class="message @messageClass  @failedMessageClass">
                                     <div>
-                                        <img src="@file.FileUrl" />
+                                        @if (file.IsVideo)
+                                        {
+                                            <video width="320" height="240" controls>
+                                                <source src="@file.FileUrl" type="video/mp4">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        }
+                                        else
+                                        {
+                                            <img src="@file.FileUrl" />
+                                        }
                                     </div>
                                     <div class="message-footer">
                                         <span class="message-time">@chatMessage.CreatedAt.ToLocalTime().ToString("hh:mm tt")</span>
@@ -206,8 +228,6 @@
                                     </div>
                                 </div>
                             }
-
-
                         </div>
                     }
                 }

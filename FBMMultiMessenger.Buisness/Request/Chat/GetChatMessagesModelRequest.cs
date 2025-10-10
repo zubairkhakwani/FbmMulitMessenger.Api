@@ -26,16 +26,5 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public DateTime CreatedAt { get; set; }
-
-        public List<FileDataModelResponse> FileData { get; set; } = new List<FileDataModelResponse>();
     }
-    public class FileDataModelResponse
-    {
-        public string FileUrl { get; set; } = string.Empty;
-        public string FileName { get; set; } = string.Empty;
-        public bool IsVideo { get; set; }
-
-    }
-
-
 }

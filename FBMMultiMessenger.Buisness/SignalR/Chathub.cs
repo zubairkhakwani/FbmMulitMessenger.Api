@@ -1,27 +1,33 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
-using FBMMultiMessenger.Contracts.Contracts.Extension;
-using MediatR;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.SignalR
 {
     public class ChatHub : Hub
     {
         private static Dictionary<string, string> _connections = new Dictionary<string, string>();
+        public static Dictionary<string, string> _devices = new Dictionary<string, string>();
+
         public async Task RegisterUser(string userId)
         {
             _connections[userId] = Context.ConnectionId;
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
         }
 
-        public async Task MessageReceived(string toUserId, ReceiveChatHttpResponse message)
+        public async Task MessageReceived(string toUserId, HandleChatHttpResponse message)
         {
             if (_connections.ContainsKey(toUserId))
             {
                 await Clients.Client(_connections[toUserId]).SendAsync("ReceiveMessage", message);
+            }
+        }
+
+        public void HandleNotification(string deviceId, string fbChatId)
+        {
+            if (!_devices.ContainsKey(deviceId))
+            {
+                _devices.Add(deviceId, fbChatId);
             }
         }
 

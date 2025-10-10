@@ -12,6 +12,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using OneSignalSDK.DotNet;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 
 namespace FBMMultiMessenger.Components.Pages.Chat
@@ -110,7 +111,8 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             var taskAccountsQuery = GetAccountChats();
 
             await Task.WhenAll(taskSignalR, taskAccountsQuery);
-            await HandlePushNotifacitonAsync();
+
+            await ConfigurePushNotificationsAsync();
 
             await JS.InvokeVoidAsync("registerEnterHandler", DotNetObjectReference.Create(this));
         }
@@ -147,20 +149,37 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
 
 
-        private List<FileData> GetImages(string message)
+        private List<FileData> GetFileData(string message)
         {
-            var imagesList = JsonSerializer.Deserialize<List<string>>(message);
+            var mediaUrls = JsonSerializer.Deserialize<List<string>>(message);
 
-            var fileModel = imagesList.Select(i => new FileData()
+            var fileModel = mediaUrls?.Select(url => new FileData()
             {
-                FileUrl = i
+                FileUrl = url,
+                IsVideo = IsVideo(url)
 
             }).ToList();
 
-            return fileModel;
+            return fileModel ?? new List<FileData>();
         }
 
-        private async Task HandleMessageReceivedAsync(ReceiveChatHttpResponse receivedChat)
+        private bool IsVideo(string url)
+        {
+            var videoExtensions = new[] { ".mp4", ".webm", ".ogg", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".m4v" };
+
+            try
+            {
+                var uri = new Uri(url);
+                var extension = Path.GetExtension(uri.AbsolutePath).ToLowerInvariant();
+                return videoExtensions.Contains(extension);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task HandleMessageReceivedAsync(HandleChatHttpResponse receivedChat)
         {
             var isChatPresent = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
             if (isChatPresent is null)
@@ -181,7 +200,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             }
 
-            //If the message that we received fbChatId is not opened so we add a unread badge and show it on top of the chats,otherwise we add new chat so it can be displayed in the messages.
+            //If the message that we received fbChatId is not opened so we add an unread badge and show it on top of the chat.
             if (receivedChat.FbChatId != SelectedFbChatId)
             {
                 var myAccountChat = FilteredAccountChats.FirstOrDefault(x => x.FbChatId == receivedChat.FbChatId);
@@ -190,6 +209,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                     FilteredAccountChats.Remove(myAccountChat);
                     myAccountChat.UnReadCount += 1;
                     FilteredAccountChats.Insert(0, myAccountChat); //new message should display on top.
+                    await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
                 }
             }
             else
@@ -197,33 +217,35 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 //actual chat message
                 var receivedMessage = new GeChatMessagesHttpResponse()
                 {
-                    IsReceived = true,
+                    IsReceived = !receivedChat.IsSent,
                     IsTextMessage = receivedChat.IsTextMessage,
                     IsImageMessage = receivedChat.IsImageMessage,
                     IsVideoMessage = receivedChat.IsVideoMessage,
-                    CreatedAt = DateTime.UtcNow
+                    IsAudioMessage = receivedChat.IsAudioMessage,
+                    CreatedAt = receivedChat.StartedAt
                 };
 
-                if (receivedChat.IsTextMessage)
+                if (receivedChat.IsImageMessage || receivedChat.IsVideoMessage)
+                {
+                    receivedMessage.FileData = GetFileData(receivedChat.Message);
+                }
+                else
                 {
                     receivedMessage.Message = receivedChat.Message;
-                }
-                else if (receivedChat.IsImageMessage)
-                {
-                    receivedMessage.FileData = GetImages(receivedChat.Message);
                 }
 
                 ChatMessages.Add(receivedMessage);
             }
 
             await InvokeAsync(StateHasChanged);
-
-            await JS.InvokeVoidAsync("myInterop.playNotificationSound", 1);
         }
 
         public async Task LoadChatMessage(string fbChatId)
         {
             HandleSelectedChat(fbChatId);
+
+            await HandlePushNotification(fbChatId);
+
 
             if (isAndriodPlatform)
             {
@@ -236,8 +258,6 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             {
                 //Making the unread messages to read
                 myAccountChats.UnReadCount = 0;
-
-                //Force UI to reload, so our changes reflect.
                 await InvokeAsync(StateHasChanged);
             }
 
@@ -252,7 +272,26 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
             SelectedFbChatId = fbChatId;
 
+            var responseChatMesasge = response?.Data ?? new List<GeChatMessagesHttpResponse>();
+
+            foreach (var chatMessge in responseChatMesasge)
+            {
+                if (chatMessge.IsImageMessage || chatMessge.IsVideoMessage)
+                {
+                    chatMessge.FileData = GetFileData(chatMessge.Message);
+                }
+            }
+
             ChatMessages  = response?.Data ?? new List<GeChatMessagesHttpResponse>();
+        }
+
+        public async Task HandlePushNotification(string fbChatId)
+        {
+            if (isAndriodPlatform)
+            {
+                var deviceId = OneSignal.User.PushSubscription.Id;
+                await SignalRChatService.HandleNotification(deviceId, fbChatId);
+            }
         }
 
         public async Task NotifyExtension()
@@ -431,7 +470,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
 
         }
 
-        private async Task HandlePushNotifacitonAsync()
+        private async Task ConfigurePushNotificationsAsync()
         {
             if (isAndriodPlatform)
             {
@@ -443,6 +482,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 Console.WriteLine("Player Id :", playerId);
             }
         }
+
         public async Task ConnectToSignalR()
         {
             if (!SignalRChatService.IsConnected)
@@ -452,6 +492,7 @@ namespace FBMMultiMessenger.Components.Pages.Chat
                 SignalRChatService.OnMessageReceived += async (msg) => await HandleMessageReceivedAsync(msg);
             }
         }
+
         private void FilterChat()
         {
             var filteredAccountChats = AccountChats.Where(x => x.FbLisFbListingTitle.ToLower().Contains(FilterKeyword)
@@ -465,9 +506,11 @@ namespace FBMMultiMessenger.Components.Pages.Chat
             StateHasChanged();
 
         }
+
         public void Dispose()
         {
             BackButtonService.BackButtonPressed -= OnBackButtonPressed;
+            SignalRChatService.DisconnectAsync();
         }
     }
 }

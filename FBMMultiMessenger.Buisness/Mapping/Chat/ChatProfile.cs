@@ -16,14 +16,13 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
     {
         public ChatProfile()
         {
-            CreateMap<ReceiveChatHttpRequest, ReceiveChatModelRequest>();
+            CreateMap<HandleChatHttpRequest, HandleChatModelRequest>();
 
-            CreateMap<ReceiveChatModelResponse, ReceiveChatHttpResponse>();
-            CreateMap<BaseResponse<ReceiveChatModelResponse>, BaseResponse<ReceiveChatHttpResponse>>();
+            CreateMap<HandleChatModelResponse, HandleChatHttpResponse>();
+            CreateMap<BaseResponse<HandleChatModelResponse>, BaseResponse<HandleChatHttpResponse>>();
 
             CreateMap<GetChatMessagesModelResponse, GeChatMessagesHttpResponse>();
             CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GeChatMessagesHttpResponse>>>();
-            CreateMap<FileDataModelResponse, FileData>();
 
 
             CreateMap<NotifyExtensionHttpRequest, NotifyExtensionModelRequest>();

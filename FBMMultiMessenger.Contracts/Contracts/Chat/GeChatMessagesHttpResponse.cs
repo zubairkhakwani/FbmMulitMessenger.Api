@@ -32,6 +32,5 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsVideo { get; set; }
 
         public IBrowserFile File { get; set; } = null!;
-
     }
 }
