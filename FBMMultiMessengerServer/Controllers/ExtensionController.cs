@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FBMMultiMessenger.Server.Controllers
@@ -28,7 +26,7 @@ namespace FBMMultiMessenger.Server.Controllers
 
         [Authorize]
         [HttpPost("notify")]
-        public async Task<BaseResponse<NotifyExtensionHttpResponse>> ReceiveChatMessage([FromForm] NotifyExtensionHttpRequest httpRequest)
+        public async Task<BaseResponse<NotifyExtensionHttpResponse>> Notify([FromForm] NotifyExtensionHttpRequest httpRequest)
         {
             NotifyExtensionModelRequest request = _mapper.Map<NotifyExtensionModelRequest>(httpRequest);
             var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);

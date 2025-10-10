@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Request.Chat
 {
-    public class ReceiveChatModelRequest : IRequest<BaseResponse<ReceiveChatModelResponse>>
+    public class HandleChatModelRequest : IRequest<BaseResponse<HandleChatModelResponse>>
     {
         public int UserId { get; set; }
         public required string FbChatId { get; set; }
@@ -18,15 +18,15 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public required string FbListingTitle { get; set; }
         public required decimal FbListingPrice { get; set; }
         public required string FbListingLocation { get; set; }
-        public required List<string> Messages{ get; set; }
+        public required List<string> Messages { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
-
+        public bool IsSent { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
     }
 
-    public class ReceiveChatModelResponse
+    public class HandleChatModelResponse
     {
 
     }

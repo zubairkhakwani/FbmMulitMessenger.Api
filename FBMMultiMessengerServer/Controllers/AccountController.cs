@@ -1,15 +1,12 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
-using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Account;
-using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Response;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessengerServer.Controllers
+namespace FBMMultiMessenger.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -20,8 +17,8 @@ namespace FBMMultiMessengerServer.Controllers
 
         public AccountController(IMediator mediator, IMapper mapper)
         {
-            this._mediator=mediator;
-            this._mapper=mapper;
+            _mediator=mediator;
+            _mapper=mapper;
         }
 
         [Authorize]

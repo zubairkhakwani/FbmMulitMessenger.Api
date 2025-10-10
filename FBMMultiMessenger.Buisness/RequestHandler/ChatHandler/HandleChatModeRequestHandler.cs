@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -20,19 +21,21 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
-    internal class ReceiveChatModeRequestHandler : IRequestHandler<ReceiveChatModelRequest, BaseResponse<ReceiveChatModelResponse>>
+    internal class HandleChatModeRequestHandler : IRequestHandler<HandleChatModelRequest, BaseResponse<HandleChatModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ChatHub _chatHub;
         private readonly OneSignalService _oneSignalNotificationService;
 
-        public ReceiveChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, OneSignalService oneSignalNotificationService)
+        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, OneSignalService oneSignalNotificationService)
         {
             this._dbContext=dbContext;
             this._hubContext = hubContext;
+            this._chatHub = chatHub;
             this._oneSignalNotificationService=oneSignalNotificationService;
         }
-        public async Task<BaseResponse<ReceiveChatModelResponse>> Handle(ReceiveChatModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
             var chat = await _dbContext.Chats
                                        .Include(u => u.User)
@@ -68,26 +71,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var dbMessage = string.Empty;
 
-            if (request.IsImageMessage)
+            if (request.IsImageMessage || request.IsVideoMessage)
             {
                 dbMessage = JsonSerializer.Serialize(request.Messages);
             }
-            else if (request.IsTextMessage)
+            else
             {
-                dbMessage = request.Messages.FirstOrDefault()?.Trim();
+                dbMessage = request.Messages.FirstOrDefault() ?? string.Empty;
             }
 
             var newChatMessage = new ChatMessages()
             {
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
-                IsReceived = true,
-                IsRead = false,
+                IsReceived = !request.IsSent,
+                IsRead = request.IsSent,
+                IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -95,60 +98,56 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             var today = DateTime.UtcNow;
-            var activeSubscription = chatReference?.User?.Subscriptions
+            var activeSubscription = chatReference?.User?.Subscriptions?
                                                                   .Where(x => x.StartedAt <= today
                                                                     &&
                                                                    x.ExpiredAt > today)
                                                                   .OrderByDescending(x => x.StartedAt)
                                                                   .FirstOrDefault();
-
-            var endDate = activeSubscription?.ExpiredAt;
-
-            if (activeSubscription is null || today >= endDate)
+            if (activeSubscription is null)
             {
-                var responseMessage = string.Empty;
-                if (activeSubscription is null)
-                {
-                    responseMessage = "user does not have any active subscription. No notification was sent and the UI was not updated. ";
-                }
-                else
-                {
-                    // will send notification to andriod level via one signal.
-                    await SendMobileNotificationAsync(request, isSubscriptionExpired: true);
-                    responseMessage = "user's subscription has expired";
-                }
-                return BaseResponse<ReceiveChatModelResponse>.Success($"Message received, but the {responseMessage}. ", new ReceiveChatModelResponse());
+                return BaseResponse<HandleChatModelResponse>.Success($"Message received, but the user does not have any active subscription. No notification was sent and the UI was not updated.", new HandleChatModelResponse());
             }
 
-            await SendMobileNotificationAsync(request);
+            var endDate = activeSubscription.ExpiredAt;
+            var isSubscriptionExpired = today >= endDate;
 
-
-            //Inform the client that the message has been received via signalR.
-            var receivedChat = new ReceiveChatHttpResponse()
+            if (!request.IsSent)
             {
-                Message = dbMessage,
-                ChatId = chat.Id,
-                FbChatId = request.FbChatId,
-                FbAccountId = request.FbAccountId,
-                FbListingId = request.FbListingId,
-                FbListingTitle = chat.FbListingTitle!,
-                FbListingLocation = chat.FbListingLocation!,
-                FbListingPrice = chat.FbListingPrice!.Value,
-                IsTextMessage = request.IsTextMessage,
-                IsVideoMessage =request.IsVideoMessage,
-                IsImageMessage = request.IsImageMessage,
-                IsAudioMessage = request.IsAudioMessage,
-                StartedAt = DateTime.UtcNow,
-            };
+                await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
+            }
 
-            //TODO
-            await _hubContext.Clients.Group("User123")
-                .SendAsync("ReceiveMessage", receivedChat, cancellationToken);
+            if (!isSubscriptionExpired)
+            {
+                //Inform the client via signalR.
+                var receivedChat = new HandleChatHttpResponse()
+                {
+                    Message = dbMessage,
+                    ChatId = chat.Id,
+                    FbChatId = request.FbChatId,
+                    FbAccountId = request.FbAccountId,
+                    FbListingId = request.FbListingId,
+                    FbListingTitle = chat.FbListingTitle!,
+                    FbListingLocation = chat.FbListingLocation!,
+                    FbListingPrice = chat.FbListingPrice!.Value,
+                    IsTextMessage = request.IsTextMessage,
+                    IsVideoMessage =request.IsVideoMessage,
+                    IsImageMessage = request.IsImageMessage,
+                    IsAudioMessage = request.IsAudioMessage,
+                    StartedAt = newChatMessage.CreatedAt
+                };
 
+                //TODO
+                var signalRMethod = request.IsSent ? "SendMessage" : "ReceiveMessage";
 
-            return BaseResponse<ReceiveChatModelResponse>.Success($"Message has been received successfully", new ReceiveChatModelResponse());
+                await _hubContext.Clients.Group("User123")
+                    .SendAsync(signalRMethod, receivedChat, cancellationToken);
+            }
+
+            var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
+            return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
-        private async Task SendMobileNotificationAsync(ReceiveChatModelRequest request, bool isSubscriptionExpired = false)
+        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int userId, bool isSubscriptionExpired = false)
         {
             string message = string.Empty;
 
@@ -171,11 +170,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 request.FbChatId = string.Empty;
             }
 
+            //var devices = ChatHub._devices;
+            //var device = devices.FirstOrDefault(x => x.Key == request.FbChatId);
+
 
             await _oneSignalNotificationService.SendMessageNotification(
-                userId: request.UserId.ToString(),
+                userId: userId.ToString(),
                 message: message,
-                senderName: "FBM MULTI MESSENGER",
+                senderName: "Fbm Multi Messenger",
                 chatId: request.FbChatId,
                 isSubscriptionExpired: isSubscriptionExpired
             );

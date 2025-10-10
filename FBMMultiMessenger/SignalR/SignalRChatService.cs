@@ -14,7 +14,7 @@ namespace FBMMultiMessenger.SignalR
     public class SignalRChatService
     {
         private HubConnection _hubConnection;
-        public event Func<ReceiveChatHttpResponse, Task> OnMessageReceived;
+        public event Func<HandleChatHttpResponse, Task> OnMessageReceived;
 
         public bool IsConnected => _hubConnection?.State == HubConnectionState.Connected;
 
@@ -35,7 +35,7 @@ namespace FBMMultiMessenger.SignalR
                     .WithUrl($"{_baseURL}chathub")
                     .Build();
 
-                _hubConnection.On<ReceiveChatHttpResponse>("ReceiveMessage", async (messageData) =>
+                _hubConnection.On<HandleChatHttpResponse>("ReceiveMessage", async (messageData) =>
                 {
                     if (OnMessageReceived != null)
                     {
@@ -51,6 +51,11 @@ namespace FBMMultiMessenger.SignalR
             {
                 Console.WriteLine("Something went wrong when connecting user to signalR");
             }
+        }
+
+        public async Task HandleNotification(string deviceId, string fbChatId)
+        {
+            await _hubConnection.SendAsync("HandleNotification", deviceId, fbChatId);
         }
 
         public async Task DisconnectAsync()

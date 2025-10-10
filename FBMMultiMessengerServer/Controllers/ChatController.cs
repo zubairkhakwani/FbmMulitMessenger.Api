@@ -1,15 +1,10 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Chat;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
-using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Response;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Server.Controllers
 {
@@ -26,39 +21,18 @@ namespace FBMMultiMessenger.Server.Controllers
             this._mapper=mapper;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="httpRequest"></param>
-        /// <returns></returns>
-        
 
         [Authorize]
-        [HttpPost("receive")]
-        public async Task<BaseResponse<ReceiveChatHttpResponse>> Receive([FromBody] ReceiveChatHttpRequest httpRequest)
+        [HttpPost("message")]
+        public async Task<BaseResponse<HandleChatHttpResponse>> Receive([FromBody] HandleChatHttpRequest httpRequest)
         {
-            ReceiveChatModelRequest request = _mapper.Map<ReceiveChatModelRequest>(httpRequest);
+            HandleChatModelRequest request = _mapper.Map<HandleChatModelRequest>(httpRequest);
             var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
             request.UserId = userId;
 
-            BaseResponse<ReceiveChatModelResponse> response = await _mediator.Send(request);
+            BaseResponse<HandleChatModelResponse> response = await _mediator.Send(request);
 
-            BaseResponse<ReceiveChatHttpResponse> httpResponse = _mapper.Map<BaseResponse<ReceiveChatHttpResponse>>(response);
-
-            return httpResponse;
-        }
-
-        [Authorize]
-        [HttpPost("send")]
-        public async Task<BaseResponse<SendChatMessageModelResponse>> Send([FromBody] SendChatMessagesHttpRequest httpRequest)
-        {
-            SendChatMessageModelRequest request = _mapper.Map<SendChatMessageModelRequest>(httpRequest);
-            var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            request.UserId = userId;
-
-            BaseResponse<SendChatMessageModelResponse> response = await _mediator.Send(request);
-
-            BaseResponse<SendChatMessageModelResponse> httpResponse = _mapper.Map<BaseResponse<SendChatMessageModelResponse>>(response);
+            BaseResponse<HandleChatHttpResponse> httpResponse = _mapper.Map<BaseResponse<HandleChatHttpResponse>>(response);
 
             return httpResponse;
         }
@@ -80,8 +54,5 @@ namespace FBMMultiMessenger.Server.Controllers
 
             return httpResponse;
         }
-
-
-
     }
 }

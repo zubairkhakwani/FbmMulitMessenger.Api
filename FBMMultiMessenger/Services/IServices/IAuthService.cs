@@ -12,5 +12,7 @@ namespace FBMMultiMessenger.Services.IServices
         Task<T> LoginAsync<T>(LoginHttpRequest httpRequest) where T : class;
         Task<T> RegisterAsync<T>(RegisterHttpRequest httpRequest) where T : class;
 
+        Task Logout();
+
     }
 }

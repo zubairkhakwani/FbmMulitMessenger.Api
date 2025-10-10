@@ -33,7 +33,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
 
             var chatMessages = await _dbContext.ChatMessages
-                                                        .Include(c=>c.Chat)
+                                                        .Include(c => c.Chat)
                                                         .Where(cm => cm.Chat.FBChatId == request.FbChatId
                                                               &&
                                                               cm.Chat.UserId == request.UserId)
@@ -43,37 +43,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 FbChatId = x.Chat.FBChatId,
                 IsReceived = x.IsReceived,
-                Message = x.IsTextMessage ? x.Message : "",
+                Message = x.Message,
                 IsTextMessage = x.IsTextMessage,
                 IsImageMessage = x.IsImageMessage,
                 IsVideoMessage = x.IsVideoMessage,
                 IsAudioMessage = x.IsAudioMessage,
                 IsSent = x.IsSent,
                 CreatedAt = x.CreatedAt,
-                FileData = GetImages(x)
 
             }).ToList();
 
 
             return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Opetation performed successfully", response);
-        }
-
-        private List<FileDataModelResponse> GetImages(ChatMessages message)
-        {
-            if(!message.IsImageMessage)
-            {
-                return new List<FileDataModelResponse>();
-            }
-
-            var imagesList = JsonSerializer.Deserialize<List<string>>(message.Message);
-
-            var fileModel = imagesList.Select(i => new FileDataModelResponse()
-            {
-                FileUrl = i
-
-            }).ToList();
-
-            return fileModel;
         }
     }
 }

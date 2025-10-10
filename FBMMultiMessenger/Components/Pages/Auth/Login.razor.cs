@@ -44,7 +44,7 @@ namespace FBMMultiMessenger.Components.Pages.Auth
 
         protected override async Task OnInitializedAsync()
         {
-            
+
         }
 
         public async Task OnValidPost()

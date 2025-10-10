@@ -1,8 +1,10 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Helpers;
 using FBMMultiMessenger.Request;
 using FBMMultiMessenger.Services.IServices;
 using FBMMultiMessenger.Utility;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -15,10 +17,14 @@ namespace FBMMultiMessenger.Services
     internal class AuthService : IAuthService
     {
         private readonly IBaseService _baseService;
+        private readonly AuthenticationStateProvider _authenticationStateProvider;
+        private readonly ITokenProvider TokenProvider;
 
-        public AuthService(IBaseService baseService)
+        public AuthService(IBaseService baseService, AuthenticationStateProvider authState, ITokenProvider tokenProvider)
         {
             this._baseService=baseService;
+            this._authenticationStateProvider = authState;
+            this.TokenProvider =tokenProvider;
 
         }
         public async Task<T> LoginAsync<T>(LoginHttpRequest httpRequest) where T : class
@@ -31,6 +37,12 @@ namespace FBMMultiMessenger.Services
             };
 
             return await _baseService.SendAsync<LoginHttpRequest, T>(apiRequest);
+        }
+
+        public async Task Logout()
+        {
+            await TokenProvider.RemoveTokenAsync();
+            ((CustomAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
         }
 
         public async Task<T> RegisterAsync<T>(RegisterHttpRequest httpRequest) where T : class
