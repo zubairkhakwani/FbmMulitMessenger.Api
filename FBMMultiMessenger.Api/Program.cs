@@ -18,9 +18,8 @@ namespace FBMMultiMessengerServer
             builder.Services.RegisterMediatR();
             builder.Services.RegisterAutoMapper(typeof(IServiceCollectionExtension).GetTypeInfo().Assembly, typeof(Program).GetTypeInfo().Assembly);
             builder.Services.AddTokenAuth(builder.Configuration);
-            builder.Services.AddSignalR();
-            builder.Services.AddScoped<OneSignalService>();
-            builder.Services.AddScoped<ChatHub>();
+            builder.Services.RegisterServices();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

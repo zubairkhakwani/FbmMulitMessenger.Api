@@ -1,4 +1,7 @@
-﻿using FBMMultiMessenger.Data.DB;
+﻿using FBMMultiMessenger.Buisness.Notifaciton;
+using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Data.DB;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -87,6 +90,17 @@ namespace FBMMultiMessenger.Buisness.Exntesions
                      ValidateAudience = false
                  };
              });
+
+            return services;
+        }
+
+        public static IServiceCollection RegisterServices(this IServiceCollection services)
+        {
+            services.AddSignalR();
+            services.AddScoped<OneSignalService>();
+            services.AddScoped<ChatHub>();
+            services.AddScoped<CurrentUserService>();
+
 
             return services;
         }

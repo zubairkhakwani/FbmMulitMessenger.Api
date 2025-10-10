@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Buisness"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Contracts", "FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj", "{265284BF-C141-470E-8FA1-13505CAFE2EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Utility", "FBMMultiMessenger.Utility\FBMMultiMessenger.Utility.csproj", "{4BBAAF64-D168-4148-9CFB-824A305801A2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Data", "FBMMultiMessenger.Data\FBMMultiMessenger.Data.csproj", "{8D514572-FC2D-0856-A6D9-72448E272CEE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FBMMultiMessenger.Api", "FBMMultiMessenger.Api\FBMMultiMessenger.Api.csproj", "{EEABCA1D-8BDE-4DA1-F4C6-5F593C34060B}"
@@ -27,10 +25,6 @@ Global
 		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{265284BF-C141-470E-8FA1-13505CAFE2EC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4BBAAF64-D168-4148-9CFB-824A305801A2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8D514572-FC2D-0856-A6D9-72448E272CEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8D514572-FC2D-0856-A6D9-72448E272CEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D514572-FC2D-0856-A6D9-72448E272CEE}.Release|Any CPU.ActiveCfg = Release|Any CPU

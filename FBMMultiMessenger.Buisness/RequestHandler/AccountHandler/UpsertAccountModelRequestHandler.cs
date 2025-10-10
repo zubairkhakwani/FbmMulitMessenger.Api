@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -16,13 +17,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
     public class UpsertAccountModelRequestHandler : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly CurrentUserService _currentUserService;
 
-        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext)
+        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
         {
             this._dbContext=dbContext;
+            this._currentUserService=currentUserService;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
+            var currentUser = _currentUserService.GetCurrentUser();
+
+
+
             if (request.AccountId is null)
             {
                 return await AddRequestAsync(request);
