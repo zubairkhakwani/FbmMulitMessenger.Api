@@ -244,12 +244,10 @@ namespace FBMMultiMessenger.Components.Pages.Chat
         {
             HandleSelectedChat(fbChatId);
 
-            await HandlePushNotification(fbChatId);
-
-
             if (isAndriodPlatform)
             {
                 HandleMobileSideBar();
+                await HandlePushNotification(fbChatId);
             }
 
 

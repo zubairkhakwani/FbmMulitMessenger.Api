@@ -1,4 +1,6 @@
 ﻿@page "/mobile-sidebar"
+@using FBMMultiMessenger.Services.IServices
+@attribute [Authorize]
 
 
 <!-- Mobile Sidebar -->
@@ -36,8 +38,22 @@
     </div>
 
     <!-- Mobile Logout Button -->
-    <button class="mobile-logout-btn">
+    <button class="mobile-logout-btn" @onclick="Logout">
         <div class="mobile-menu-icon"> <i class="fa fa-sign-out-alt"></i></div>
         <span>Logout</span>
     </button>
 </div>
+
+@code {
+
+    [Inject]
+    public IAuthService AuthService { get; set; }
+    [Inject]
+    public NavigationManager Navigation { get; set; }
+
+    public async Task Logout()
+    {
+        await AuthService.Logout();
+        // Navigation.NavigateTo("/login", true);
+    }
+}

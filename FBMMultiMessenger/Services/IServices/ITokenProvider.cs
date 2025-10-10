@@ -10,5 +10,6 @@ namespace FBMMultiMessenger.Services.IServices
     {
         Task SetTokenAsync(string token);
         Task<string?> GetTokenAsync();
+        Task RemoveTokenAsync();
     }
 }

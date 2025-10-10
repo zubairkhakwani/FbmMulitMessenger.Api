@@ -26,5 +26,9 @@ namespace FBMMultiMessenger.Services
         {
             await JS.InvokeVoidAsync("myInterop.setItem", SD.AccessToken, token);
         }
+        public async Task RemoveTokenAsync()
+        {
+            await JS.InvokeVoidAsync("myInterop.removeItem", SD.AccessToken);
+        }
     }
 }
