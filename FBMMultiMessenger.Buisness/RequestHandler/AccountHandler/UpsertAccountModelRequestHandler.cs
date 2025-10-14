@@ -1,4 +1,6 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using Azure;
+using Azure.Core;
+using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
@@ -9,6 +11,9 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using System;
+using System.Globalization;
 using System.Security.Principal;
 using System.Threading;
 
@@ -28,36 +33,43 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
-            var currentUser = _currentUserService.GetCurrentUser();
+            (bool isValid, int? currentUserId, string? fbAccountId, string errorMessage) =await ValidateRequestAsync(request.Cookie, cancellationToken);
 
-            //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
-            if (currentUser is null)
+            if (!isValid)
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Invalid request, Please login again to continue");
+                return BaseResponse<UpsertAccountModelResponse>.Error(errorMessage);
             }
 
-            request.UserId = currentUser.Id;
-
+            request.UserId = currentUserId!.Value;
             if (request.AccountId is null)
             {
-                return await AddRequestAsync(request, cancellationToken);
+                return await AddRequestAsync(request, fbAccountId!, cancellationToken);
             }
 
-            return await UpdateRequestAsync(request, cancellationToken);
+            return await UpdateRequestAsync(request, fbAccountId!, cancellationToken);
         }
 
-        public async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, CancellationToken cancellationToken)
+        private async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
-            var subscription = await _dbContext.Subscriptions
-                                     .FirstOrDefaultAsync(x => x.UserId == request.UserId);
 
-            if (subscription is null)
+
+            var today = DateTime.UtcNow;
+            var activeSubscription = await _dbContext.Subscriptions
+                                          .Where(x => x.UserId == request.UserId
+                                             &&
+                                             x.StartedAt <= today
+                                             &&
+                                             x.ExpiredAt > today)
+                                          .OrderByDescending(x => x.StartedAt)
+                                          .FirstOrDefaultAsync(cancellationToken);
+
+            if (activeSubscription is null)
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true);
             }
 
-            var maxLimit = subscription.MaxLimit;
-            var limitUsed = subscription.LimitUsed;
+            var maxLimit = activeSubscription.MaxLimit;
+            var limitUsed = activeSubscription.LimitUsed;
 
             var response = new UpsertAccountModelResponse();
 
@@ -67,8 +79,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
             }
 
-            var today = DateTime.Now;
-            var expiryDate = subscription.ExpiredAt;
+            var expiryDate = activeSubscription.ExpiredAt;
 
             if (today >= expiryDate)
             {
@@ -76,17 +87,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("Your subscription has expired. Please renew to continue using this feature.", redirectToPackages: true, response);
             }
 
-
             var newAccount = new Account()
             {
-                UserId =request.UserId,
+                UserId = request.UserId,
                 Cookie = request.Cookie,
                 Name = request.Name,
+                FbAccountId = fbAccountId,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
-            subscription.LimitUsed++;
+            activeSubscription.LimitUsed++;
 
             await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -99,13 +110,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 IsActive = newAccount.IsActive
             };
 
-            await _hubContext.Clients.Group(request.UserId.ToString())
+            //Inform our console app to close/re-open browser accordingly.
+            var consoleUser = $"Console_{request.UserId.ToString()}";
+            await _hubContext.Clients.Group(consoleUser)
                .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
 
-        public async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, CancellationToken cancellationToken)
+        private async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
             var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.Id == request.AccountId && x.UserId == request.UserId);
 
@@ -119,6 +132,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             account.Name = request.Name;
             account.Cookie = request.Cookie;
+            account.FbAccountId = fbAccountId;
             account.UpdatedAt = DateTime.Now;
 
             _dbContext.Accounts.Update(account);
@@ -137,11 +151,66 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                     IsUpdateRequest = true
                 };
 
-                await _hubContext.Clients.Group(request.UserId.ToString())
+                //Inform our console app to close/re-open browser accordingly.
+                var consoleUser = $"Console_{request.UserId.ToString()}";
+                await _hubContext.Clients.Group(consoleUser)
                    .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", response);
+        }
+
+        private (bool isValid, string? userId) ValidateCookie(string cookieString)
+        {
+            try
+            {
+                // Parse cookies into dictionary
+                var cookies = cookieString
+                    .Split(';')
+                    .Select(x => x.Trim().Split('=', 2))
+                    .Where(x => x.Length == 2)
+                    .ToDictionary(x => x[0], x => x[1]);
+
+
+                if (!cookies.ContainsKey("c_user") || !cookies.ContainsKey("xs"))
+                    return (false, null);
+
+                return (true, cookies["c_user"]);
+            }
+            catch
+            {
+                return (false, null);
+            }
+        }
+
+        private async Task<(bool isValid, int? currentUserId, string? fbAccountIda, string errorMessage)> ValidateRequestAsync(string cookie, CancellationToken cancellationToken)
+        {
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
+            if (currentUser is null)
+            {
+                return (false, null, null, "Invalid request, Please login again to continue.");
+            }
+
+            (bool IsValidCookie, string? fbAccountId) =  ValidateCookie(cookie);
+
+            if (!IsValidCookie || string.IsNullOrWhiteSpace(fbAccountId))
+            {
+
+                return (false, null, null, "The cookie you provided is not valid. Please provide a valid Facebook cookie.");
+            }
+
+            var accountWithSameFbAccountId = await _dbContext.Accounts
+                                                          .FirstOrDefaultAsync(x => x.FbAccountId == fbAccountId, cancellationToken);
+            if (accountWithSameFbAccountId is not null)
+            {
+
+                return (false, null, null, "This account is already being used, please provide another valid facebook cookie.");
+            }
+
+            return (true, currentUser.Id, fbAccountId, "Validation Successful");
+
         }
     }
 }

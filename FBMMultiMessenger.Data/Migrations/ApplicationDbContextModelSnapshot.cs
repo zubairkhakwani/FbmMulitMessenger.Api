@@ -38,9 +38,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FbAccountId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FbUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")

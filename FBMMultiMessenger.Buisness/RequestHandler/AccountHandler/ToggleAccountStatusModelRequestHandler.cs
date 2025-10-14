@@ -1,17 +1,11 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 {
@@ -52,7 +46,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
 
             //Inform our console app to close/re-open browser accordingly.
-            await _hubContext.Clients.Group(request.UserId.ToString())
+            var consoleUser = $"Console_{request.UserId.ToString()}";
+            await _hubContext.Clients.Group(consoleUser)
                .SendAsync("HandleAccountToggle", accountDTO, cancellationToken);
 
 

@@ -12,8 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-
-    [Migration("20251011060131_Initial")]
+    [Migration("20251014174111_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -42,9 +41,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FbAccountId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FbUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
