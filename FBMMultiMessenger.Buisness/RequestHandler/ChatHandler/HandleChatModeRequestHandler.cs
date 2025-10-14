@@ -119,30 +119,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (!isSubscriptionExpired)
             {
-                //Inform the client via signalR.
-                var receivedChat = new HandleChatHttpResponse()
-                {
-                    Message = dbMessage,
-                    ChatId = chat.Id,
-                    FbChatId = request.FbChatId,
-                    FbAccountId = request.FbAccountId,
-                    FbListingId = request.FbListingId,
-                    FbListingTitle = chat.FbListingTitle!,
-                    FbListingLocation = chat.FbListingLocation!,
-                    FbListingPrice = chat.FbListingPrice!.Value,
-                    IsTextMessage = request.IsTextMessage,
-                    IsVideoMessage =request.IsVideoMessage,
-                    IsImageMessage = request.IsImageMessage,
-                    IsAudioMessage = request.IsAudioMessage,
-                    StartedAt = newChatMessage.CreatedAt
-                };
-
-                //TODO
-                var signalRMethod = request.IsSent ? "SendMessage" : "ReceiveMessage";
-
-                await _hubContext.Clients.Group("User123")
-                    .SendAsync(signalRMethod, receivedChat, cancellationToken);
+                await SendMessageToAppAsync(request, chatReference!, newChatMessage.CreatedAt, dbMessage, cancellationToken);
             }
+
 
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
@@ -181,6 +160,31 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 chatId: request.FbChatId,
                 isSubscriptionExpired: isSubscriptionExpired
             );
+        }
+
+        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
+        {
+            var sendMessageToUserId = $"User_{chat.UserId}";
+            //Inform the client via signalR.
+            var receivedChat = new HandleChatHttpResponse()
+            {
+                Message = message,
+                ChatId = chat.Id,
+                FbChatId = request.FbChatId,
+                FbAccountId = request.FbAccountId,
+                FbListingId = request.FbListingId,
+                FbListingTitle = chat.FbListingTitle!,
+                FbListingLocation = chat.FbListingLocation!,
+                FbListingPrice = chat.FbListingPrice!.Value,
+                IsTextMessage = request.IsTextMessage,
+                IsVideoMessage =request.IsVideoMessage,
+                IsImageMessage = request.IsImageMessage,
+                IsAudioMessage = request.IsAudioMessage,
+                StartedAt = CreatedAt
+            };
+
+            await _hubContext.Clients.Group(sendMessageToUserId)
+                .SendAsync("HandleMessage", receivedChat, cancellationToken);
         }
     }
 }

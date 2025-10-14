@@ -16,7 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Migrations\" />
+		<ProjectReference Include="..\FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj" />
 	</ItemGroup>
 
 </Project>

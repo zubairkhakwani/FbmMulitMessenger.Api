@@ -34,24 +34,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var chatMessages = await _dbContext.ChatMessages
                                                         .Include(c => c.Chat)
-                                                        .Where(cm => cm.Chat.FBChatId == request.FbChatId
+                                                        .ThenInclude(a => a.Account)
+                                                        .Where
+                                                          (cm => cm.Chat.FBChatId == request.FbChatId
                                                               &&
-                                                              cm.Chat.UserId == request.UserId)
+                                                              cm.Chat.UserId == request.UserId
+                                                          )
                                                         .ToListAsync(cancellationToken);
 
-            var response = chatMessages.Select(x => new GetChatMessagesModelResponse()
-            {
-                FbChatId = x.Chat.FBChatId,
-                IsReceived = x.IsReceived,
-                Message = x.Message,
-                IsTextMessage = x.IsTextMessage,
-                IsImageMessage = x.IsImageMessage,
-                IsVideoMessage = x.IsVideoMessage,
-                IsAudioMessage = x.IsAudioMessage,
-                IsSent = x.IsSent,
-                CreatedAt = x.CreatedAt,
+            var response = chatMessages
+                                    .Where(c => c.Chat.Account !=null && c.Chat.Account.IsActive)
+                                    .Select(x => new GetChatMessagesModelResponse()
+                                    {
+                                        FbChatId = x.Chat.FBChatId,
+                                        IsReceived = x.IsReceived,
+                                        Message = x.Message,
+                                        IsTextMessage = x.IsTextMessage,
+                                        IsImageMessage = x.IsImageMessage,
+                                        IsVideoMessage = x.IsVideoMessage,
+                                        IsAudioMessage = x.IsAudioMessage,
+                                        IsSent = x.IsSent,
+                                        CreatedAt = x.CreatedAt,
 
-            }).ToList();
+                                    }).ToList();
 
 
             return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Opetation performed successfully", response);

@@ -94,7 +94,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
 
-            //Notify extension that a user is trying to send a message from our app. 
+            //Notify extension that user is trying to send message from our app. 
             var sendChatMessage = new NotifyExtensionDTO()
             {
                 IsMessageFromApp = true,
@@ -104,10 +104,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 MediaPaths = mediaPaths
             };
 
-            await _hubContext.Clients.Group("Extension_User_123")
+            await _hubContext.Clients.Group($"Extension_{chat.FbAccountId}")
                 .SendAsync("SendMessage", sendChatMessage, cancellationToken);
 
-            // await _hubContext.Clients.All.SendAsync("SendMessage", sendChatMessage, cancellationToken);
 
             return BaseResponse<NotifyExtensionModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }

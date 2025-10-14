@@ -26,8 +26,6 @@ namespace FBMMultiMessenger.Server.Controllers
         public async Task<BaseResponse<UpsertAccountHttpResponse>> Create([FromBody] UpsertAccountHttpRequest httpRequest)
         {
             UpsertAccountModelRequest request = _mapper.Map<UpsertAccountModelRequest>(httpRequest);
-            var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            request.UserId = userId;
             BaseResponse<UpsertAccountModelResponse> response = await _mediator.Send(request);
 
             BaseResponse<UpsertAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpsertAccountHttpResponse>>(response);
@@ -65,9 +63,7 @@ namespace FBMMultiMessenger.Server.Controllers
         [HttpPut("{accountId}")]
         public async Task<BaseResponse<UpsertAccountHttpResponse>> Edit([FromBody] UpsertAccountHttpRequest httpRequest, [FromRoute] int accountId)
         {
-            int userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
             UpsertAccountModelRequest request = _mapper.Map<UpsertAccountModelRequest>(httpRequest);
-            request.UserId = userId;
             request.AccountId = accountId;
 
             BaseResponse<UpsertAccountModelResponse> response = await _mediator.Send(request);

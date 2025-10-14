@@ -1,5 +1,7 @@
 ﻿namespace FBMMultiMessenger.Buisness.DTO
 {
+
+    //This class is responsible for notifying our browser extension that user has send a message from our app.
     public class NotifyExtensionDTO
     {
         public int ChatId { get; set; }
@@ -7,12 +9,5 @@
         public string Message { get; set; } = null!;
         public List<string> MediaPaths { get; set; } = new List<string>();
         public bool IsMessageFromApp { get; set; }
-    }
-
-    public class ExtensionChatMessageResponseDTO
-    {
-        public bool Success { get; set; }
-        public NotifyExtensionDTO Data { get; set; } = new NotifyExtensionDTO();
-        public string Message { get; set; } = null!;
     }
 }

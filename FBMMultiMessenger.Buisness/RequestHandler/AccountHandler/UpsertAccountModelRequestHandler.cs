@@ -1,16 +1,16 @@
-﻿using Azure.Core;
+﻿using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Security.Principal;
+using System.Threading;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 {
@@ -18,27 +18,35 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
+        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
         {
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
+            this._hubContext = hubContext;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
+            //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Invalid request, Please login again to continue");
+            }
 
+            request.UserId = currentUser.Id;
 
             if (request.AccountId is null)
             {
-                return await AddRequestAsync(request);
+                return await AddRequestAsync(request, cancellationToken);
             }
 
-            return await UpdateRequestAsync(request);
+            return await UpdateRequestAsync(request, cancellationToken);
         }
 
-        public async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request)
+        public async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
             var subscription = await _dbContext.Subscriptions
                                      .FirstOrDefaultAsync(x => x.UserId == request.UserId);
@@ -75,19 +83,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 Cookie = request.Cookie,
                 Name = request.Name,
                 IsActive = true,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             subscription.LimitUsed++;
 
-            await _dbContext.Accounts.AddAsync(newAccount);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
+            var newAccountHttpResponse = new ConsoleAccountDTO()
+            {
+                Id =  newAccount.Id,
+                Name = newAccount.Name,
+                Cookie = newAccount.Cookie,
+                IsActive = newAccount.IsActive
+            };
+
+            await _hubContext.Clients.Group(request.UserId.ToString())
+               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
 
-        public async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request)
+        public async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
             var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.Id == request.AccountId && x.UserId == request.UserId);
 
@@ -96,14 +114,32 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("Account does not exist");
             }
 
+            var shouldHandleBrowser = account.Cookie != request.Cookie;
+
+
             account.Name = request.Name;
             account.Cookie = request.Cookie;
             account.UpdatedAt = DateTime.Now;
 
             _dbContext.Accounts.Update(account);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             var response = new UpsertAccountModelResponse();
+
+            if (shouldHandleBrowser)
+            {
+                var newAccountHttpResponse = new ConsoleAccountDTO()
+                {
+                    Id =  account.Id,
+                    Name = account.Name,
+                    Cookie = account.Cookie,
+                    IsActive = account.IsActive,
+                    IsUpdateRequest = true
+                };
+
+                await _hubContext.Clients.Group(request.UserId.ToString())
+                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+            }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", response);
         }

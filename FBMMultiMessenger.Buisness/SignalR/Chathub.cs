@@ -11,8 +11,11 @@ namespace FBMMultiMessenger.Buisness.SignalR
 
         public async Task RegisterUser(string userId)
         {
-            _connections[userId] = Context.ConnectionId;
-            await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                _connections[userId] = Context.ConnectionId;
+                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+            }
         }
 
         public async Task MessageReceived(string toUserId, HandleChatHttpResponse message)

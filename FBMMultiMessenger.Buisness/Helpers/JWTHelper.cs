@@ -19,7 +19,7 @@ namespace FBMMultiMessenger.Buisness.Helpers
             var key = Encoding.ASCII.GetBytes(model.Key);
             var accessTokenId = "JTI"+Guid.NewGuid().ToString();
 
-            var expiryDate = DateTime.Now.AddDays(7);
+            var expiryDate = DateTime.Now.AddDays(30);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

@@ -99,6 +99,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddSignalR();
             services.AddScoped<OneSignalService>();
             services.AddScoped<ChatHub>();
+            services.AddHttpContextAccessor();
             services.AddScoped<CurrentUserService>();
 
 

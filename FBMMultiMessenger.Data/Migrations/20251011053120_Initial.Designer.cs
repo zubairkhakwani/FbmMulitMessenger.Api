@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251007101206_Initial")]
+    [Migration("20251011053120_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

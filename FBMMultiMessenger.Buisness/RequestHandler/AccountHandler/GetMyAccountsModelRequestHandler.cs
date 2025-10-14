@@ -21,7 +21,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
         }
         public async Task<BaseResponse<List<GetMyAccountsModelResponse>>> Handle(GetMyAccountsModelRequest request, CancellationToken cancellationToken)
         {
-            var accounts = _dbContext.Accounts.Where(x => x.UserId == request.UserId);
+            var accounts = _dbContext.Accounts.Where(x => x.UserId == request.UserId && x.IsActive);
 
             var response = await accounts.Select(x => new GetMyAccountsModelResponse()
             {
