@@ -29,15 +29,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
         private readonly ChatHub _chatHub;
 
         private readonly IWebHostEnvironment _webHostEnvironment;
-        private string baseUrl;
 
-        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
+        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
         {
             _dbContext=dbContext;
             _hubContext = hubContext;
             _chatHub = chatHub;
             this._webHostEnvironment=webHostEnvironment;
-            baseUrl  = configuration.GetValue<string>("Urls:BaseUrl")!;
         }
         public async Task<BaseResponse<NotifyExtensionModelResponse>> Handle(NotifyExtensionModelRequest request, CancellationToken cancellationToken)
         {
@@ -131,7 +129,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     file.CopyTo(fileStream);
                 }
 
-                string relativeUrl = $"{baseUrl}/ChatMessages/Media/{fileName}";
+                string relativeUrl = $"ChatMessages/Media/{fileName}";
                 mediaPaths.Add(relativeUrl);
             }
             return mediaPaths;
