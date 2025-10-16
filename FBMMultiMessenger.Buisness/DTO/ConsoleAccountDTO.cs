@@ -12,7 +12,6 @@ namespace FBMMultiMessenger.Buisness.DTO
         public int Id { get; set; }
         public required string Name { get; set; }
         public required string Cookie { get; set; }
-        public bool IsActive { get; set; }
         public bool IsUpdateRequest { get; set; }
         public DateTime CreatedAt { get; set; }
     }

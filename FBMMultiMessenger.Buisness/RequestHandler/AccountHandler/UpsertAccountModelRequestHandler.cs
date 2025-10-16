@@ -33,7 +33,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
-            (bool isValid, int? currentUserId, string? fbAccountId, string errorMessage) =await ValidateRequestAsync(request.Cookie, cancellationToken);
+            (bool isValid, int? currentUserId, string? fbAccountId, string errorMessage) = ValidateRequest(request.Cookie, cancellationToken);
 
             if (!isValid)
             {
@@ -41,6 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             }
 
             request.UserId = currentUserId!.Value;
+
             if (request.AccountId is null)
             {
                 return await AddRequestAsync(request, fbAccountId!, cancellationToken);
@@ -51,17 +52,36 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
         private async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
+            var user = await _dbContext.Users
+                                       .Include(a => a.Accounts)
+                                       .Include(s => s.Subscriptions)
+                                       .FirstOrDefaultAsync(x => x.Id == request.UserId);
+            if (user is null)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
+            }
+
+
+            var userAccounts = user.Accounts;
+            var isFbAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId);
+
+            if (isFbAccountAlreadyExist)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
+            }
 
 
             var today = DateTime.UtcNow;
-            var activeSubscription = await _dbContext.Subscriptions
+            var userSubscriptions = user.Subscriptions;
+
+            var activeSubscription = userSubscriptions
                                           .Where(x => x.UserId == request.UserId
                                              &&
                                              x.StartedAt <= today
                                              &&
                                              x.ExpiredAt > today)
                                           .OrderByDescending(x => x.StartedAt)
-                                          .FirstOrDefaultAsync(cancellationToken);
+                                          .FirstOrDefault();
 
             if (activeSubscription is null)
             {
@@ -93,7 +113,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 Cookie = request.Cookie,
                 Name = request.Name,
                 FbAccountId = fbAccountId,
-                IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -107,7 +126,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 Id =  newAccount.Id,
                 Name = newAccount.Name,
                 Cookie = newAccount.Cookie,
-                IsActive = newAccount.IsActive
             };
 
             //Inform our console app to close/re-open browser accordingly.
@@ -124,11 +142,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             if (account is null)
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Account does not exist");
+                return BaseResponse<UpsertAccountModelResponse>.Error("Account does not exist.");
             }
 
             var shouldHandleBrowser = account.Cookie != request.Cookie;
-
 
             account.Name = request.Name;
             account.Cookie = request.Cookie;
@@ -147,7 +164,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                     Id =  account.Id,
                     Name = account.Name,
                     Cookie = account.Cookie,
-                    IsActive = account.IsActive,
                     IsUpdateRequest = true
                 };
 
@@ -183,7 +199,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             }
         }
 
-        private async Task<(bool isValid, int? currentUserId, string? fbAccountIda, string errorMessage)> ValidateRequestAsync(string cookie, CancellationToken cancellationToken)
+        private (bool isValid, int? currentUserId, string? fbAccountIda, string errorMessage) ValidateRequest(string cookie, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
@@ -201,16 +217,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return (false, null, null, "The cookie you provided is not valid. Please provide a valid Facebook cookie.");
             }
 
-            var accountWithSameFbAccountId = await _dbContext.Accounts
-                                                          .FirstOrDefaultAsync(x => x.FbAccountId == fbAccountId, cancellationToken);
-            if (accountWithSameFbAccountId is not null)
-            {
-
-                return (false, null, null, "This account is already being used, please provide another valid facebook cookie.");
-            }
-
             return (true, currentUser.Id, fbAccountId, "Validation Successful");
-
         }
     }
 }

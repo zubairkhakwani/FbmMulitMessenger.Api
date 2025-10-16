@@ -8,12 +8,9 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
-    public class ToggleAcountStatusModelRequest : IRequest<BaseResponse<ToggleAcountStatusModelResponse>>
+    public class OpenInBrowserModelRequest : IRequest<BaseResponse<object>>
     {
-        public int UserId { get; set; } //Current User Id
         public int AccountId { get; set; }
     }
-
-    public class ToggleAcountStatusModelResponse { }
 
 }

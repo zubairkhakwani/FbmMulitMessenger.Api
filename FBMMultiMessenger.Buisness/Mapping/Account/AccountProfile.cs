@@ -26,8 +26,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
             CreateMap<BaseResponse<List<GetMyAccountsModelResponse>>, BaseResponse<List<GetMyAccountsHttpResponse>>>();
 
 
-            CreateMap<ToggleAcountStatusModelResponse, ToggleAccountStatusHttpResponse>();
-            CreateMap<BaseResponse<ToggleAcountStatusModelResponse>, BaseResponse<ToggleAccountStatusHttpResponse>>();
+            CreateMap<ToggleAcountStatusModelResponse, RemoveAccountHttpResponse>();
+            CreateMap<BaseResponse<ToggleAcountStatusModelResponse>, BaseResponse<RemoveAccountHttpResponse>>();
 
 
             CreateMap<GetAllMyAccountsChatsModelResponse, GetAllMyAccountsChatsHttpResponse>();

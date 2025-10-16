@@ -43,7 +43,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                                         .ToListAsync(cancellationToken);
 
             var response = chatMessages
-                                    .Where(c => c.Chat.Account !=null && c.Chat.Account.IsActive)
                                     .Select(x => new GetChatMessagesModelResponse()
                                     {
                                         FbChatId = x.Chat.FBChatId,
@@ -55,7 +54,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                         IsAudioMessage = x.IsAudioMessage,
                                         IsSent = x.IsSent,
                                         CreatedAt = x.CreatedAt,
-
                                     }).ToList();
 
 

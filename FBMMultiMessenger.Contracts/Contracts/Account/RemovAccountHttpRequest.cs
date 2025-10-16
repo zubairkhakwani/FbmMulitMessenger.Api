@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
-    public class ToggleAccountStatusHttpRequest
+    public class RemovAccountHttpRequest
     {
         public int AccountId { get; set; }
     }
 
-    public class ToggleAccountStatusHttpResponse
+    public class RemoveAccountHttpResponse
     {
 
 

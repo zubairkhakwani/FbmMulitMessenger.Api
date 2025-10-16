@@ -49,13 +49,13 @@ namespace FBMMultiMessenger.Server.Controllers
 
         [Authorize]
         [HttpPut("{accountId}/status")]
-        public async Task<BaseResponse<ToggleAccountStatusHttpResponse>> ToggleAccountStatus([FromRoute] int accountId)
+        public async Task<BaseResponse<RemoveAccountHttpResponse>> ToggleAccountStatus([FromRoute] int accountId)
         {
             int userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            ToggleAcountStatusModelRequest request = new ToggleAcountStatusModelRequest() { UserId = userId, AccountId = accountId };
+            RemoveAcountModelRequest request = new RemoveAcountModelRequest() { UserId = userId, AccountId = accountId };
             BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(request);
 
-            BaseResponse<ToggleAccountStatusHttpResponse> httpResponse = _mapper.Map<BaseResponse<ToggleAccountStatusHttpResponse>>(response);
+            BaseResponse<RemoveAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<RemoveAccountHttpResponse>>(response);
             return httpResponse;
         }
 
@@ -83,6 +83,17 @@ namespace FBMMultiMessenger.Server.Controllers
             BaseResponse<GetAllMyAccountsChatsModelResponse> response = await _mediator.Send(request);
 
             BaseResponse<GetAllMyAccountsChatsHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetAllMyAccountsChatsHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpPost("{accountId}/open-in-browser")]
+        public async Task<BaseResponse<object>> OpenInBrwoser([FromRoute] int accountId)
+        {
+            OpenInBrowserModelRequest request = new OpenInBrowserModelRequest() { AccountId = accountId };
+
+            BaseResponse<object> httpResponse = await _mediator.Send(request);
 
             return httpResponse;
         }
