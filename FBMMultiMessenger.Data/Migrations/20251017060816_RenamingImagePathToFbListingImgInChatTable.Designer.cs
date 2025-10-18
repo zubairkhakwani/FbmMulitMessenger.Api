@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251017060816_RenamingImagePathToFbListingImgInChatTable")]
+    partial class RenamingImagePathToFbListingImgInChatTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,14 +103,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("UserProfileImg")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

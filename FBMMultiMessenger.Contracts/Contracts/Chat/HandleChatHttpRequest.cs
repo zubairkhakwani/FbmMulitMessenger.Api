@@ -23,6 +23,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
 
         //[Required]
         public string? FbListingTitle { get; set; }
+        public string? FbListingImg { get; set; }
+        public string? UserProfileImg { get; set; }
+
 
         //[Required]
         public string? FbListingLocation { get; set; }

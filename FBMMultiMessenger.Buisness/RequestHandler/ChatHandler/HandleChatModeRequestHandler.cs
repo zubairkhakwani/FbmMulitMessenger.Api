@@ -43,24 +43,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
             var chatReference = chat;
-
+            var today = DateTime.UtcNow;
             if (chat is null)
             {
                 var newChat = new Chat()
                 {
                     //AccountId = request.AccountId,
                     UserId = request.UserId,
-
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
-                    FbListingTitle = string.IsNullOrWhiteSpace(request.FbListingTitle) ? "No title" : request.FbListingTitle,
-                    FbListingLocation = string.IsNullOrWhiteSpace(request.FbListingLocation) ? "No location" : request.FbListingLocation,
+                    FbListingTitle = request.FbListingTitle,
+                    FBListingImage = request.FbListingImg,
+                    UserProfileImg = request.UserProfileImg,
+                    FbListingLocation = request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
-
-                    ImagePath = null,
                     IsRead = false,
-                    StartedAt = DateTime.Now,
+                    StartedAt = today,
+                    UpdatedAt = today
                 };
 
                 await _dbContext.AddAsync(newChat, cancellationToken);
@@ -69,6 +69,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 chatReference = newChat;
             }
 
+            var userProfileImg = chatReference?.UserProfileImg;
+            if (chatReference is not null)
+            {
+                if (request.UserProfileImg is not null && userProfileImg is null)
+                {
+                    chatReference.UserProfileImg = request.UserProfileImg;
+                }
+                chatReference.UpdatedAt = today;
+            }
+          
             var dbMessage = string.Empty;
 
             if (request.IsImageMessage || request.IsVideoMessage)
@@ -91,13 +101,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var today = DateTime.UtcNow;
+
             var activeSubscription = chatReference?.User?.Subscriptions?
                                                                   .Where(x => x.StartedAt <= today
                                                                     &&

@@ -3,12 +3,6 @@ using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.Xml;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -24,19 +18,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var chats = await _dbContext.Chats
                                         .Include(cm => cm.ChatMessages)
-                                        .Where(u => u.UserId == request.UserId).ToListAsync(cancellationToken);
+                                        .Where(u => u.UserId == request.UserId)
+                                        .OrderByDescending(x=> x.UpdatedAt)
+                                        .ToListAsync(cancellationToken);
 
             var formattedChats = chats.Select(x => new GetMyChatsModelResponse()
             {
                 Id = x.Id,
                 FbChatId = x.FBChatId!,
-                FbLisFbListingTitle = x.FbListingTitle!,
+                FbListingTitle = x.FbListingTitle!,
                 FbListingPrice = x.FbListingPrice!.Value,
+                FbListingImage = x.FBListingImage,
+                UserProfileImage = x.UserProfileImg,
                 FbListingLocation = x.FbListingLocation!,
                 IsRead = x.IsRead,
                 UnReadCount = x.ChatMessages.Where(x => !x.IsRead).Count(),
                 StartedAt = x.StartedAt,
-            }).OrderByDescending(x => x.StartedAt).ToList();
+            }).ToList();
 
 
             var response = new GetAllMyAccountsChatsModelResponse()

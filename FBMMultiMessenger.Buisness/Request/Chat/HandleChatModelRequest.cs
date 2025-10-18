@@ -14,10 +14,13 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public int UserId { get; set; }
         public required string FbChatId { get; set; }
         public required string FbAccountId { get; set; }
-        public required string FbListingId { get; set; }
-        public required string FbListingTitle { get; set; }
-        public required decimal FbListingPrice { get; set; }
-        public required string FbListingLocation { get; set; }
+        public string? FbListingId { get; set; }
+        public string? FbListingTitle { get; set; }
+        public string? FbListingImg { get; set; }
+        public string? UserProfileImg { get; set; }
+
+        public decimal? FbListingPrice { get; set; }
+        public string? FbListingLocation { get; set; }
         public required List<string> Messages { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
