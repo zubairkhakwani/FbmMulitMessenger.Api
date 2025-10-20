@@ -38,8 +38,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
             var chat = await _dbContext.Chats
-                                       .Include(u => u.User)
-                                       .ThenInclude(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
             var chatReference = chat;
@@ -48,14 +46,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 var newChat = new Chat()
                 {
-                    //AccountId = request.AccountId,
                     UserId = request.UserId,
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
                     FbListingTitle = request.FbListingTitle,
                     FBListingImage = request.FbListingImg,
-                    UserProfileImg = request.UserProfileImg,
+                    UserProfileImage = request.UserProfileImg,
                     FbListingLocation = request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
                     IsRead = false,
@@ -69,16 +66,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 chatReference = newChat;
             }
 
-            var userProfileImg = chatReference?.UserProfileImg;
+            var userProfileImg = chatReference?.UserProfileImage;
             if (chatReference is not null)
             {
                 if (request.UserProfileImg is not null && userProfileImg is null)
                 {
-                    chatReference.UserProfileImg = request.UserProfileImg;
+                    chatReference.UserProfileImage = request.UserProfileImg;
                 }
                 chatReference.UpdatedAt = today;
             }
-          
+
             var dbMessage = string.Empty;
 
             if (request.IsImageMessage || request.IsVideoMessage)
@@ -108,12 +105,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
 
 
-            var activeSubscription = chatReference?.User?.Subscriptions?
-                                                                  .Where(x => x.StartedAt <= today
-                                                                    &&
-                                                                   x.ExpiredAt > today)
-                                                                  .OrderByDescending(x => x.StartedAt)
-                                                                  .FirstOrDefault();
+
+            //Get active subscription of the current user.
+            var activeSubscription = _dbContext.Subscriptions
+                                     .Where(x => x.StartedAt <= today
+                                            &&
+                                     x.ExpiredAt > today
+                                            && 
+                                     x.UserId == request.UserId)
+                                    .OrderByDescending(x => x.StartedAt)
+                                    .FirstOrDefault();
+
+
+
             if (activeSubscription is null)
             {
                 return BaseResponse<HandleChatModelResponse>.Success($"Message received, but the user does not have any active subscription. No notification was sent and the UI was not updated.", new HandleChatModelResponse());
@@ -175,6 +179,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
         {
             var sendMessageToUserId = $"User_{chat.UserId}";
+
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
             {
@@ -182,10 +187,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 ChatId = chat.Id,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
-                FbListingId = request.FbListingId,
-                FbListingTitle = chat.FbListingTitle!,
-                FbListingLocation = chat.FbListingLocation!,
-                FbListingPrice = chat.FbListingPrice!.Value,
+                FbListingId = request.FbListingId!,
+                FbListingTitle = chat.FbListingTitle,
+                FbListingLocation = chat.FbListingLocation,
+                FbListingPrice = chat.FbListingPrice, 
+                FbListingImage = chat.FBListingImage,
+                
+                UserProfileImage = chat.UserProfileImage,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage =request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,

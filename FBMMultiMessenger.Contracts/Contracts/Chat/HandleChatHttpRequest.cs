@@ -47,24 +47,19 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
     public class HandleChatHttpResponse
     {
         public int ChatId { get; set; }
-        public string FbUserId { get; set; } = null!;
-
-        public string FbChatId { get; set; } = null!;
-
-        public string FbListingId { get; set; } = null!;
-
-        public string FbAccountId { get; set; } = null!;
-
-        public string FbListingTitle { get; set; } = null!;
-
-        public string FbListingLocation { get; set; } = null!;
-
-        public decimal FbListingPrice { get; set; }
-
         public string Message { get; set; } = null!;
+        public string FbUserId { get; set; } = null!;
+        public string FbChatId { get; set; } = null!;
+        public string? FbListingId { get; set; } = null!;
+        public string FbAccountId { get; set; } = null!;
+        public string? FbListingTitle { get; set; }
+        public string? FbListingImage { get; set; }
+        public string? FbListingLocation { get; set; }
+        public decimal? FbListingPrice { get; set; }
+        public string? UserProfileImage { get; set; }
+
 
         public bool IsRead { get; set; }
-
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }

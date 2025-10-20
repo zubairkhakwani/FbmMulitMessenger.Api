@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                                 .OrderByDescending(x => x.StartedAt)
                                                 .FirstOrDefault();
 
-            if (activeSubscription is not null)
+            if (activeSubscription is not null && activeSubscription.LimitUsed > 0)
             {
                 activeSubscription.LimitUsed--;
             }

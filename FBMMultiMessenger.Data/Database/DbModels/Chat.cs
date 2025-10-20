@@ -21,7 +21,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public string? FbListingTitle { get; set; }
         public string? FbListingLocation { get; set; }
         public string? FBListingImage { get; set; }
-        public string? UserProfileImg { get; set; }
+        public string? UserProfileImage { get; set; }
 
         [Precision(18, 2)]
         public decimal? FbListingPrice { get; set; }
