@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251017060816_RenamingImagePathToFbListingImgInChatTable")]
-    partial class RenamingImagePathToFbListingImgInChatTable
+    [Migration("20251021063706_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -103,8 +103,14 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
+
+                    b.Property<string>("UserProfileImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
