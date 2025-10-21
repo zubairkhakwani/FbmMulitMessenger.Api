@@ -55,7 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     UserProfileImage = request.UserProfileImg,
                     FbListingLocation = request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
-                    IsRead = false,
+                    IsRead = request.IsReceived,
                     StartedAt = today,
                     UpdatedAt = today
                 };
@@ -74,6 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     chatReference.UserProfileImage = request.UserProfileImg;
                 }
                 chatReference.UpdatedAt = today;
+                chatReference.IsRead = request.IsReceived;
             }
 
             var dbMessage = string.Empty;
@@ -84,6 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
             else
             {
+
                 dbMessage = request.Messages.FirstOrDefault() ?? string.Empty;
             }
 
@@ -91,8 +93,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
-                IsReceived = !request.IsSent,
-                IsRead = request.IsSent,
+                IsReceived = !request.IsReceived, //request.IsReceived will only be true if user has sent message
+                IsRead = request.IsReceived,
                 IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
@@ -126,7 +128,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var endDate = activeSubscription.ExpiredAt;
             var isSubscriptionExpired = today >= endDate;
 
-            if (!request.IsSent)
+            if (!request.IsReceived)
             {
                 await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
             }
@@ -198,7 +200,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage =request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-                StartedAt = CreatedAt
+                IsReceived = !request.IsReceived,
+                StartedAt = CreatedAt,
             };
 
             await _hubContext.Clients.Group(sendMessageToUserId)

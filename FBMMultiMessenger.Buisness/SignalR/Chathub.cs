@@ -15,6 +15,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             {
                 _connections[userId] = Context.ConnectionId;
                 await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                Console.WriteLine($"User {userId} Connected");
             }
         }
 

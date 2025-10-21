@@ -26,7 +26,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
-        public bool IsSent { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
+        public bool IsReceived { get; set; } //it will only be true if the user has sent the message => (true = message is sent & false = message is received)
     }
 
     public class HandleChatModelResponse

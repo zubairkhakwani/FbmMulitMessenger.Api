@@ -24,12 +24,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
         public async Task<BaseResponse<List<GetChatMessagesModelResponse>>> Handle(GetChatMessagesModelRequest request, CancellationToken cancellationToken)
         {
+            await _dbContext.Chats
+                                .Where(m => m.FBChatId == request.FbChatId
+                                        &&
+                                       m.UserId == request.UserId)
+                                .ExecuteUpdateAsync(p => p
+                                .SetProperty(m => m.IsRead, m => true),cancellationToken);
+
             await _dbContext.ChatMessages
                                 .Where(m => m.Chat.FBChatId == request.FbChatId
                                         &&
                                        m.Chat.UserId == request.UserId)
                                 .ExecuteUpdateAsync(p => p
-                                .SetProperty(m => m.IsRead, m => true));
+                                .SetProperty(m => m.IsRead, m => true),cancellationToken);
+
 
 
             var chatMessages = await _dbContext.ChatMessages

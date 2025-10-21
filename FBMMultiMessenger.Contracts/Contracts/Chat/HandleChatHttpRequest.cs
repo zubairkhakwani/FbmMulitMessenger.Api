@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
 
-        public bool IsSent { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
+        public bool IsReceived { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
 
     }
 
@@ -57,7 +57,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public string? FbListingLocation { get; set; }
         public decimal? FbListingPrice { get; set; }
         public string? UserProfileImage { get; set; }
-
+        public string LastMessage { get; set; } = string.Empty;
+        public string LastMessageFrom { get; set; } = string.Empty;
 
         public bool IsRead { get; set; }
         public bool IsTextMessage { get; set; }
@@ -65,9 +66,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
 
-        public bool IsSent { get; set; }
+        public bool IsReceived { get; set; }
 
         public DateTime StartedAt { get; set; }
-
     }
 }
