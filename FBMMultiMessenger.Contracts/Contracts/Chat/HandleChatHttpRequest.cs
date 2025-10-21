@@ -35,6 +35,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
 
         // [Required]
         public List<string>? Messages { get; set; }
+        public string? OfflineUniqueId { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
@@ -48,6 +49,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
     {
         public int ChatId { get; set; }
         public string Message { get; set; } = null!;
+        public string? OfflineUniqueId { get; set; }
         public string FbUserId { get; set; } = null!;
         public string FbChatId { get; set; } = null!;
         public string? FbListingId { get; set; } = null!;

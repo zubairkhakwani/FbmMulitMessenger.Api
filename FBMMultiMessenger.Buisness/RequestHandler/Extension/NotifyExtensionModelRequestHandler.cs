@@ -99,6 +99,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 ChatId = chat.Id,
                 FbChatId = request.FbChatId,
                 Message = request.Message,
+                OfflineUniqueId = request.OfflineUniqueId,
                 MediaPaths = mediaPaths
             };
 

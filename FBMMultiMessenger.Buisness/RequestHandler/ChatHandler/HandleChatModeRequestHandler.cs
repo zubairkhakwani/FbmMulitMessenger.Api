@@ -194,7 +194,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 FbListingLocation = chat.FbListingLocation,
                 FbListingPrice = chat.FbListingPrice, 
                 FbListingImage = chat.FBListingImage,
-                
+                OfflineUniqueId =  request.OfflineUniqueId,
                 UserProfileImage = chat.UserProfileImage,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage =request.IsVideoMessage,
