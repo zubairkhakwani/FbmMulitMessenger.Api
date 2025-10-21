@@ -15,13 +15,16 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
     {
         public int Id { get; set; }
         public string FbChatId { get; set; } = null!;
-        public string FbLisFbListingTitle { get; set; } = null!;
+        public string FbListingTitle { get; set; } = null!;
         public string FbListingLocation { get; set; } = null!;
         public decimal FbListingPrice { get; set; }
-        public string ImagePath { get; set; } = null!;
+        public string? FbListingImage { get; set; }
+        public string? UserProfileImage { get; set; }
+        public string? LastMessage { get; set; }
+        public string? LastMessageFrom { get; set; } // You or Hadia.
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
-       
+
         public DateTime StartedAt { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
         public string FbChatId { get; set; } = null!;
 
         public string? Message { get; set; }
+        public string OfflineUniqueId { get; set; } = string.Empty;
 
         public List<IFormFile>? Files { get; set; }
     }
@@ -28,6 +29,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
 
         [Required]
         public string Message { get; set; } = null!;
+
+        public string OfflineUniqueId { get; set; } = string.Empty;
 
         public List<IBrowserFile>? Files { get; set; }
 

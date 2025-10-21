@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<Chat> Chats { get; set; }
         public DbSet<ChatMessages> ChatMessages { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<DefaultMessage> DefaultMessages { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,8 +32,8 @@ namespace FBMMultiMessenger.Data.DB
 
             modelBuilder.Entity<Subscription>().HasData(
 
-                new Subscription() { Id =1, UserId = 1, MaxLimit = 5, LimitUsed=0, StartedAt =new DateTime(2025, 9, 20), ExpiredAt =new DateTime(2025, 10, 20) },
-                new Subscription() { Id =2, UserId = 2, MaxLimit = 5, LimitUsed = 0, StartedAt = new DateTime(2025, 9, 20), ExpiredAt = new DateTime(2025, 10, 20) }
+                new Subscription() { Id =1, UserId = 1, MaxLimit = 5, LimitUsed=0, StartedAt =new DateTime(2025, 9, 20), ExpiredAt =new DateTime(2025, 12, 31) },
+                new Subscription() { Id =2, UserId = 2, MaxLimit = 5, LimitUsed = 0, StartedAt = new DateTime(2025, 9, 20), ExpiredAt = new DateTime(2025, 12, 31) }
                 );
         }
     }

@@ -38,35 +38,43 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
             var chat = await _dbContext.Chats
-                                       .Include(u => u.User)
-                                       .ThenInclude(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
             var chatReference = chat;
-
+            var today = DateTime.UtcNow;
             if (chat is null)
             {
                 var newChat = new Chat()
                 {
-                    //AccountId = request.AccountId,
                     UserId = request.UserId,
-
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
-                    FbListingTitle = string.IsNullOrWhiteSpace(request.FbListingTitle) ? "No title" : request.FbListingTitle,
-                    FbListingLocation = string.IsNullOrWhiteSpace(request.FbListingLocation) ? "No location" : request.FbListingLocation,
+                    FbListingTitle = request.FbListingTitle,
+                    FBListingImage = request.FbListingImg,
+                    UserProfileImage = request.UserProfileImg,
+                    FbListingLocation = request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
-
-                    ImagePath = null,
-                    IsRead = false,
-                    StartedAt = DateTime.Now,
+                    IsRead = request.IsReceived,
+                    StartedAt = today,
+                    UpdatedAt = today
                 };
 
                 await _dbContext.AddAsync(newChat, cancellationToken);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
                 chatReference = newChat;
+            }
+
+            var userProfileImg = chatReference?.UserProfileImage;
+            if (chatReference is not null)
+            {
+                if (request.UserProfileImg is not null && userProfileImg is null)
+                {
+                    chatReference.UserProfileImage = request.UserProfileImg;
+                }
+                chatReference.UpdatedAt = today;
+                chatReference.IsRead = request.IsReceived;
             }
 
             var dbMessage = string.Empty;
@@ -77,6 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
             else
             {
+
                 dbMessage = request.Messages.FirstOrDefault() ?? string.Empty;
             }
 
@@ -84,26 +93,33 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
-                IsReceived = !request.IsSent,
-                IsRead = request.IsSent,
+                IsReceived = !request.IsReceived, //request.IsReceived will only be true if user has sent message
+                IsRead = request.IsReceived,
                 IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var today = DateTime.UtcNow;
-            var activeSubscription = chatReference?.User?.Subscriptions?
-                                                                  .Where(x => x.StartedAt <= today
-                                                                    &&
-                                                                   x.ExpiredAt > today)
-                                                                  .OrderByDescending(x => x.StartedAt)
-                                                                  .FirstOrDefault();
+
+
+            //Get active subscription of the current user.
+            var activeSubscription = _dbContext.Subscriptions
+                                     .Where(x => x.StartedAt <= today
+                                            &&
+                                     x.ExpiredAt > today
+                                            && 
+                                     x.UserId == request.UserId)
+                                    .OrderByDescending(x => x.StartedAt)
+                                    .FirstOrDefault();
+
+
+
             if (activeSubscription is null)
             {
                 return BaseResponse<HandleChatModelResponse>.Success($"Message received, but the user does not have any active subscription. No notification was sent and the UI was not updated.", new HandleChatModelResponse());
@@ -112,7 +128,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var endDate = activeSubscription.ExpiredAt;
             var isSubscriptionExpired = today >= endDate;
 
-            if (!request.IsSent)
+            if (!request.IsReceived)
             {
                 await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
             }
@@ -165,6 +181,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
         {
             var sendMessageToUserId = $"User_{chat.UserId}";
+
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
             {
@@ -172,15 +189,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 ChatId = chat.Id,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
-                FbListingId = request.FbListingId,
-                FbListingTitle = chat.FbListingTitle!,
-                FbListingLocation = chat.FbListingLocation!,
-                FbListingPrice = chat.FbListingPrice!.Value,
+                FbListingId = request.FbListingId!,
+                FbListingTitle = chat.FbListingTitle,
+                FbListingLocation = chat.FbListingLocation,
+                FbListingPrice = chat.FbListingPrice, 
+                FbListingImage = chat.FBListingImage,
+                OfflineUniqueId =  request.OfflineUniqueId,
+                UserProfileImage = chat.UserProfileImage,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage =request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-                StartedAt = CreatedAt
+                IsReceived = !request.IsReceived,
+                StartedAt = CreatedAt,
             };
 
             await _hubContext.Clients.Group(sendMessageToUserId)

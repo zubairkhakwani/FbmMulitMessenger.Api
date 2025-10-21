@@ -19,8 +19,4 @@
 		<ProjectReference Include="..\FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Migrations\" />
-	</ItemGroup>
-
 </Project>

@@ -1,14 +1,9 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.Xml;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -24,19 +19,31 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var chats = await _dbContext.Chats
                                         .Include(cm => cm.ChatMessages)
-                                        .Where(u => u.UserId == request.UserId).ToListAsync(cancellationToken);
+                                        .Where(u => u.UserId == request.UserId)
+                                        .OrderByDescending(x => x.UpdatedAt)
+                                        .ToListAsync(cancellationToken);
 
-            var formattedChats = chats.Select(x => new GetMyChatsModelResponse()
+            var formattedChats = chats.Select(x =>
             {
-                Id = x.Id,
-                FbChatId = x.FBChatId!,
-                FbLisFbListingTitle = x.FbListingTitle!,
-                FbListingPrice = x.FbListingPrice!.Value,
-                FbListingLocation = x.FbListingLocation!,
-                IsRead = x.IsRead,
-                UnReadCount = x.ChatMessages.Where(x => !x.IsRead).Count(),
-                StartedAt = x.StartedAt,
-            }).OrderByDescending(x => x.StartedAt).ToList();
+                var lastMessageInfo = GetLastMessageInfo(x.FbListingTitle, x.ChatMessages);
+
+                return new GetMyChatsModelResponse
+                {
+                    Id = x.Id,
+                    FbChatId = x.FBChatId!,
+                    FbListingTitle = x.FbListingTitle,
+                    FbListingLocation = x.FbListingLocation,
+                    FbListingPrice = x.FbListingPrice,
+                    FbListingImage = x.FBListingImage,
+                    UserProfileImage = x.UserProfileImage,
+                    LastMessage = lastMessageInfo.lastMessage,
+                    LastMessageFrom = lastMessageInfo.lastMessageFrom,
+                    IsRead = x.IsRead,
+                    UnReadCount = x.ChatMessages.Count(m => !m.IsRead),
+                    StartedAt = x.StartedAt
+                };
+            }).ToList();
+
 
 
             var response = new GetAllMyAccountsChatsModelResponse()
@@ -45,6 +52,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             };
 
             return BaseResponse<GetAllMyAccountsChatsModelResponse>.Success("Operation performed successfully", response);
+        }
+        public (string? lastMessage, string? lastMessageFrom) GetLastMessageInfo(string? title, List<ChatMessages> chatMessages)
+        {
+            var lastMessage = chatMessages.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+
+            if (lastMessage is not null && title is not null)
+            {
+                string lastMessageFrom = lastMessage.IsReceived ? title.Split(" ")[0] : "You";
+
+                return (lastMessage.Message, lastMessageFrom);
+            }
+
+            return (null, null);
         }
     }
 }

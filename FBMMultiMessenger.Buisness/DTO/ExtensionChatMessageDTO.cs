@@ -7,6 +7,8 @@
         public int ChatId { get; set; }
         public string FbChatId { get; set; } = null!;
         public string Message { get; set; } = null!;
+        public string OfflineUniqueId { get; set; } = string.Empty;
+
         public List<string> MediaPaths { get; set; } = new List<string>();
         public bool IsMessageFromApp { get; set; }
     }

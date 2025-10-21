@@ -37,6 +37,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DefaultMessageId")
+                        .HasColumnType("int");
+
                     b.Property<string>("FbAccountId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -52,6 +55,8 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DefaultMessageId");
 
                     b.HasIndex("UserId");
 
@@ -70,6 +75,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("FBChatId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FBListingImage")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FbAccountId")
@@ -91,17 +99,20 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("FbUserId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImagePath")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
+
+                    b.Property<string>("UserProfileImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -158,6 +169,34 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.ToTable("ChatMessages");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DefaultMessage");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.Property<int>("Id")
@@ -194,7 +233,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
-                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = false,
                             LimitUsed = 0,
                             MaxLimit = 5,
@@ -204,7 +243,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 2,
-                            ExpiredAt = new DateTime(2025, 10, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = false,
                             LimitUsed = 0,
                             MaxLimit = 5,
@@ -272,11 +311,17 @@ namespace FBMMultiMessenger.Data.Migrations
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
                 {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", "DefaultMessage")
+                        .WithMany("Accounts")
+                        .HasForeignKey("DefaultMessageId");
+
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
                         .WithMany("Accounts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DefaultMessage");
 
                     b.Navigation("User");
                 });
@@ -309,6 +354,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("Chat");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany("DefaultMessages")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -330,9 +386,16 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("ChatMessages");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
+                {
+                    b.Navigation("Accounts");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("DefaultMessages");
 
                     b.Navigation("Subscriptions");
                 });

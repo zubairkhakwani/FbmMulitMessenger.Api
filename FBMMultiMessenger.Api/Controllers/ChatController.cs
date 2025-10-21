@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessenger.Server.Controllers
+namespace FBMMultiMessenger.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -17,8 +17,8 @@ namespace FBMMultiMessenger.Server.Controllers
 
         public ChatController(IMediator mediator, IMapper mapper)
         {
-            this._mediator=mediator;
-            this._mapper=mapper;
+            _mediator=mediator;
+            _mapper=mapper;
         }
 
 
