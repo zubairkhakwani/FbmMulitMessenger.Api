@@ -22,6 +22,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         //Navigation Properties
         public User User { get; set; } = null!;
+        public DefaultMessage? DefaultMessage { get; set; }
         public List<Chat> Chats { get; set; } = new List<Chat>();
     }
 }
