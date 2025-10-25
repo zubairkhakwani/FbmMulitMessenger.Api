@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using FBMMultiMessenger.Buisness.Notifaciton;
+﻿using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
@@ -8,16 +7,8 @@ using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {

@@ -214,7 +214,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             if (!IsValidCookie || string.IsNullOrWhiteSpace(fbAccountId))
             {
 
-                return (false, null, null, "The cookie you provided is not valid. Please provide a valid Facebook cookie.");
+                return (false, null, null, "The cookie you provided is not valid. Please provide a valid facebook cookie.");
             }
 
             return (true, currentUser.Id, fbAccountId, "Validation Successful");

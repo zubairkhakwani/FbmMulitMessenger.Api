@@ -4,7 +4,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.DefaultMessage
 {
     public class GetMyDefaultMessagesHttpResponse
     {
-        public List<DefaultMessagesHttpResponse> DefaultMessages = new List<DefaultMessagesHttpResponse>();
+        public List<DefaultMessagesHttpResponse> DefaultMessages { get; set; } = new List<DefaultMessagesHttpResponse>();
         public List<GetMyAccountsHttpResponse> AllAccounts { get; set; } = new List<GetMyAccountsHttpResponse>();
     }
 

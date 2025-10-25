@@ -12,14 +12,20 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Mapping.DefualtMessage
 {
-    internal class DefaultMessage : Profile
+    internal class DefaultMessageProfile : Profile
     {
-        public DefaultMessage()
+        public DefaultMessageProfile()
         {
             CreateMap<GetMyDefaultMessagesModelResponse, GetMyDefaultMessagesHttpResponse>();
             CreateMap<DefaultMessagesModelResponse, DefaultMessagesHttpResponse>();
             CreateMap<GetMyAccountsModelResponse, GetMyAccountsHttpResponse>();
             CreateMap<BaseResponse<GetMyDefaultMessagesModelResponse>, BaseResponse<GetMyDefaultMessagesHttpResponse>>();
+
+
+
+            CreateMap<UpsertDefaultMessageHttpRequest, UpsertDefaultMessageModelRequest>();
+            CreateMap<UpsertDefaultMessageModelResponse, UpsertDefaultMessageHttpResponse>();
+            CreateMap<BaseResponse<UpsertDefaultMessageModelResponse>, BaseResponse<UpsertDefaultMessageHttpResponse>>();
         }
     }
 }

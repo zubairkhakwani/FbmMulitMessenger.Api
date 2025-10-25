@@ -13,6 +13,10 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         [ForeignKey(nameof(User))]
         public int UserId { get; set; }
+
+        [ForeignKey(nameof(DefaultMessage))]
+        public int? DefaultMessageId { get; set; }
+
         public required string Name { get; set; }
         public required string FbAccountId { get; set; }
         public required string Cookie { get; set; }
