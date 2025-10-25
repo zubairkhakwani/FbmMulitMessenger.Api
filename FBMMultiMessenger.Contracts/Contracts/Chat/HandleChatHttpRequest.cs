@@ -42,6 +42,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsAudioMessage { get; set; }
 
         public bool IsReceived { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
+        public long? FbOTID { get; set; }
 
     }
 

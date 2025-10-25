@@ -23,11 +23,12 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? FbListingLocation { get; set; }
         public required List<string> Messages { get; set; }
         public string? OfflineUniqueId { get; set; }
+        public long? FbOTID { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
-        public bool IsReceived { get; set; } //it will only be true if the user has sent the message => (true = message is sent & false = message is received)
+        public bool IsReceived { get; set; }
     }
 
     public class HandleChatModelResponse
