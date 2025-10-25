@@ -4,6 +4,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251021111321_addingDefaultMessageInUserTable")]
+    partial class addingDefaultMessageInUserTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,7 +63,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
@@ -120,7 +123,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Chats", (string)null);
+                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ChatMessages", b =>
@@ -166,7 +169,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("ChatId");
 
-                    b.ToTable("ChatMessages", (string)null);
+                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
@@ -194,7 +197,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DefaultMessages", (string)null);
+                    b.ToTable("DefaultMessages");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
@@ -227,7 +230,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
 
                     b.HasData(
                         new
@@ -284,7 +287,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new

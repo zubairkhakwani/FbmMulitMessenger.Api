@@ -32,5 +32,30 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<BaseResponse<UpsertDefaultMessageHttpResponse>> Add([FromBody] UpsertDefaultMessageHttpRequest httpRequest)
+        {
+            UpsertDefaultMessageModelRequest request = _mapper.Map<UpsertDefaultMessageModelRequest>(httpRequest);
+            BaseResponse<UpsertDefaultMessageModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<UpsertDefaultMessageHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpsertDefaultMessageHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<BaseResponse<UpsertDefaultMessageHttpResponse>> Edit([FromBody] UpsertDefaultMessageHttpRequest httpRequest, [FromRoute] int id)
+        {
+            UpsertDefaultMessageModelRequest request = _mapper.Map<UpsertDefaultMessageModelRequest>(httpRequest);
+            request.Id = id;
+            BaseResponse<UpsertDefaultMessageModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<UpsertDefaultMessageHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpsertDefaultMessageHttpResponse>>(response);
+
+            return httpResponse;
+        }
     }
 }
