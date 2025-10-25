@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using FBMMultiMessenger.Buisness.Notifaciton;
+﻿using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
@@ -8,16 +7,9 @@ using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.Collections.Concurrent;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
@@ -28,15 +20,38 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private readonly ChatHub _chatHub;
         private readonly OneSignalService _oneSignalNotificationService;
 
+        private static readonly ConcurrentDictionary<string, DateTime> _processedOTIDs = new ConcurrentDictionary<string, DateTime>();
+        private static DateTime _lastCleanup = DateTime.UtcNow;
+
         public HandleChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, OneSignalService oneSignalNotificationService)
         {
-            this._dbContext=dbContext;
+            this._dbContext = dbContext;
             this._hubContext = hubContext;
             this._chatHub = chatHub;
-            this._oneSignalNotificationService=oneSignalNotificationService;
+            this._oneSignalNotificationService = oneSignalNotificationService;
         }
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
+            if (request.FbOTID != null)
+            {
+                string compositeKey = $"{request.FbAccountId}_{request.FbChatId}_{request.FbOTID}";
+                var now = DateTime.UtcNow;
+
+                // Try to add with timestamp
+                if (!_processedOTIDs.TryAdd(compositeKey, now))
+                {
+                    return BaseResponse<HandleChatModelResponse>.Success($"Duplicate message ignored.",new HandleChatModelResponse());
+                }
+
+                // Clean up old entries every 3 minutes (non-blocking)
+                if ((now - _lastCleanup).TotalMinutes >= 3)
+                {
+                    _lastCleanup = now;
+                    Task.Run(() => CleanupOldOTIDs(now));
+                }
+            }
+
+
             var chat = await _dbContext.Chats
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
 
@@ -55,7 +70,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     UserProfileImage = request.UserProfileImg,
                     FbListingLocation = request.FbListingLocation,
                     FbListingPrice = request.FbListingPrice,
-                    IsRead = request.IsReceived,
+                    IsRead = !request.IsReceived,
                     StartedAt = today,
                     UpdatedAt = today
                 };
@@ -74,7 +89,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     chatReference.UserProfileImage = request.UserProfileImg;
                 }
                 chatReference.UpdatedAt = today;
-                chatReference.IsRead = request.IsReceived;
+                chatReference.IsRead = !request.IsReceived;
             }
 
             var dbMessage = string.Empty;
@@ -93,8 +108,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
-                IsReceived = !request.IsReceived, //request.IsReceived will only be true if user has sent message
-                IsRead = request.IsReceived,
+                IsReceived = request.IsReceived,
+                IsRead = !request.IsReceived,
                 IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
@@ -113,7 +128,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                      .Where(x => x.StartedAt <= today
                                             &&
                                      x.ExpiredAt > today
-                                            && 
+                                            &&
                                      x.UserId == request.UserId)
                                     .OrderByDescending(x => x.StartedAt)
                                     .FirstOrDefault();
@@ -128,7 +143,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var endDate = activeSubscription.ExpiredAt;
             var isSubscriptionExpired = today >= endDate;
 
-            if (!request.IsReceived)
+            if (request.IsReceived)
             {
                 await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
             }
@@ -192,7 +207,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 FbListingId = request.FbListingId!,
                 FbListingTitle = chat.FbListingTitle,
                 FbListingLocation = chat.FbListingLocation,
-                FbListingPrice = chat.FbListingPrice, 
+                FbListingPrice = chat.FbListingPrice,
                 FbListingImage = chat.FBListingImage,
                 OfflineUniqueId =  request.OfflineUniqueId,
                 UserProfileImage = chat.UserProfileImage,
@@ -200,12 +215,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage =request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
-                IsReceived = !request.IsReceived,
+                IsReceived = request.IsReceived,
                 StartedAt = CreatedAt,
             };
 
             await _hubContext.Clients.Group(sendMessageToUserId)
                 .SendAsync("HandleMessage", receivedChat, cancellationToken);
+        }
+
+        // Add this new method to the class
+        private void CleanupOldOTIDs(DateTime currentTime)
+        {
+            var keysToRemove = _processedOTIDs
+                .Where(kvp => (currentTime - kvp.Value).TotalMinutes > 3)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                _processedOTIDs.TryRemove(key, out _);
+            }
         }
     }
 }

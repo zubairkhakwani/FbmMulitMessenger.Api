@@ -1,21 +1,29 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Concurrent;
 
 namespace FBMMultiMessenger.Buisness.SignalR
 {
     public class ChatHub : Hub
     {
-        private static Dictionary<string, string> _connections = new Dictionary<string, string>();
-        public static Dictionary<string, string> _devices = new Dictionary<string, string>();
+        private static ConcurrentDictionary<string, string> _connections = new ConcurrentDictionary<string, string>();
+        public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
 
         public async Task RegisterUser(string userId)
         {
-            if (!string.IsNullOrWhiteSpace(userId))
+            try
             {
-                _connections[userId] = Context.ConnectionId;
-                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-                Console.WriteLine($"User {userId} Connected");
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    _connections[userId] = Context.ConnectionId;
+                    await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                    Console.WriteLine($"User {userId} Connected");
+                }
+            }
+            catch(Exception ex)
+            {
+
             }
         }
 
@@ -31,7 +39,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
         {
             if (!_devices.ContainsKey(deviceId))
             {
-                _devices.Add(deviceId, fbChatId);
+                _devices.TryAdd(deviceId, fbChatId);
             }
         }
 
@@ -52,7 +60,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             var userId = _connections.FirstOrDefault(x => x.Value == Context.ConnectionId).Key;
             if (userId != null)
             {
-                _connections.Remove(userId);
+                _connections.TryRemove(userId, out _);
                 Console.WriteLine($"User {userId} disconnected");
             }
             await base.OnDisconnectedAsync(exception);

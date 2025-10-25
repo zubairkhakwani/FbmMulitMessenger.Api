@@ -24,48 +24,46 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
         public async Task<BaseResponse<List<GetChatMessagesModelResponse>>> Handle(GetChatMessagesModelRequest request, CancellationToken cancellationToken)
         {
+            // Get chat ID first
+            var chatId = await _dbContext.Chats
+                .Where(m => m.FBChatId == request.FbChatId && m.UserId == request.UserId)
+                .Select(m => m.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (chatId == 0)
+            {
+                return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Chat not found", new());
+            }
+
+            // Bulk update (fast, no loading into memory)
             await _dbContext.Chats
-                                .Where(m => m.FBChatId == request.FbChatId
-                                        &&
-                                       m.UserId == request.UserId)
-                                .ExecuteUpdateAsync(p => p
-                                .SetProperty(m => m.IsRead, m => true),cancellationToken);
+                .Where(c => c.Id == chatId)
+                .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
 
             await _dbContext.ChatMessages
-                                .Where(m => m.Chat.FBChatId == request.FbChatId
-                                        &&
-                                       m.Chat.UserId == request.UserId)
-                                .ExecuteUpdateAsync(p => p
-                                .SetProperty(m => m.IsRead, m => true),cancellationToken);
+                .Where(m => m.ChatId == chatId)
+                .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
 
-
-
+            // Load messages for response (with AsNoTracking for performance)
             var chatMessages = await _dbContext.ChatMessages
-                                                        .Include(c => c.Chat)
-                                                        .ThenInclude(a => a.Account)
-                                                        .Where
-                                                          (cm => cm.Chat.FBChatId == request.FbChatId
-                                                              &&
-                                                              cm.Chat.UserId == request.UserId
-                                                          )
-                                                        .ToListAsync(cancellationToken);
-
-            var response = chatMessages
-                                    .Select(x => new GetChatMessagesModelResponse()
-                                    {
-                                        FbChatId = x.Chat.FBChatId,
-                                        IsReceived = x.IsReceived,
-                                        Message = x.Message,
-                                        IsTextMessage = x.IsTextMessage,
-                                        IsImageMessage = x.IsImageMessage,
-                                        IsVideoMessage = x.IsVideoMessage,
-                                        IsAudioMessage = x.IsAudioMessage,
-                                        IsSent = x.IsSent,
-                                        CreatedAt = x.CreatedAt,
-                                    }).ToList();
+                .AsNoTracking()
+                .Where(cm => cm.ChatId == chatId)
+                .Select(x => new GetChatMessagesModelResponse()
+                {
+                    FbChatId = request.FbChatId,
+                    IsReceived = x.IsReceived,
+                    Message = x.Message,
+                    IsTextMessage = x.IsTextMessage,
+                    IsImageMessage = x.IsImageMessage,
+                    IsVideoMessage = x.IsVideoMessage,
+                    IsAudioMessage = x.IsAudioMessage,
+                    IsSent = x.IsSent,
+                    CreatedAt = x.CreatedAt,
+                })
+                .ToListAsync(cancellationToken);
 
 
-            return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Opetation performed successfully", response);
+            return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Operation performed successfully", chatMessages);
         }
     }
 }
