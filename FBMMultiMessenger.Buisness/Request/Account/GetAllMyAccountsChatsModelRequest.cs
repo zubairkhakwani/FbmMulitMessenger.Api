@@ -12,7 +12,6 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class GetAllMyAccountsChatsModelRequest : IRequest<BaseResponse<GetAllMyAccountsChatsModelResponse>>
     {
-        public int UserId { get; set; } // Current logged in user's id
     }
 
     public class GetAllMyAccountsChatsModelResponse

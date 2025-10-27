@@ -43,6 +43,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<object>.Error("Invalid request, Account does not exist.");
             }
 
+
             var newAccountHttpResponse = new ConsoleAccountDTO()
             {
                 Id =  account.Id,

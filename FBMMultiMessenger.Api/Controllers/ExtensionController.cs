@@ -29,8 +29,6 @@ namespace FBMMultiMessenger.Server.Controllers
         public async Task<BaseResponse<NotifyExtensionHttpResponse>> Notify([FromForm] NotifyExtensionHttpRequest httpRequest)
         {
             NotifyExtensionModelRequest request = _mapper.Map<NotifyExtensionModelRequest>(httpRequest);
-            var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            request.UserId = userId;
 
             BaseResponse<NotifyExtensionModelResponse> response = await _mediator.Send(request);
 

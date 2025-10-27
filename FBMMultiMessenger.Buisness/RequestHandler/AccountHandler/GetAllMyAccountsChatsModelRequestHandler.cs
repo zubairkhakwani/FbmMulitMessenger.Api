@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -10,16 +11,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     internal class GetAllMyAccountsChatsModelRequestHandler : IRequestHandler<GetAllMyAccountsChatsModelRequest, BaseResponse<GetAllMyAccountsChatsModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly CurrentUserService _currentUserService;
 
-        public GetAllMyAccountsChatsModelRequestHandler(ApplicationDbContext dbContext)
+        public GetAllMyAccountsChatsModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
         {
             this._dbContext = dbContext;
+            this._currentUserService=currentUserService;
         }
         public async Task<BaseResponse<GetAllMyAccountsChatsModelResponse>> Handle(GetAllMyAccountsChatsModelRequest request, CancellationToken cancellationToken)
         {
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra safety check: If the user has came to this point he will be logged in hence currenuser will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<GetAllMyAccountsChatsModelResponse>.Error("Invalid Request, Please login again to continue.");
+            }
+
+
             var chats = await _dbContext.Chats
                                         .Include(cm => cm.ChatMessages)
-                                        .Where(u => u.UserId == request.UserId)
+                                        .Where(u => u.UserId == currentUser.Id)
                                         .OrderByDescending(x => x.UpdatedAt)
                                         .ToListAsync(cancellationToken);
 

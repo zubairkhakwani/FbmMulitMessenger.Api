@@ -10,7 +10,6 @@ namespace FBMMultiMessenger.Buisness.Request.Subscription
 {
     public class GetMySubscriptionModelRequest : IRequest<BaseResponse<GetMySubscriptionModelResponse>>
     {
-        public int UserId { get; set; } //Currently logged in userid.
     }
 
     public class GetMySubscriptionModelResponse

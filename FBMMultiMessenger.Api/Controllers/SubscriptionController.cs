@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessenger.Server.Controllers
+namespace FBMMultiMessenger.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -17,21 +17,15 @@ namespace FBMMultiMessenger.Server.Controllers
 
         public SubscriptionController(IMediator mediator, IMapper mapper)
         {
-            this._mediator=mediator;
-            this._mapper=mapper;
+            _mediator=mediator;
+            _mapper=mapper;
         }
 
         [Authorize]
         [HttpGet("me")]
         public async Task<BaseResponse<GetMySubscriptionHttpResponse>> GetMySubscription()
         {
-            GetMySubscriptionModelRequest request = new GetMySubscriptionModelRequest()
-            {
-                UserId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value)
-            };
-
-            BaseResponse<GetMySubscriptionModelResponse> response = await _mediator.Send(request);
-
+            BaseResponse<GetMySubscriptionModelResponse> response = await _mediator.Send(new GetMySubscriptionModelRequest());
             BaseResponse<GetMySubscriptionHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetMySubscriptionHttpResponse>>(response);
 
             return httpResponse;

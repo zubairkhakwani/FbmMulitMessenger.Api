@@ -10,7 +10,6 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class GetMyAccountsModelRequest : IRequest<BaseResponse<List<GetMyAccountsModelResponse>>>
     {
-        public int UserId { get; set; }
     }
 
     public class GetMyAccountsModelResponse

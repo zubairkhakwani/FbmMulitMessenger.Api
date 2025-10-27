@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Response;
@@ -16,6 +17,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
     internal class HandleChatModeRequestHandler : IRequestHandler<HandleChatModelRequest, BaseResponse<HandleChatModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly CurrentUserService _currentUserService;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly ChatHub _chatHub;
         private readonly OneSignalService _oneSignalNotificationService;
@@ -23,9 +25,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private static readonly ConcurrentDictionary<string, DateTime> _processedOTIDs = new ConcurrentDictionary<string, DateTime>();
         private static DateTime _lastCleanup = DateTime.UtcNow;
 
-        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, OneSignalService oneSignalNotificationService)
+        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, OneSignalService oneSignalNotificationService)
         {
             this._dbContext = dbContext;
+            this._currentUserService=currentUserService;
             this._hubContext = hubContext;
             this._chatHub = chatHub;
             this._oneSignalNotificationService = oneSignalNotificationService;
@@ -40,7 +43,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 // Try to add with timestamp
                 if (!_processedOTIDs.TryAdd(compositeKey, now))
                 {
-                    return BaseResponse<HandleChatModelResponse>.Success($"Duplicate message ignored.",new HandleChatModelResponse());
+                    return BaseResponse<HandleChatModelResponse>.Success($"Duplicate message ignored.", new HandleChatModelResponse());
                 }
 
                 // Clean up old entries every 3 minutes (non-blocking)
@@ -51,6 +54,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 }
             }
 
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<HandleChatModelResponse>.Error("Invalid Request, Please login again to continue");
+            }
 
             var chat = await _dbContext.Chats
                                        .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
@@ -61,7 +71,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 var newChat = new Chat()
                 {
-                    UserId = request.UserId,
+                    UserId = currentUser.Id,
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
@@ -129,7 +139,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                             &&
                                      x.ExpiredAt > today
                                             &&
-                                     x.UserId == request.UserId)
+                                     x.UserId == currentUser.Id)
                                     .OrderByDescending(x => x.StartedAt)
                                     .FirstOrDefault();
 

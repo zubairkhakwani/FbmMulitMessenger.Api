@@ -1,21 +1,13 @@
-﻿using Azure;
-using Azure.Core;
-using FBMMultiMessenger.Buisness.DTO;
+﻿using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using System;
-using System.Globalization;
-using System.Security.Principal;
-using System.Threading;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 {
@@ -130,8 +122,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             //Inform our console app to close/re-open browser accordingly.
             var consoleUser = $"Console_{request.UserId.ToString()}";
-            await _hubContext.Clients.Group(consoleUser)
-               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+            //await _hubContext.Clients.Group(consoleUser)
+            //   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }

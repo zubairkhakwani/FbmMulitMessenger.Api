@@ -6,7 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessenger.Server.Controllers
+namespace FBMMultiMessenger.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -37,11 +37,7 @@ namespace FBMMultiMessenger.Server.Controllers
         [HttpGet("me")]
         public async Task<BaseResponse<List<GetMyAccountsHttpResponse>>> GetAll()
         {
-            int userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            GetMyAccountsModelRequest request = new GetMyAccountsModelRequest() { UserId = userId };
-            request.UserId = userId;
-
-            BaseResponse<List<GetMyAccountsModelResponse>> response = await _mediator.Send(request);
+            BaseResponse<List<GetMyAccountsModelResponse>> response = await _mediator.Send(new GetMyAccountsModelRequest());
             BaseResponse<List<GetMyAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GetMyAccountsHttpResponse>>>(response);
 
             return httpResponse;
@@ -51,11 +47,9 @@ namespace FBMMultiMessenger.Server.Controllers
         [HttpPut("{accountId}/status")]
         public async Task<BaseResponse<RemoveAccountHttpResponse>> ToggleAccountStatus([FromRoute] int accountId)
         {
-            int userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            RemoveAcountModelRequest request = new RemoveAcountModelRequest() { UserId = userId, AccountId = accountId };
-            BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(request);
-
+            BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(new RemoveAcountModelRequest() { AccountId = accountId });
             BaseResponse<RemoveAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<RemoveAccountHttpResponse>>(response);
+
             return httpResponse;
         }
 
@@ -75,13 +69,7 @@ namespace FBMMultiMessenger.Server.Controllers
         [HttpGet("me/chats")]
         public async Task<BaseResponse<GetAllMyAccountsChatsHttpResponse>> GetAllMyAccountChats()
         {
-            GetAllMyAccountsChatsModelRequest request = new GetAllMyAccountsChatsModelRequest()
-            {
-                UserId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value)
-            };
-
-            BaseResponse<GetAllMyAccountsChatsModelResponse> response = await _mediator.Send(request);
-
+            BaseResponse<GetAllMyAccountsChatsModelResponse> response = await _mediator.Send(new GetAllMyAccountsChatsModelRequest());
             BaseResponse<GetAllMyAccountsChatsHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetAllMyAccountsChatsHttpResponse>>(response);
 
             return httpResponse;

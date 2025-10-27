@@ -27,8 +27,6 @@ namespace FBMMultiMessenger.Api.Controllers
         public async Task<BaseResponse<HandleChatHttpResponse>> Receive([FromBody] HandleChatHttpRequest httpRequest)
         {
             HandleChatModelRequest request = _mapper.Map<HandleChatModelRequest>(httpRequest);
-            var userId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value);
-            request.UserId = userId;
 
             BaseResponse<HandleChatModelResponse> response = await _mediator.Send(request);
 
@@ -42,13 +40,7 @@ namespace FBMMultiMessenger.Api.Controllers
         [HttpGet("{fbChatId}/chatmessages")]
         public async Task<BaseResponse<List<GeChatMessagesHttpResponse>>> GetMyChatMessages([FromRoute] string fbChatId)
         {
-            GetChatMessagesModelRequest request = new GetChatMessagesModelRequest()
-            {
-                FbChatId = fbChatId,
-                UserId = Convert.ToInt32(HttpContext.User.FindFirst("Id")?.Value)
-            };
-
-            BaseResponse<List<GetChatMessagesModelResponse>> response = await _mediator.Send(request);
+            BaseResponse<List<GetChatMessagesModelResponse>> response = await _mediator.Send(new GetChatMessagesModelRequest() { FbChatId = fbChatId });
 
             BaseResponse<List<GeChatMessagesHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GeChatMessagesHttpResponse>>>(response);
 

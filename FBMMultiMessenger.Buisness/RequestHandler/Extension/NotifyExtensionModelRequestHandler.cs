@@ -1,38 +1,30 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Extension;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Response;
-using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Buffers.Text;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 {
     internal class NotifyExtensionModelRequestHandler : IRequestHandler<NotifyExtensionModelRequest, BaseResponse<NotifyExtensionModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly CurrentUserService _currentUserService;
         private readonly IHubContext<ChatHub> _hubContext;
         private readonly ChatHub _chatHub;
 
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
+        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
         {
             _dbContext=dbContext;
+            this._currentUserService=currentUserService;
             _hubContext = hubContext;
             _chatHub = chatHub;
             this._webHostEnvironment=webHostEnvironment;
@@ -44,12 +36,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 return BaseResponse<NotifyExtensionModelResponse>.Error("Please enter a message or attach a file to send.");
             }
 
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid Request, Please login again to continue");
+            }
+
+
             var chat = await _dbContext.Chats
                                            .Include(x => x.User)
                                            .ThenInclude(s => s.Subscriptions)
                                            .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
                                            &&
-                                           c.UserId == request.UserId, cancellationToken);
+                                           c.UserId == currentUser.Id, cancellationToken);
 
             if (chat is null)
             {

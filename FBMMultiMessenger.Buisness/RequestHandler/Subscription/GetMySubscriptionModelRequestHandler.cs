@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Subscription;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -14,16 +15,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
     internal class GetMySubscriptionModelRequestHandler : IRequestHandler<GetMySubscriptionModelRequest, BaseResponse<GetMySubscriptionModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly CurrentUserService _currentUserService;
 
-        public GetMySubscriptionModelRequestHandler(ApplicationDbContext dbContext)
+        public GetMySubscriptionModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
         {
             this._dbContext=dbContext;
+            this._currentUserService=currentUserService;
         }
         public async Task<BaseResponse<GetMySubscriptionModelResponse>> Handle(GetMySubscriptionModelRequest request, CancellationToken cancellationToken)
         {
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra safety check: If the user has came to this point he will be logged in hence currenuser will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Invalid Request, Please login again to continue.");
+            }
+
+
             var activeSubscription = await _dbContext.Subscriptions
                                                .Where(x => x.StartedAt <= DateTime.UtcNow && x.ExpiredAt > DateTime.UtcNow
-                                                      && x.UserId == request.UserId)
+                                                      && x.UserId == currentUser.Id)
                                                .OrderByDescending(x => x.StartedAt)
                                                .FirstOrDefaultAsync(cancellationToken);
 
