@@ -122,8 +122,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             //Inform our console app to close/re-open browser accordingly.
             var consoleUser = $"Console_{request.UserId.ToString()}";
-            //await _hubContext.Clients.Group(consoleUser)
-            //   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+            await _hubContext.Clients.Group(consoleUser)
+               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
