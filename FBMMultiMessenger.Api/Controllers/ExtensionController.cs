@@ -7,7 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessenger.Server.Controllers
+namespace FBMMultiMessenger.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -19,9 +19,9 @@ namespace FBMMultiMessenger.Server.Controllers
 
         public ExtensionController(IMapper mapper, IMediator mediator, OneSignalService oneSignalNotificationService)
         {
-            this._mapper=mapper;
-            this._mediator=mediator;
-            this._oneSignalNotificationService=oneSignalNotificationService;
+            _mapper=mapper;
+            _mediator=mediator;
+            _oneSignalNotificationService=oneSignalNotificationService;
         }
 
         [Authorize]
@@ -33,6 +33,19 @@ namespace FBMMultiMessenger.Server.Controllers
             BaseResponse<NotifyExtensionModelResponse> response = await _mediator.Send(request);
 
             BaseResponse<NotifyExtensionHttpResponse> httpResponse = _mapper.Map<BaseResponse<NotifyExtensionHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+
+
+        [Authorize]
+        [HttpGet("/api/lib/bootstrap/css/bootstrap.min.css")]
+        public async Task<BaseResponse<GetEncExntesionContentHttpResponse>> Get([FromQuery] bool UpdateServer)
+        {
+            BaseResponse<GetEncExtensionContentModelResponse> response = await _mediator.Send(new GetEncExtensionContentModelRequest() { UpdateServer = UpdateServer });
+
+            BaseResponse<GetEncExntesionContentHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetEncExntesionContentHttpResponse>>(response);
 
             return httpResponse;
         }

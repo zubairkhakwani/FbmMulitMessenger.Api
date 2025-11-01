@@ -18,10 +18,12 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 {
                     _connections[userId] = Context.ConnectionId;
                     await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
+
                     Console.WriteLine($"User {userId} Connected");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 
             }

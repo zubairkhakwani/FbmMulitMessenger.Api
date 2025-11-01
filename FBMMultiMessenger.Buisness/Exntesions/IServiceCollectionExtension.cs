@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Notifaciton;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -101,6 +102,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<ChatHub>();
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentUserService>();
+            services.AddScoped<AesEncryptionHelper>();
 
 
             return services;

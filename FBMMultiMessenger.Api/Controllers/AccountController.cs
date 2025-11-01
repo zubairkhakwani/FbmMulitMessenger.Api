@@ -34,6 +34,19 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
+        [HttpPost("import")]
+        public async Task<BaseResponse<object>> BulkImport([FromBody] List<ImportAccountsHttpRequest> httpRequest)
+        {
+            List<ImportAccounts> request = _mapper.Map<List<ImportAccounts>>(httpRequest);
+
+            BaseResponse<object> response = await _mediator.Send(new ImportAccountsModelRequest() { Accounts = request });
+
+            BaseResponse<object> httpResponse = _mapper.Map<BaseResponse<object>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
         [HttpGet("me")]
         public async Task<BaseResponse<List<GetMyAccountsHttpResponse>>> GetAll()
         {

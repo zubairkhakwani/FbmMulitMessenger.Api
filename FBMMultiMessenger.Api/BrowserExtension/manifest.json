@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Notification Helper by fbm robo",
+  "version": "1.0",
+  "permissions": [
+    "tabs",
+    "webRequest",
+    "webRequestAuthProvider",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://localhost:7095/*",
+    "https://*.facebook.com/*",
+    "https://unpkg.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "all_frames": true,
+      "js": [ "content.js" ],
+      "match_about_blank": true,
+      "match_origin_as_fallback": true,
+      "matches": [ "https://*.facebook.com/*" ],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    },
+    {
+      "all_frames": false,
+      "js": [ "inject.js" ],
+      "match_about_blank": true,
+      "match_origin_as_fallback": true,
+      "matches": [ "https://*.facebook.com/*" ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [ "signalr.min.js" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}

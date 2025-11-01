@@ -55,14 +55,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             if (activeSubscription is not null && activeSubscription.LimitUsed > 0)
             {
-                activeSubscription.LimitUsed--;
+                activeSubscription.LimitUsed--; 
             }
 
             _dbContext.Remove(account);
             await _dbContext.SaveChangesAsync();
 
 
-            var accountDTO = new ConsoleAccountDTO()
+            var accountDTO = new AccountDTO()
             {
                 Id =  account.Id,
                 Name = account.Name,

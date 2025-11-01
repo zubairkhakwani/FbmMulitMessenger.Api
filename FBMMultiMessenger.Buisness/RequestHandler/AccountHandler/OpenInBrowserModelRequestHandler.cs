@@ -44,11 +44,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
 
-            var newAccountHttpResponse = new ConsoleAccountDTO()
+            var newAccountHttpResponse = new AccountDTO()
             {
                 Id =  account.Id,
                 Name = account.Name,
                 Cookie = account.Cookie,
+                CreatedAt = account.CreatedAt
             };
 
             //Inform our console app to open browser if not opened.

@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
@@ -9,7 +10,7 @@ using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
+namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
     public class UpsertAccountModelRequestHandler : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
     {
@@ -19,9 +20,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
         public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
         {
-            this._dbContext=dbContext;
-            this._currentUserService=currentUserService;
-            this._hubContext = hubContext;
+            _dbContext=dbContext;
+            _currentUserService=currentUserService;
+            _hubContext = hubContext;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
@@ -113,17 +114,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var newAccountHttpResponse = new ConsoleAccountDTO()
+
+
+            //Inform our server to open browser .
+            var newAccountHttpResponse = new AccountDTO()
             {
                 Id =  newAccount.Id,
                 Name = newAccount.Name,
                 Cookie = newAccount.Cookie,
+                CreatedAt = newAccount.CreatedAt
             };
 
-            //Inform our console app to close/re-open browser accordingly.
-            var consoleUser = $"Console_{request.UserId.ToString()}";
-            await _hubContext.Clients.Group(consoleUser)
-               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+            await _hubContext.Clients.Group($"Console_{request.UserId}")
+               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
@@ -137,59 +140,42 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("Account does not exist.");
             }
 
-            var shouldHandleBrowser = account.Cookie != request.Cookie;
+            var newCookie = request.Cookie.Trim();
+            var previousCookie = account.Cookie.Trim();
 
-            account.Name = request.Name;
-            account.Cookie = request.Cookie;
-            account.FbAccountId = fbAccountId;
-            account.UpdatedAt = DateTime.Now;
+            var newAccountName = request.Name.Trim();
+            var previousAccountName = account.Name.Trim();
 
-            _dbContext.Accounts.Update(account);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            var shouldUpdate = newCookie != previousCookie || newAccountName != previousAccountName;
 
-            var response = new UpsertAccountModelResponse();
-
-            if (shouldHandleBrowser)
+            if (shouldUpdate)
             {
-                var newAccountHttpResponse = new ConsoleAccountDTO()
+                account.Name = newAccountName;
+                account.Cookie = newCookie;
+                account.FbAccountId = fbAccountId;
+                account.UpdatedAt = DateTime.UtcNow;
+
+                _dbContext.Accounts.Update(account);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                //Inform our server to close/re-open browser accordingly.
+                var newAccountHttpResponse = new AccountDTO()
                 {
                     Id =  account.Id,
                     Name = account.Name,
                     Cookie = account.Cookie,
-                    IsUpdateRequest = true
+                    CreatedAt = account.CreatedAt,
+                    IsCookieChanged = newCookie != previousCookie,
                 };
 
-                //Inform our console app to close/re-open browser accordingly.
-                var consoleUser = $"Console_{request.UserId.ToString()}";
-                await _hubContext.Clients.Group(consoleUser)
-                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                await _hubContext.Clients.Group($"Console_{request.UserId.ToString()}")
+                   .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
             }
 
-            return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", response);
+            return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", new UpsertAccountModelResponse());
         }
 
-        private (bool isValid, string? userId) ValidateCookie(string cookieString)
-        {
-            try
-            {
-                // Parse cookies into dictionary
-                var cookies = cookieString
-                    .Split(';')
-                    .Select(x => x.Trim().Split('=', 2))
-                    .Where(x => x.Length == 2)
-                    .ToDictionary(x => x[0], x => x[1]);
 
-
-                if (!cookies.ContainsKey("c_user") || !cookies.ContainsKey("xs"))
-                    return (false, null);
-
-                return (true, cookies["c_user"]);
-            }
-            catch
-            {
-                return (false, null);
-            }
-        }
 
         private (bool isValid, int? currentUserId, string? fbAccountIda, string errorMessage) ValidateRequest(string cookie, CancellationToken cancellationToken)
         {
@@ -201,7 +187,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return (false, null, null, "Invalid request, Please login again to continue.");
             }
 
-            (bool IsValidCookie, string? fbAccountId) =  ValidateCookie(cookie);
+            (bool IsValidCookie, string? fbAccountId) = FBCookieValidatior.Validate(cookie);
 
             if (!IsValidCookie || string.IsNullOrWhiteSpace(fbAccountId))
             {
