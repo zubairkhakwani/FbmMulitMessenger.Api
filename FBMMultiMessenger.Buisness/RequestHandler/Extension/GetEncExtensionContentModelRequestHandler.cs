@@ -2,8 +2,11 @@
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Data.Database.DbModels;
+using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
@@ -12,11 +15,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
     {
         private readonly AesEncryptionHelper _aesEncryptionHelper;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ApplicationDbContext _dbContext;
 
-        public GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext)
+        public GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext)
         {
             this._aesEncryptionHelper=aesEncryptionHelper;
             this._hubContext=hubContext;
+            this._dbContext=dbContext;
         }
         public async Task<BaseResponse<GetEncExtensionContentModelResponse>> Handle(GetEncExtensionContentModelRequest request, CancellationToken cancellationToken)
         {
@@ -44,6 +49,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 string signaRFilePath = Path.Combine(ProjectDir, "BrowserExtension", "signalR.min.js");
                 var SignalRPackage = File.ReadAllText(signaRFilePath);
 
+                var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
+                var exntensionVersion = settings?.Extension_Version;
+
+                if (settings == null)
+                {
+                    var newSettings = new Settings()
+                    {
+                        Extension_Version = Guid.NewGuid().ToString(),
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _dbContext.Settings.AddAsync(newSettings);
+                    await _dbContext.SaveChangesAsync();
+                }
+
 
                 var anonymousObj = new
                 {
@@ -51,7 +70,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     InjectJs = InjectJs,
                     ContentJs = ContentJs,
                     ManifestJson = ManifestJson,
-                    SignalRPackage = SignalRPackage
+                    SignalRPackage = SignalRPackage,
+                    Extenison_Version = exntensionVersion
                 };
 
                 string extensionFilesJson = JsonSerializer.Serialize(anonymousObj);

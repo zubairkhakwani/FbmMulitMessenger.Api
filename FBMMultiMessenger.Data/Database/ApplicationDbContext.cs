@@ -1,10 +1,5 @@
 ﻿using FBMMultiMessenger.Data.Database.DbModels;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Data.DB
 {
@@ -19,6 +14,8 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<ChatMessages> ChatMessages { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<DefaultMessage> DefaultMessages { get; set; }
+        public DbSet<Settings> Settings { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
