@@ -11,58 +11,71 @@ using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 {
-    internal class GetEncExtensionContentModelRequestHandler : IRequestHandler<GetEncExtensionContentModelRequest, BaseResponse<GetEncExtensionContentModelResponse>>
+    internal class GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext) : IRequestHandler<GetEncExtensionContentModelRequest, BaseResponse<GetEncExtensionContentModelResponse>>
     {
-        private readonly AesEncryptionHelper _aesEncryptionHelper;
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly AesEncryptionHelper _aesEncryptionHelper = aesEncryptionHelper;
+        private readonly IHubContext<ChatHub> _hubContext = hubContext;
+        private readonly ApplicationDbContext _dbContext = dbContext;
 
-        public GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext)
-        {
-            this._aesEncryptionHelper=aesEncryptionHelper;
-            this._hubContext=hubContext;
-            this._dbContext=dbContext;
-        }
+        //This handler will get called by our desktop app and server (that runs browser on user machine).
         public async Task<BaseResponse<GetEncExtensionContentModelResponse>> Handle(GetEncExtensionContentModelRequest request, CancellationToken cancellationToken)
         {
             try
             {
-                string BaseDir = AppContext.BaseDirectory; // folder of the running app
+                string baseDir = AppContext.BaseDirectory;
+                string extensionFolder = Path.Combine(baseDir, "BrowserExtension");
 
-                string ProjectDir = Path.GetFullPath(Path.Combine(BaseDir, @"..\..\..")); // Go up from bin/Debug/netX.X to project root
-
-                string backgroundFilePath = Path.Combine(ProjectDir, "BrowserExtension", "background.js");
-                var BackgroundJs = File.ReadAllText(backgroundFilePath);
-
-
-                string injectFilePath = Path.Combine(ProjectDir, "BrowserExtension", "inject.js");
-                var InjectJs = File.ReadAllText(injectFilePath);
-
-
-                string contentFilePath = Path.Combine(ProjectDir, "BrowserExtension", "content.js");
-                var ContentJs = File.ReadAllText(contentFilePath);
-
-
-                string maniFestFilePath = Path.Combine(ProjectDir, "BrowserExtension", "manifest.json");
-                var ManifestJson = File.ReadAllText(maniFestFilePath);
-
-                string signaRFilePath = Path.Combine(ProjectDir, "BrowserExtension", "signalR.min.js");
-                var SignalRPackage = File.ReadAllText(signaRFilePath);
-
-                var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
-                var exntensionVersion = settings?.Extension_Version;
-
-                if (settings == null)
+                if (!Directory.Exists(extensionFolder))
                 {
-                    var newSettings = new Settings()
-                    {
-                        Extension_Version = Guid.NewGuid().ToString(),
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _dbContext.Settings.AddAsync(newSettings);
-                    await _dbContext.SaveChangesAsync();
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                        $"BrowserExtension folder not found at: {extensionFolder}");
                 }
 
+                string backgroundFilePath = Path.Combine(extensionFolder, "background.js");
+                string injectFilePath = Path.Combine(extensionFolder, "inject.js");
+                string contentFilePath = Path.Combine(extensionFolder, "content.js");
+                string manifestFilePath = Path.Combine(extensionFolder, "manifest.json");
+                string signalRFilePath = Path.Combine(extensionFolder, "signalR.min.js");
+
+
+                if (!File.Exists(backgroundFilePath))
+                {
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                             $"background.js not found at: {backgroundFilePath}");
+                }
+
+                var BackgroundJs = await File.ReadAllTextAsync(backgroundFilePath, cancellationToken);
+                var InjectJs = await File.ReadAllTextAsync(injectFilePath, cancellationToken);
+                var ContentJs = await File.ReadAllTextAsync(contentFilePath, cancellationToken);
+                var ManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
+                var SignalRPackage = await File.ReadAllTextAsync(signalRFilePath, cancellationToken);
+
+                var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
+                var extensionVersion = settings?.Extension_Version;
+
+                // we only update settings if the request is from our desktop app => UpdateServer will only be true if the request is from our desktop app
+                if (request.UpdateServer)
+                {
+                    if (settings == null)
+                    {
+                        var newSettings = new Settings()
+                        {
+                            Extension_Version = Guid.NewGuid().ToString(),
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        await _dbContext.Settings.AddAsync(newSettings, cancellationToken);
+
+                        extensionVersion = newSettings.Extension_Version;
+                    }
+                    else
+                    {
+                        extensionVersion = settings.Extension_Version = Guid.NewGuid().ToString();
+                        settings.UpdatedAt = DateTime.UtcNow;
+                    }
+
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
 
                 var anonymousObj = new
                 {
@@ -71,7 +84,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     ContentJs = ContentJs,
                     ManifestJson = ManifestJson,
                     SignalRPackage = SignalRPackage,
-                    Extenison_Version = exntensionVersion
+                    ExtensionVersion = extensionVersion
                 };
 
                 string extensionFilesJson = JsonSerializer.Serialize(anonymousObj);
@@ -83,6 +96,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     Css = encryptedExtensionFiles
                 };
 
+                //Only be true if the reqeust is from our desktop app.
                 if (request.UpdateServer)
                 {
                     //Inform our server that extension file has been changed.
@@ -93,12 +107,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
                 return BaseResponse<GetEncExtensionContentModelResponse>.Success("Successfully loaded bootstrap css", response);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
                 return BaseResponse<GetEncExtensionContentModelResponse>.Error("Something went wrong while fetching bootstrap css.");
             }
-
         }
     }
 }
