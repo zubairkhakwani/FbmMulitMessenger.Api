@@ -41,6 +41,10 @@ namespace FBMMultiMessengerServer
 
                 var app = builder.Build();
 
+                if (!Directory.Exists("Logs"))
+                {
+                    Directory.CreateDirectory("Logs");
+                }
 
                 try
                 {
@@ -52,7 +56,6 @@ namespace FBMMultiMessengerServer
                     }
 #endif
 
-                    File.WriteAllText($"Logs\\db-migration-fail-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid()}.txt", $"MIgration success.");
                 }
                 catch (Exception ex)
                 {
@@ -83,7 +86,8 @@ namespace FBMMultiMessengerServer
                     Directory.CreateDirectory("Logs");
                 }
 
-                File.WriteAllText($"Logs\\crash-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid()}.txt", $"Error while starting application. exception is {ex.Message}");
+                File.WriteAllText($"Logs\\crash-{DateTime.Now:yyyy MM dd hh mm ss}-{Guid.NewGuid()}.txt", $"Error while starting application: exception is {ex.Message}.\n Stack Strace : {ex.StackTrace} ");
+
                 Log.Fatal(ex, "An error occurred while starting the application");
             }
         }
