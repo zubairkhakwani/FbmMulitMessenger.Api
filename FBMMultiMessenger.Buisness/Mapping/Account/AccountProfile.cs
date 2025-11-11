@@ -2,8 +2,8 @@
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Request.Extension;
-using FBMMultiMessenger.Contracts;
 using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 
 namespace FBMMultiMessenger.Buisness.Mapping.Account
@@ -18,7 +18,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<BaseResponse<UpsertAccountModelResponse>, BaseResponse<UpsertAccountHttpResponse>>();
 
-
+            CreateMap<GetMyAccountsHttpRequest,GetMyAccountsModelRequest>();
             CreateMap<GetMyAccountsModelResponse, GetMyAccountsHttpResponse>();
 
             CreateMap<PageableResponse<GetMyAccountsModelResponse>, PageableResponse<GetMyAccountsHttpResponse>>();

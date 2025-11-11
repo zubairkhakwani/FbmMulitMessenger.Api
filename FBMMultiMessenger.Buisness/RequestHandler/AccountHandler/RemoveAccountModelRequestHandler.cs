@@ -31,20 +31,31 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             {
                 return BaseResponse<ToggleAcountStatusModelResponse>.Error("Invalid Request, Please login again to continue.");
             }
+            if (request.AccountIds.Count == 0)
+            {
+                return BaseResponse<ToggleAcountStatusModelResponse>.Error("Invalid Request, Please select any account to delete.");
+            }
 
-            var account = await _dbContext.Accounts
+
+            var accounts = await _dbContext.Accounts
                                           .Include(u => u.User)
                                           .ThenInclude(s => s.Subscriptions)
-                                          .FirstOrDefaultAsync(x => x.UserId == currentUser.Id
+                                          .Where(x => x.UserId == currentUser.Id
                                                                &&
-                                                               x.Id == request.AccountId, cancellationToken);
+                                                 request.AccountIds.Any(id => id == x.Id))
+                                          .ToListAsync(cancellationToken);
 
-            if (account is null)
+            var account = accounts?.FirstOrDefault();
+
+
+            if (accounts == null || account?.User?.Subscriptions == null)
             {
-                return BaseResponse<ToggleAcountStatusModelResponse>.Error("Account does not exist");
+                return BaseResponse<ToggleAcountStatusModelResponse>.Error("Account or subscriptions not found");
             }
 
             var subscriptions = account.User.Subscriptions;
+            var count = accounts.Count;
+
             var today = DateTime.UtcNow;
             var activeSubscription = subscriptions
                                                 .Where(x => x.StartedAt <= today
@@ -55,27 +66,28 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             if (activeSubscription is not null && activeSubscription.LimitUsed > 0)
             {
-                activeSubscription.LimitUsed--; 
+                activeSubscription.LimitUsed -= count;
             }
 
-            _dbContext.Remove(account);
-            await _dbContext.SaveChangesAsync();
+            _dbContext.RemoveRange(accounts);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
-
-            var accountDTO = new AccountDTO()
+            var accountDTO = accounts.Select(x => new AccountDTO()
             {
-                Id =  account.Id,
-                Name = account.Name,
-                Cookie = account.Cookie,
-            };
+                Id = x.Id,
+                Name = x.Name,
+                Cookie = x.Cookie,
+                CreatedAt = x.CreatedAt,
+            });
 
             //Inform our console app to close browser.
             var consoleUser = $"Console_{currentUser.Id.ToString()}";
             await _hubContext.Clients.Group(consoleUser)
                .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
 
+            var responseMessage = count > 1 ? "Selected accounts" : "Account";
 
-            return BaseResponse<ToggleAcountStatusModelResponse>.Success($"Account has been deleted.", new ToggleAcountStatusModelResponse());
+            return BaseResponse<ToggleAcountStatusModelResponse>.Success($"{responseMessage} has been deleted.", new ToggleAcountStatusModelResponse());
         }
     }
 }

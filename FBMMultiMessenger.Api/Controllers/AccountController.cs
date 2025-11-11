@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
-using FBMMultiMessenger.Contracts;
 using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -49,19 +49,29 @@ namespace FBMMultiMessenger.Api.Controllers
 
         [Authorize]
         [HttpGet("me")]
-        public async Task<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>> GetAll([FromQuery] int pageNo, int pageSize)
+        public async Task<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>> GetAll([FromQuery] GetMyAccountsHttpRequest httpRequest)
         {
-            BaseResponse<PageableResponse<GetMyAccountsModelResponse>> response = await _mediator.Send(new GetMyAccountsModelRequest() { PageNo = pageNo, PageSize = pageSize });
+            BaseResponse<PageableResponse<GetMyAccountsModelResponse>> response = await _mediator.Send(_mapper.Map<GetMyAccountsModelRequest>(httpRequest));
             BaseResponse<PageableResponse<GetMyAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>>(response);
 
             return httpResponse;
         }
 
         [Authorize]
-        [HttpPut("{accountId}/status")]
-        public async Task<BaseResponse<RemoveAccountHttpResponse>> ToggleAccountStatus([FromRoute] int accountId)
+        [HttpDelete("{accountId}")]
+        public async Task<BaseResponse<RemoveAccountHttpResponse>> Delete([FromRoute] int accountId)
         {
-            BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(new RemoveAcountModelRequest() { AccountId = accountId });
+            BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(new RemoveAcountModelRequest() { AccountIds = [accountId] });
+            BaseResponse<RemoveAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<RemoveAccountHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpDelete("bulk")]
+        public async Task<BaseResponse<RemoveAccountHttpResponse>> DeleteBulk([FromBody] List<int> accountIds)
+        {
+            BaseResponse<ToggleAcountStatusModelResponse> response = await _mediator.Send(new RemoveAcountModelRequest() { AccountIds = accountIds });
             BaseResponse<RemoveAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<RemoveAccountHttpResponse>>(response);
 
             return httpResponse;

@@ -1,9 +1,9 @@
-﻿namespace FBMMultiMessenger.Contracts.Contracts.Account
+﻿using FBMMultiMessenger.Contracts.Response;
+
+namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
-    public class GetMyAccountsHttpRequest
+    public class GetMyAccountsHttpRequest : PageableRequest
     {
-        public int PageNo { get; set; }
-        public int PageSize { get; set; }
     }
     public class GetMyAccountsHttpResponse
     {
