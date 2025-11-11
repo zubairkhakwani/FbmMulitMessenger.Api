@@ -3,7 +3,7 @@ using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;

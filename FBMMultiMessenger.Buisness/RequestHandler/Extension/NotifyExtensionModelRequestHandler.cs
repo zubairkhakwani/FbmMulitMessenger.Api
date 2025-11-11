@@ -2,7 +2,7 @@
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;

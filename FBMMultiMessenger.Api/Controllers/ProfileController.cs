@@ -3,7 +3,7 @@ using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.Profile;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Profile;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,6 +1,6 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using FBMMultiMessenger.Buisness.Request.Auth;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;

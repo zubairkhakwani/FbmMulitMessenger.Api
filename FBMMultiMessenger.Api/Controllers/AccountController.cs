@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Contracts;
 using FBMMultiMessenger.Contracts.Contracts.Account;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,10 +49,10 @@ namespace FBMMultiMessenger.Api.Controllers
 
         [Authorize]
         [HttpGet("me")]
-        public async Task<BaseResponse<List<GetMyAccountsHttpResponse>>> GetAll()
+        public async Task<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>> GetAll([FromQuery] int pageNo, int pageSize)
         {
-            BaseResponse<List<GetMyAccountsModelResponse>> response = await _mediator.Send(new GetMyAccountsModelRequest());
-            BaseResponse<List<GetMyAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GetMyAccountsHttpResponse>>>(response);
+            BaseResponse<PageableResponse<GetMyAccountsModelResponse>> response = await _mediator.Send(new GetMyAccountsModelRequest() { PageNo = pageNo, PageSize = pageSize });
+            BaseResponse<PageableResponse<GetMyAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>>(response);
 
             return httpResponse;
         }

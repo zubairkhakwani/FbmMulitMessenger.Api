@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Subscription;
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

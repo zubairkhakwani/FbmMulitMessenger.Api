@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FBMMultiMessenger.Contracts.Contracts.Account
+﻿namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
+    public class GetMyAccountsHttpRequest
+    {
+        public int PageNo { get; set; }
+        public int PageSize { get; set; }
+    }
     public class GetMyAccountsHttpResponse
     {
         public int Id { get; set; }

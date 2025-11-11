@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Subscription;
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;

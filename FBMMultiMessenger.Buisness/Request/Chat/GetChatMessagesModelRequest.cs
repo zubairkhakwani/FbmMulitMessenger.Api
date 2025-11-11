@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Response;
+﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;

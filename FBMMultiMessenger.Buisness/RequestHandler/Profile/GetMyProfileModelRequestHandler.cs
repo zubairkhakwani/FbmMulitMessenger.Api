@@ -1,6 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Profile;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

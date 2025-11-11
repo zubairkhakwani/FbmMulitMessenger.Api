@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Profile;
 using FBMMultiMessenger.Contracts.Contracts.Profile;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 
 namespace FBMMultiMessenger.Buisness.Mapping.UserProfile
 {

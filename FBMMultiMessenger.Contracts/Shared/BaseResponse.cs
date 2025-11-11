@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Contracts.Response
+namespace FBMMultiMessenger.Contracts.Shared
 {
     public class BaseResponse<T> where T : class
     {

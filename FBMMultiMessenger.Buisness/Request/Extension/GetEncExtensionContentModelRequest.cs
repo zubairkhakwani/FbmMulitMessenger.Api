@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Response;
+﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 
 namespace FBMMultiMessenger.Buisness.Request.Extension

@@ -3,7 +3,7 @@ using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;

@@ -1,6 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +37,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             if (chatId == 0)
             {
                 return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Chat not found", new());
-            }
+            } 
 
             // Bulk update (fast, no loading into memory)
             await _dbContext.Chats

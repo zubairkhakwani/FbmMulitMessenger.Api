@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
-using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 
 namespace FBMMultiMessenger.Buisness.Mapping.Exntension
 {

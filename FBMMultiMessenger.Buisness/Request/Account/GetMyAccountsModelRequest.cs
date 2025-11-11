@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Contracts.Response;
+﻿using FBMMultiMessenger.Contracts;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -8,8 +9,10 @@ using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
-    public class GetMyAccountsModelRequest : IRequest<BaseResponse<List<GetMyAccountsModelResponse>>>
+    public class GetMyAccountsModelRequest : IRequest<BaseResponse<PageableResponse<GetMyAccountsModelResponse>>>
     {
+        public int PageNo { get; set; }
+        public int PageSize { get; set; }
     }
 
     public class GetMyAccountsModelResponse
@@ -18,6 +21,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public required string Name { get; set; }
         public required string Cookie { get; set; }
         public bool IsActive { get; set; }
+        public int TotalCount { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

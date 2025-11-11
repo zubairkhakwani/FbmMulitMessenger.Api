@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Response;
+﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
