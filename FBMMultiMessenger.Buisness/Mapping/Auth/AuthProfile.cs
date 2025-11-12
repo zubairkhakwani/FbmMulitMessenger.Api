@@ -23,6 +23,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Auth
             CreateMap<RegisterModelResponse, RegisterHttpResponse>();
             CreateMap<BaseResponse<RegisterModelResponse>, BaseResponse<RegisterHttpResponse>>();
 
+            CreateMap<ResetPasswordHttpRequest, ResetPasswordModelRequest>();
+
         }
     }
 }

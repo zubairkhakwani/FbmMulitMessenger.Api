@@ -3,6 +3,7 @@ using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FBMMultiMessenger.Server.Controllers
@@ -42,6 +43,28 @@ namespace FBMMultiMessenger.Server.Controllers
             return httpResponse;
         }
 
+        [HttpPost("forgot-password")]
+        public async Task<BaseResponse<object>> ForgotPassword([FromBody] ForgotPasswordHttpRequest httpRequest)
+        {
+            BaseResponse<object> httpResponse = await _mediator.Send(new ForgotPasswordModelRequest() { Email = httpRequest.Email, IsResendRequest = httpRequest.IsResendRequest });
+            return httpResponse;
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<BaseResponse<object>> VerifyOtp([FromBody] string otp)
+        {
+            BaseResponse<object> httpResponse = await _mediator.Send(new VerifyOtpModelRequest() { Otp = otp });
+            return httpResponse;
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<BaseResponse<object>> ResetPassword([FromBody] ResetPasswordHttpRequest httpRequest)
+        {
+
+            var request = _mapper.Map<ResetPasswordModelRequest>(httpRequest);
+            BaseResponse<object> httpResponse = await _mediator.Send(request);
+            return httpResponse;
+        }
     }
 }
 

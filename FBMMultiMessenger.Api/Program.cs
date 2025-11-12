@@ -1,4 +1,5 @@
 using FBMMultiMessenger.Buisness.Exntesions;
+using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -31,6 +32,7 @@ namespace FBMMultiMessengerServer
 
                 // Add services to the container.
 
+
                 builder.Services.AddControllers();
                 builder.Services.RegisterDatabase(builder.Configuration);
                 builder.Services.AddSwagger();
@@ -39,6 +41,7 @@ namespace FBMMultiMessengerServer
                 builder.Services.AddTokenAuth(builder.Configuration);
                 builder.Services.RegisterServices();
 
+                builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
                 var app = builder.Build();
 
                 if (!Directory.Exists("Logs"))

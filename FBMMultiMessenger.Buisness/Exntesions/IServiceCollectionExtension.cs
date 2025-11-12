@@ -103,7 +103,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddHttpContextAccessor();
             services.AddScoped<CurrentUserService>();
             services.AddScoped<AesEncryptionHelper>();
-
+            services.AddScoped<IEmailService, EmailService>();
 
             return services;
         }

@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Data.Database.DbModels;
+﻿using FBMMultiMessenger.Contracts.Contracts.Auth;
+using FBMMultiMessenger.Data.Database.DbModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Data.DB
@@ -14,6 +15,8 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<ChatMessages> ChatMessages { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<DefaultMessage> DefaultMessages { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
         public DbSet<Settings> Settings { get; set; }
 
 
