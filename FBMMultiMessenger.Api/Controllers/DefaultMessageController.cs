@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.DefaultMessage;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.DefaultMessage;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;

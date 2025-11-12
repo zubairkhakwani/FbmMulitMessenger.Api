@@ -5,11 +5,6 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 {
@@ -46,6 +41,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                     Cookie =  x.Cookie,
                                     CreatedAt = x.CreatedAt
                                 }).ToListAsync();
+
+            //Apply filter
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.ToLower().Trim();
+
+                response = response.Where(x => x.Name.Trim().ToLower().Contains(keyword)).ToList();
+            }
 
             var totalCount = accounts.Count();
 

@@ -3,6 +3,7 @@ using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
@@ -27,8 +28,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 return BaseResponse<object>.Error("Invalid Request, Please login again to continue.");
             }
 
+            // Normalize input by trimming spaces and converting to lowercase 
+            // to ensure case-insensitive and whitespace-tolerant password comparison.
+
             var newPassword = request.NewPassword.ToLower().Trim();
             var confirmPassword = request.ConfirmPassword.ToLower().Trim();
+            var currentPassword = request.CurrentPassword.ToLower().Trim();
+
+            if (currentPassword == newPassword)
+            {
+                return BaseResponse<object>.Error("Invalid Request, New password cannot be the same as your current password.");
+            }
 
             if (newPassword != confirmPassword)
             {
@@ -50,7 +60,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
 
             user.Password = request.NewPassword;
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<object>.Success("Your password has been updated successfully.", new());
         }
