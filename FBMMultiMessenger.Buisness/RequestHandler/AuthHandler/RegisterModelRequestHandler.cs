@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using FBMMultiMessenger.Buisness.Request.Auth;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -16,10 +17,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
     public class RegisterModelRequestHandler : IRequestHandler<RegisterModelRequest, BaseResponse<RegisterModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly IEmailService _emailService;
 
-        public RegisterModelRequestHandler(ApplicationDbContext dbContext)
+        public RegisterModelRequestHandler(ApplicationDbContext dbContext,IEmailService emailService)
         {
             this._dbContext=dbContext;
+            this._emailService=emailService;
         }
         public async Task<BaseResponse<RegisterModelResponse>> Handle(RegisterModelRequest request, CancellationToken cancellationToken)
         {
@@ -43,6 +46,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 
             await _dbContext.Users.AddAsync(newUser, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.Name);
 
             return BaseResponse<RegisterModelResponse>.Success("Resgistered Successfully", new RegisterModelResponse());
         }

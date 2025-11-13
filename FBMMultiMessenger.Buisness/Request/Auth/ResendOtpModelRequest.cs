@@ -3,9 +3,9 @@ using MediatR;
 
 namespace FBMMultiMessenger.Buisness.Request.Auth
 {
-    public class VerifyOtpModelRequest : IRequest<BaseResponse<object>>
+    public class ResendOtpModelRequest : IRequest<BaseResponse<object>>
     {
-        public required string Otp { get; set; }
+        public required string Email { get; set; }
         public bool IsEmailVerification { get; set; }
     }
 }

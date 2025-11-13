@@ -1,12 +1,11 @@
-﻿using FBMMultiMessenger.Buisness.Request.Auth;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Security.Cryptography;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 {
@@ -32,29 +31,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
             }
 
 
-            if (!request.IsResendRequest)
+
+            var isPreviousOtpValid = OtpManager.HasValidOtp(user);
+
+            if (isPreviousOtpValid)
             {
-                // If the most recent password reset token is still active and unused, 
-                // do not generate a new one. Instead, notify the user that an OTP 
-                // has already been sent to their email.
-
-                var passwordResetTokens = user.PasswordResetTokens;
-                var lastResetToken = passwordResetTokens
-                                                .OrderByDescending(x => x.CreatedAt)
-                                                .FirstOrDefault();
-
-                var expiresAt = lastResetToken?.ExpiresAt;
-                var today = DateTime.UtcNow;
-
-                var isPreviousOtpValid = expiresAt > today && (lastResetToken is not null && !lastResetToken.IsUsed);
-
-                if (isPreviousOtpValid)
-                {
-                    return BaseResponse<object>.Success("A verification code has already been sent to your email. Please check your inbox.", new());
-                }
+                return BaseResponse<object>.Success("A verification code has already been sent to your email. Please check your inbox.", new());
             }
 
-            var otp = GenerateOTP();
+
+            var otp = OtpManager.GenerateOTP();
 
             var isEmailSend = await _emailService.SendPasswordResetEmailAsync(user.Email, otp, user.Name);
 
@@ -69,49 +55,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 Email = user.Email,
                 Otp = otp,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(OtpManager.OtpExpiryDuration),
                 UserId = user.Id
 
             };
-
-            if (request.IsResendRequest)
-            {
-                await _dbContext.PasswordResetTokens
-                    .Where(x => x.UserId == user.Id)
-                    .ExecuteUpdateAsync(p => p
-                                       .SetProperty(m => m.IsUsed, true), cancellationToken);
-            }
 
             await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<object>.Success("A verification code has been sent successfully.", new());
-        }
-
-        public static string GenerateOTP()
-        {
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                // Available digits 0-9
-                var availableDigits = Enumerable.Range(0, 10).ToList();
-                var code = new int[6];
-
-                // Select 6 unique random digits
-                for (int i = 0; i < 6; i++)
-                {
-                    byte[] randomByte = new byte[1];
-                    rng.GetBytes(randomByte);
-
-                    // Get random index from remaining available digits
-                    int index = randomByte[0] % availableDigits.Count;
-                    code[i] = availableDigits[index];
-
-                    // Remove used digit to ensure uniqueness
-                    availableDigits.RemoveAt(index);
-                }
-
-                return string.Join("", code);
-            }
         }
     }
 }

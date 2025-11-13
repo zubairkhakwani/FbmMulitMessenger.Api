@@ -46,14 +46,21 @@ namespace FBMMultiMessenger.Server.Controllers
         [HttpPost("forgot-password")]
         public async Task<BaseResponse<object>> ForgotPassword([FromBody] ForgotPasswordHttpRequest httpRequest)
         {
-            BaseResponse<object> httpResponse = await _mediator.Send(new ForgotPasswordModelRequest() { Email = httpRequest.Email, IsResendRequest = httpRequest.IsResendRequest });
+            BaseResponse<object> httpResponse = await _mediator.Send(new ForgotPasswordModelRequest() { Email = httpRequest.Email });
             return httpResponse;
         }
 
         [HttpPost("verify-otp")]
-        public async Task<BaseResponse<object>> VerifyOtp([FromBody] string otp)
+        public async Task<BaseResponse<object>> VerifyOtp([FromBody] string otp, [FromQuery] bool isEmailVerification = false)
         {
-            BaseResponse<object> httpResponse = await _mediator.Send(new VerifyOtpModelRequest() { Otp = otp });
+            BaseResponse<object> httpResponse = await _mediator.Send(new VerifyOtpModelRequest() { Otp = otp, IsEmailVerification = isEmailVerification });
+            return httpResponse;
+        }
+
+        [HttpPost("resend-otp")]
+        public async Task<BaseResponse<object>> ResendOtp([FromBody] string email, [FromQuery] bool isEmailVerification = false)
+        {
+            BaseResponse<object> httpResponse = await _mediator.Send(new ResendOtpModelRequest() { Email = email, IsEmailVerification = isEmailVerification });
             return httpResponse;
         }
 

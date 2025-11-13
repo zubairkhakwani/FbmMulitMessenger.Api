@@ -6,6 +6,5 @@ namespace FBMMultiMessenger.Buisness.Request.Auth
     public class ForgotPasswordModelRequest : IRequest<BaseResponse<object>>
     {
         public string Email { get; set; } = null!;
-        public bool IsResendRequest { get; set; }
     }
 }

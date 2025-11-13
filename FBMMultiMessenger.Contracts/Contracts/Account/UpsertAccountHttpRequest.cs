@@ -20,5 +20,6 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
     {
         public bool IsLimitExceeded { get; set; }
         public bool IsSubscriptionExpired { get; set; }
+        public string EmailSendTo { get; set; } = string.Empty;
     }
 }

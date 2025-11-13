@@ -4,11 +4,6 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
 {
@@ -26,7 +21,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
-            //Extra safety check: If the user has came to this point he will be logged in hence currenuser will never be null.
+            //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
             if (currentUser is null)
             {
                 return BaseResponse<GetMySubscriptionModelResponse>.Error("Invalid Request, Please login again to continue.");

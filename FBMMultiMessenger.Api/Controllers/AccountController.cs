@@ -36,13 +36,13 @@ namespace FBMMultiMessenger.Api.Controllers
 
         [Authorize]
         [HttpPost("import")]
-        public async Task<BaseResponse<object>> BulkImport([FromBody] List<ImportAccountsHttpRequest> httpRequest)
+        public async Task<BaseResponse<UpsertAccountHttpResponse>> BulkImport([FromBody] List<ImportAccountsHttpRequest> httpRequest)
         {
             List<ImportAccounts> request = _mapper.Map<List<ImportAccounts>>(httpRequest);
 
-            BaseResponse<object> response = await _mediator.Send(new ImportAccountsModelRequest() { Accounts = request });
+            BaseResponse<UpsertAccountModelResponse> response = await _mediator.Send(new ImportAccountsModelRequest() { Accounts = request });
 
-            BaseResponse<object> httpResponse = _mapper.Map<BaseResponse<object>>(response);
+            BaseResponse<UpsertAccountHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpsertAccountHttpResponse>>(response);
 
             return httpResponse;
         }

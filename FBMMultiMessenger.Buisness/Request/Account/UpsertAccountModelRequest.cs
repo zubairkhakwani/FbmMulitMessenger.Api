@@ -22,5 +22,8 @@ namespace FBMMultiMessenger.Buisness.Request.Account
     {
         public bool IsLimitExceeded { get; set; }
         public bool IsSubscriptionExpired { get; set; }
+
+        public bool IsEmailVerified { get; set; }
+        public string EmailSendTo { get; set; } = string.Empty;
     }
 }

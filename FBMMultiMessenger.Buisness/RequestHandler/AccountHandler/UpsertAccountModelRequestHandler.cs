@@ -16,12 +16,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
+        private readonly IEmailService _emailService;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
+        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IEmailService emailService, IHubContext<ChatHub> hubContext)
         {
             _dbContext=dbContext;
             _currentUserService=currentUserService;
+            this._emailService=emailService;
             _hubContext = hubContext;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
@@ -47,13 +49,42 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var user = await _dbContext.Users
                                        .Include(a => a.Accounts)
+                                       .Include(p => p.PasswordResetTokens)
                                        .Include(s => s.Subscriptions)
-                                       .FirstOrDefaultAsync(x => x.Id == request.UserId);
+                                       .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken: cancellationToken);
             if (user is null)
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
             }
 
+            if (!user.IsEmailVerified)
+            {
+
+                var isPreviousOtpValid = OtpManager.HasValidOtp(user, isEmailVerificationCode: true);
+
+                if (isPreviousOtpValid)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Success("A verification code has already been sent to your email. Please check your inbox.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
+                }
+
+                var otp = OtpManager.GenerateOTP();
+
+                var newPasswordResetToken = new PasswordResetToken()
+                {
+                    Email = user.Email,
+                    Otp = otp,
+                    CreatedAt = DateTime.Now,
+                    ExpiresAt = DateTime.Now.AddMinutes(OtpManager.OtpExpiryDuration),
+                    UserId = user.Id,
+                    IsEmailVerification = true
+                };
+
+                await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);
+                return BaseResponse<UpsertAccountModelResponse>.Error("Please verify your email to continue.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
+            }
 
             var userAccounts = user.Accounts;
             var isFbAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId);

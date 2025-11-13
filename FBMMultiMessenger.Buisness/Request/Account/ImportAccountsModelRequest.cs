@@ -1,8 +1,9 @@
-﻿using FBMMultiMessenger.Contracts.Shared;
+﻿using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
-    public class ImportAccountsModelRequest : IRequest<BaseResponse<object>>
+    public class ImportAccountsModelRequest : IRequest<BaseResponse<UpsertAccountModelResponse>>
     {
         public List<ImportAccounts> Accounts { get; set; } = new List<ImportAccounts>();
     }

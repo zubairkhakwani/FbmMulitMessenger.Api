@@ -17,10 +17,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         public async Task<BaseResponse<object>> Handle(VerifyOtpModelRequest request, CancellationToken cancellationToken)
         {
             var passwordResetToken = await _dbContext.PasswordResetTokens
-                                               .FirstOrDefaultAsync(x => x.Otp == request.Otp, cancellationToken);
-
+                                                     .Include(u => u.User)
+                                                     .FirstOrDefaultAsync(x => x.Otp == request.Otp, cancellationToken);
 
             if (passwordResetToken is null)
+            {
+                return BaseResponse<object>.Error("Invalid request, verification code is not valid");
+            }
+
+            if (request.IsEmailVerification && !passwordResetToken.IsEmailVerification)
+            {
+                return BaseResponse<object>.Error("Invalid request, verification code is not valid");
+            }
+            if (!request.IsEmailVerification && passwordResetToken.IsEmailVerification)
             {
                 return BaseResponse<object>.Error("Invalid request, verification code is not valid");
             }
@@ -38,7 +47,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 return BaseResponse<object>.Error("This verification code has already been used. Please request a new one.");
             }
 
-            return BaseResponse<object>.Success("Verification successful. You can now reset your password.", new());
+            if (request.IsEmailVerification)
+            {
+                var user = passwordResetToken.User;
+                if (!user.IsEmailVerified)
+                {
+                    user.IsEmailVerified = true;
+                    passwordResetToken.IsUsed = true;
+                    passwordResetToken.UsedAt = DateTime.UtcNow;
+
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            var responseMessage = request.IsEmailVerification ? "Email Verification successfull" : "Verification successful. You can now reset your password.";
+            return BaseResponse<object>.Success(responseMessage, new());
         }
     }
 }

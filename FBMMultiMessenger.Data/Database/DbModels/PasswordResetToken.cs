@@ -18,6 +18,9 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [MaxLength(500)]
         public required string Otp { get; set; }
 
+        public bool IsEmailVerification { get; set; }
+
+
         public DateTime CreatedAt { get; set; }
 
         public DateTime ExpiresAt { get; set; }
