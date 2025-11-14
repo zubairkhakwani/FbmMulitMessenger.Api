@@ -60,7 +60,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 }
             }
 
-            var responseMessage = request.IsEmailVerification ? "Email Verification successfull" : "Verification successful. You can now reset your password.";
+            var responseMessage = request.IsEmailVerification ? "Email Verified successfully." : "Verification successful. You can now reset your password.";
             return BaseResponse<object>.Success(responseMessage, new());
         }
     }

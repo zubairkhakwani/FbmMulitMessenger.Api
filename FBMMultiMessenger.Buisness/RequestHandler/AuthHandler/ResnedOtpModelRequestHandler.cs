@@ -45,6 +45,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(OtpManager.OtpExpiryDuration),
                 UserId = user.Id,
+                IsEmailVerification = request.IsEmailVerification
             };
 
             await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
