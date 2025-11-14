@@ -48,6 +48,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
             {
                 return BaseResponse<object>.Success("No changes deteced", new());
             }
+            if (user.Email.Trim() != requestedEmail)
+            {
+                user.IsEmailVerified = false;
+            }
 
 
             user.Name = requestedName;

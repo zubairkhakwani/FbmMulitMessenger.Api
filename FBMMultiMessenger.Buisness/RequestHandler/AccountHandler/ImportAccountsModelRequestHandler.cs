@@ -146,7 +146,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                  .SendAsync("HandleUpsertAccount", newAccountsHttpResponse, cancellationToken);
 
 
-            return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new());
+            return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
         }
 
         public List<ImportAccounts> GetSanitizedAccounts(List<Account> userAccounts, ImportAccountsModelRequest request)

@@ -115,7 +115,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var maxLimit = activeSubscription.MaxLimit;
             var limitUsed = activeSubscription.LimitUsed;
 
-            var response = new UpsertAccountModelResponse();
+            var response = new UpsertAccountModelResponse() { IsEmailVerified = true };
 
             if (limitUsed >= maxLimit)
             {
