@@ -1,7 +1,9 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Shared;
@@ -18,15 +20,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IUserAccountService _userAccountService;
+        private readonly IMapper _mapper;
         private readonly CurrentUserService _currentUserService;
-        private readonly IEmailService _emailService;
 
-        public ImportAccountsModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, CurrentUserService currentUserService, IEmailService emailService)
+        public ImportAccountsModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, IUserAccountService userAccountService, IMapper mapper, CurrentUserService currentUserService)
         {
             this._dbContext=dbContext;
             this._hubContext=hubContext;
+            this._userAccountService=userAccountService;
+            this._mapper=mapper;
             this._currentUserService=currentUserService;
-            this._emailService=emailService;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(ImportAccountsModelRequest request, CancellationToken cancellationToken)
         {
@@ -52,30 +56,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             if (!user.IsEmailVerified)
             {
-                var isPreviousOtpValid = OtpManager.HasValidOtp(user, isEmailVerificationCode: true);
+                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
 
-                if (isPreviousOtpValid)
-                {
-                    return BaseResponse<UpsertAccountModelResponse>.Success("A verification code has already been sent to your email. Please check your inbox.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
-                }
-
-                var otp = OtpManager.GenerateOTP();
-
-                var newPasswordResetToken = new PasswordResetToken()
-                {
-                    Email = user.Email,
-                    Otp = otp,
-                    CreatedAt = DateTime.Now,
-                    ExpiresAt = DateTime.Now.AddMinutes(OtpManager.OtpExpiryDuration),
-                    UserId = user.Id,
-                    IsEmailVerification = true
-                };
-
-                await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);
-                return BaseResponse<UpsertAccountModelResponse>.Error("Please verify your email to continue.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
+                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
 

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Request.Extension;
@@ -18,7 +19,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<BaseResponse<UpsertAccountModelResponse>, BaseResponse<UpsertAccountHttpResponse>>();
 
-            CreateMap<GetMyAccountsHttpRequest,GetMyAccountsModelRequest>();
+            CreateMap<GetMyAccountsHttpRequest, GetMyAccountsModelRequest>();
             CreateMap<GetMyAccountsModelResponse, GetMyAccountsHttpResponse>();
 
             CreateMap<PageableResponse<GetMyAccountsModelResponse>, PageableResponse<GetMyAccountsHttpResponse>>();
@@ -44,6 +45,10 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<GetEncExtensionContentModelResponse, GetMyAccountsHttpResponse>();
             CreateMap<BaseResponse<GetEncExtensionContentModelResponse>, BaseResponse<GetMyAccountsHttpResponse>>();
+
+
+            CreateMap<EmailVerificationResponse, UpsertAccountModelResponse>();
+            CreateMap<BaseResponse<EmailVerificationResponse>, BaseResponse<UpsertAccountModelResponse>>();
         }
     }
 }

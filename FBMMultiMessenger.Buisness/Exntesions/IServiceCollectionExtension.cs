@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -104,7 +105,8 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<CurrentUserService>();
             services.AddScoped<AesEncryptionHelper>();
             services.AddScoped<IEmailService, EmailService>();
-
+            services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+            services.AddScoped<IUserAccountService, UserAccountService>();
             return services;
         }
     }

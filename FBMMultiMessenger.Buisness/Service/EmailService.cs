@@ -1,4 +1,6 @@
-﻿using FBMMultiMessenger.Buisness.Models;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -145,7 +147,7 @@ namespace FBMMultiMessenger.Buisness.Service
                 
                 <div class='expiry-notice'>
                     <strong style='color: #c53030;'>⏰ Important:</strong>
-                    <p style='margin: 5px 0 0 0; color: #742a2a; font-size: 14px;'>This code will expire in <strong>30 minutes</strong>. Please use it immediately.</p>
+                    <p style='margin: 5px 0 0 0; color: #742a2a; font-size: 14px;'>This code will expire in <strong>{OtpManager.PasswordExpiryDuration} minutes</strong>. Please use it immediately.</p>
                 </div>
                 
                 <div class='info-box'>
@@ -250,7 +252,7 @@ namespace FBMMultiMessenger.Buisness.Service
             
             <div class='expiry-notice'>
                 <strong style='color: #c53030;'>⏰ Important:</strong>
-                <p style='margin: 5px 0 0 0; color: #742a2a; font-size: 14px;'>This code will expire in <strong>30 minutes</strong>. Please verify your email promptly.</p>
+                <p style='margin: 5px 0 0 0; color: #742a2a; font-size: 14px;'>This code will expire in <strong>{OtpManager.EmailExpiryDuration} minutes</strong>. Please verify your email promptly.</p>
             </div>
             
             <div class='info-box'>

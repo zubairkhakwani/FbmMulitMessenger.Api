@@ -1,6 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Auth;
-using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -13,11 +13,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IEmailService _emailService;
+        private readonly IVerificationCodeService _verificationCodeService;
 
-        public ForgotPasswordModelRequestHandler(ApplicationDbContext dbContext, IEmailService emailService)
+        public ForgotPasswordModelRequestHandler(ApplicationDbContext dbContext, IEmailService emailService, IVerificationCodeService verificationCodeService)
         {
             this._dbContext=dbContext;
             this._emailService=emailService;
+            this._verificationCodeService=verificationCodeService;
         }
         public async Task<BaseResponse<object>> Handle(ForgotPasswordModelRequest request, CancellationToken cancellationToken)
         {
@@ -30,9 +32,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 return BaseResponse<object>.Error("Invalid request, Email does not exist.");
             }
 
-
-
-            var isPreviousOtpValid = OtpManager.HasValidOtp(user);
+            var isPreviousOtpValid = _verificationCodeService.HasValidOtp(user);
 
             if (isPreviousOtpValid)
             {
@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
             }
 
 
-            var otp = OtpManager.GenerateOTP();
+            var otp = _verificationCodeService.GenerateOTP();
 
             var isEmailSend = await _emailService.SendPasswordResetEmailAsync(user.Email, otp, user.Name);
 
@@ -49,15 +49,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 return BaseResponse<object>.Error("Something went wrong when sending email, please try later.");
             }
 
-
             var newPasswordResetToken = new PasswordResetToken()
             {
                 Email = user.Email,
                 Otp = otp,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(OtpManager.OtpExpiryDuration),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(OtpManager.PasswordExpiryDuration),
                 UserId = user.Id
-
             };
 
             await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);

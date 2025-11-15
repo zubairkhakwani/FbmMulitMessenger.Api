@@ -1,7 +1,9 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
@@ -16,15 +18,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
-        private readonly IEmailService _emailService;
+        private readonly IUserAccountService _userAccountService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IMapper _mapper;
 
-        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IEmailService emailService, IHubContext<ChatHub> hubContext)
+        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IUserAccountService userAccountService, IHubContext<ChatHub> hubContext, IMapper mapper)
         {
             _dbContext=dbContext;
             _currentUserService=currentUserService;
-            this._emailService=emailService;
+            this._userAccountService=userAccountService;
             _hubContext = hubContext;
+            this._mapper=mapper;
         }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
@@ -59,31 +63,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             if (!user.IsEmailVerified)
             {
+                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
 
-                var isPreviousOtpValid = OtpManager.HasValidOtp(user, isEmailVerificationCode: true);
-
-                if (isPreviousOtpValid)
-                {
-                    return BaseResponse<UpsertAccountModelResponse>.Success("A verification code has already been sent to your email. Please check your inbox.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
-                }
-
-                var otp = OtpManager.GenerateOTP();
-
-                var newPasswordResetToken = new PasswordResetToken()
-                {
-                    Email = user.Email,
-                    Otp = otp,
-                    CreatedAt = DateTime.Now,
-                    ExpiresAt = DateTime.Now.AddMinutes(OtpManager.OtpExpiryDuration),
-                    UserId = user.Id,
-                    IsEmailVerification = true
-                };
-
-                await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);
-                return BaseResponse<UpsertAccountModelResponse>.Error("Please verify your email to continue.", result: new UpsertAccountModelResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
+                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
             var userAccounts = user.Accounts;
@@ -115,7 +97,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var maxLimit = activeSubscription.MaxLimit;
             var limitUsed = activeSubscription.LimitUsed;
 
-            var response = new UpsertAccountModelResponse() { IsEmailVerified = true };
+            var response = new UpsertAccountModelResponse();
 
             if (limitUsed >= maxLimit)
             {
@@ -164,11 +146,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
         private async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
-            var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.Id == request.AccountId && x.UserId == request.UserId);
+            var account = await _dbContext.Accounts
+                                          .FirstOrDefaultAsync(x => x.Id == request.AccountId
+                                                               &&
+                                                               x.UserId == request.UserId, cancellationToken);
 
             if (account is null)
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("Account does not exist.");
+            }
+
+            var user = account.User;
+
+            if (!user.IsEmailVerified)
+            {
+                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
+
+                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
             var newCookie = request.Cookie.Trim();
@@ -199,7 +193,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     IsCookieChanged = newCookie != previousCookie,
                 };
 
-                await _hubContext.Clients.Group($"Console_{request.UserId.ToString()}")
+                await _hubContext.Clients.Group($"Console_{request.UserId}")
                    .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
             }
 

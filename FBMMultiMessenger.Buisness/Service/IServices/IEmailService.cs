@@ -1,4 +1,4 @@
-﻿namespace FBMMultiMessenger.Buisness.Service
+﻿namespace FBMMultiMessenger.Buisness.Service.IServices
 {
     public interface IEmailService
     {

@@ -1,6 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Auth;
-using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -12,11 +12,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
     internal class ResnedOtpModelRequestHandler : IRequestHandler<ResendOtpModelRequest, BaseResponse<object>>
     {
         private readonly ApplicationDbContext _dbContext;
+        private readonly IVerificationCodeService _verificationCodeService;
         private readonly IEmailService _emailService;
 
-        public ResnedOtpModelRequestHandler(ApplicationDbContext dbContext, IEmailService emailService)
+        public ResnedOtpModelRequestHandler(ApplicationDbContext dbContext, IVerificationCodeService verificationCodeService, IEmailService emailService)
         {
             this._dbContext=dbContext;
+            this._verificationCodeService=verificationCodeService;
             this._emailService=emailService;
         }
         public async Task<BaseResponse<object>> Handle(ResendOtpModelRequest request, CancellationToken cancellationToken)
@@ -36,14 +38,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                                                .SetProperty(m => m.IsUsed, true), cancellationToken);
 
 
-            var otp = OtpManager.GenerateOTP();
+            var otp = _verificationCodeService.GenerateOTP();
+
+            var expiryDuration = request.IsEmailVerification
+                                        ? OtpManager.EmailExpiryDuration
+                                        : OtpManager.PasswordExpiryDuration;
 
             var newPasswordResetToken = new PasswordResetToken()
             {
                 Email = user.Email,
                 Otp = otp,
                 CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(OtpManager.OtpExpiryDuration),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(expiryDuration),
                 UserId = user.Id,
                 IsEmailVerification = request.IsEmailVerification
             };
