@@ -24,7 +24,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         public async Task<BaseResponse<object>> Handle(ForgotPasswordModelRequest request, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
-                                       .Include(p => p.PasswordResetTokens)
+                                       .Include(p => p.VerificationTokens)
                                        .FirstOrDefaultAsync(x => x.Email == request.Email.Trim(), cancellationToken);
 
             if (user is null)
@@ -49,7 +49,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 return BaseResponse<object>.Error("Something went wrong when sending email, please try later.");
             }
 
-            var newPasswordResetToken = new PasswordResetToken()
+            var newPasswordResetToken = new VerificationToken()
             {
                 Email = user.Email,
                 Otp = otp,
@@ -58,7 +58,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 UserId = user.Id
             };
 
-            await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
+            await _dbContext.VerificationTokens.AddAsync(newPasswordResetToken, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<object>.Success("A verification code has been sent successfully.", new());

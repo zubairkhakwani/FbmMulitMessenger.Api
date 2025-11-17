@@ -53,7 +53,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var user = await _dbContext.Users
                                        .Include(a => a.Accounts)
-                                       .Include(p => p.PasswordResetTokens)
+                                       .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken: cancellationToken);
             if (user is null)

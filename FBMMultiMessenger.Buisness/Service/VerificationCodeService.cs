@@ -34,11 +34,11 @@ namespace FBMMultiMessenger.Buisness.Service
 
         public bool HasValidOtp(User user, bool isEmailVerificationCode = false)
         {
-            if (user?.PasswordResetTokens == null || !user.PasswordResetTokens.Any())
+            if (user?.VerificationTokens == null || !user.VerificationTokens.Any())
                 return false;
 
             // Get the most recent token
-            var lastToken = user.PasswordResetTokens
+            var lastToken = user.VerificationTokens
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefault();
 

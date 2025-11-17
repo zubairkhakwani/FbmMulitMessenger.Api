@@ -16,7 +16,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         }
         public async Task<BaseResponse<object>> Handle(ResetPasswordModelRequest request, CancellationToken cancellationToken)
         {
-            var passwordResetToken = await _dbContext.PasswordResetTokens
+            var passwordResetToken = await _dbContext.VerificationTokens
                                                 .Include(u => u.User)
                                                .FirstOrDefaultAsync(x => x.Otp == request.Otp
                                                                     &&
@@ -50,7 +50,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 
             var user = passwordResetToken.User;
 
-            await _dbContext.PasswordResetTokens
+            await _dbContext.VerificationTokens
                       .Where(x => x.UserId == user.Id)
                       .ExecuteUpdateAsync(p => p
                                                .SetProperty(m => m.IsUsed, true), cancellationToken);

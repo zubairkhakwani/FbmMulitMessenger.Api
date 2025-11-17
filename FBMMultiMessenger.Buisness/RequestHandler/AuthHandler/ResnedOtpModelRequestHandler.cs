@@ -32,7 +32,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
             }
 
             //if the user is requesting another otp we mark previous otp as used.
-            await _dbContext.PasswordResetTokens
+            await _dbContext.VerificationTokens
                       .Where(x => x.UserId == user.Id)
                       .ExecuteUpdateAsync(p => p
                                                .SetProperty(m => m.IsUsed, true), cancellationToken);
@@ -44,7 +44,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                                         ? OtpManager.EmailExpiryDuration
                                         : OtpManager.PasswordExpiryDuration;
 
-            var newPasswordResetToken = new PasswordResetToken()
+            var newPasswordResetToken = new VerificationToken()
             {
                 Email = user.Email,
                 Otp = otp,
@@ -54,7 +54,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 IsEmailVerification = request.IsEmailVerification
             };
 
-            await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
+            await _dbContext.VerificationTokens.AddAsync(newPasswordResetToken, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             if (request.IsEmailVerification)

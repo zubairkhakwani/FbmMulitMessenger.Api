@@ -31,7 +31,7 @@ namespace FBMMultiMessenger.Buisness.Service
 
             var otp = _verificationCodeService.GenerateOTP();
 
-            var newPasswordResetToken = new PasswordResetToken()
+            var newPasswordResetToken = new VerificationToken()
             {
                 Email = user.Email,
                 Otp = otp,
@@ -41,7 +41,7 @@ namespace FBMMultiMessenger.Buisness.Service
                 IsEmailVerification = true
             };
 
-            await _dbContext.PasswordResetTokens.AddAsync(newPasswordResetToken, cancellationToken);
+            await _dbContext.VerificationTokens.AddAsync(newPasswordResetToken, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);

@@ -23,6 +23,6 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<Subscription> Subscriptions { get; set; } = new List<Subscription>();
         public List<Account> Accounts { get; set; } = new List<Account>();
         public List<DefaultMessage> DefaultMessages { get; set; } = new List<DefaultMessage>();
-        public List<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
+        public List<VerificationToken> VerificationTokens { get; set; } = new List<VerificationToken>();
     }
 }

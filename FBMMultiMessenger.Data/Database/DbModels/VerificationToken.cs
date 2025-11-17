@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
-    public class PasswordResetToken
+    public class VerificationToken
     {
         public int Id { get; set; }
 
@@ -19,7 +19,6 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public required string Otp { get; set; }
 
         public bool IsEmailVerification { get; set; }
-
 
         public DateTime CreatedAt { get; set; }
 

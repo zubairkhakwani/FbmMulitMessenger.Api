@@ -14,7 +14,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<ChatMessages> ChatMessages { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<DefaultMessage> DefaultMessages { get; set; }
-        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<VerificationToken> VerificationTokens { get; set; }
 
         public DbSet<Settings> Settings { get; set; }
 
