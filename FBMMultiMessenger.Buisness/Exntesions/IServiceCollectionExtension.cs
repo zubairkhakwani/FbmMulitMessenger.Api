@@ -109,5 +109,23 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<IUserAccountService, UserAccountService>();
             return services;
         }
+
+        public static IServiceCollection AddCors(this IServiceCollection services, IConfiguration configuration)
+        {
+            var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!;
+
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("AllowMyApp", policy =>
+            //    {
+            //        policy.AllowAnyOrigin()
+            //              .AllowAnyMethod()
+            //              .AllowAnyHeader()
+            //              .AllowCredentials();
+            //    });
+            //});
+
+            return services;
+        }
     }
 }

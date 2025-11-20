@@ -14,8 +14,8 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public int LimitUsed { get; set; }
         public bool IsActive { get; set; }
         public DateTime StartedAt { get; set; }
-
         public DateTime ExpiredAt { get; set; }
+
 
         [ForeignKey(nameof(User))]
         public int UserId { get; set; }

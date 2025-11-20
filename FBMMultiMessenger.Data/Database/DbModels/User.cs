@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
     public class User
     {
         public int Id { get; set; }
+
+        [ForeignKey(nameof(Role))]
+        public int RoleId { get; set; }
+
         public required string Name { get; set; }
         public required string Email { get; set; }
         public required string Password { get; set; }
@@ -24,5 +24,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<Account> Accounts { get; set; } = new List<Account>();
         public List<DefaultMessage> DefaultMessages { get; set; } = new List<DefaultMessage>();
         public List<VerificationToken> VerificationTokens { get; set; } = new List<VerificationToken>();
+        public Role Role { get; set; } = null!;
+
     }
 }

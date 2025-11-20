@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251117044722_RenamingNameOfPasswordResetTokenToAGenericName")]
-    partial class RenamingNameOfPasswordResetTokenToAGenericName
+    [Migration("20251118184023_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -200,6 +200,167 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.ToTable("DefaultMessages");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AccountsPurchased")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ActualPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ApprovedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PurchasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SubscriptionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PaymentVerifications");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaxAccounts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinAccounts")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PricePerAccount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PricingTiers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            MaxAccounts = 10,
+                            MinAccounts = 1,
+                            PricePerAccount = 100m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            MaxAccounts = 20,
+                            MinAccounts = 11,
+                            PricePerAccount = 50m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            MaxAccounts = 100,
+                            MinAccounts = 21,
+                            PricePerAccount = 40m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            MaxAccounts = 2147483647,
+                            MinAccounts = 101,
+                            PricePerAccount = 30m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        });
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Customer"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 9, 21, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 9, 21, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "SuperAdmin"
+                        });
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Settings", b =>
                 {
                     b.Property<int>("Id")
@@ -311,7 +472,12 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
 
@@ -325,7 +491,8 @@ namespace FBMMultiMessenger.Data.Migrations
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Zubair Khakwani",
-                            Password = "Zubair!"
+                            Password = "Zubair!",
+                            RoleId = 3
                         },
                         new
                         {
@@ -336,7 +503,8 @@ namespace FBMMultiMessenger.Data.Migrations
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Shaheer Khawjikzai",
-                            Password = "Shaheer1!"
+                            Password = "Shaheer1!",
+                            RoleId = 3
                         });
                 });
 
@@ -439,6 +607,23 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Subscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId");
+
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subscription");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -448,6 +633,17 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.VerificationToken", b =>
@@ -474,6 +670,11 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
                 {
                     b.Navigation("Accounts");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>

@@ -8,31 +8,85 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace FBMMultiMessenger.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "PricingTiers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MinAccounts = table.Column<int>(type: "int", nullable: false),
+                    MaxAccounts = table.Column<int>(type: "int", nullable: false),
+                    PricePerAccount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PricingTiers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Settings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Extension_Version = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Settings", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    RoleId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ContactNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsEmailVerified = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "DefaultMessage",
+                name: "DefaultMessages",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -44,9 +98,9 @@ namespace FBMMultiMessenger.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DefaultMessage", x => x.Id);
+                    table.PrimaryKey("PK_DefaultMessages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_DefaultMessage_Users_UserId",
+                        name: "FK_DefaultMessages_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -78,29 +132,90 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "VerificationTokens",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Otp = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    IsEmailVerification = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false),
+                    UsedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VerificationTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VerificationTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Accounts",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: false),
+                    DefaultMessageId = table.Column<int>(type: "int", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FbAccountId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Cookie = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DefaultMessageId = table.Column<int>(type: "int", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Accounts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Accounts_DefaultMessage_DefaultMessageId",
+                        name: "FK_Accounts_DefaultMessages_DefaultMessageId",
                         column: x => x.DefaultMessageId,
-                        principalTable: "DefaultMessage",
+                        principalTable: "DefaultMessages",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Accounts_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentVerifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    SubscriptionId = table.Column<int>(type: "int", nullable: true),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AccountsPurchased = table.Column<int>(type: "int", nullable: false),
+                    PurchasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ActualPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedByAdminId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentVerifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentVerifications_Subscriptions_SubscriptionId",
+                        column: x => x.SubscriptionId,
+                        principalTable: "Subscriptions",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PaymentVerifications_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -173,12 +288,33 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "ContactNumber", "CreatedAt", "Email", "IsActive", "Name", "Password" },
+                table: "PricingTiers",
+                columns: new[] { "Id", "CreatedAt", "MaxAccounts", "MinAccounts", "PricePerAccount", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 1, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "zbrkhakwani@gmail.com", true, "Zubair Khakwani", "Zubair!" },
-                    { 2, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "shaheersk12@gmail.com", true, "Shaheer Khawjikzai", "Shaheer1!" }
+                    { 1, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified), 10, 1, 100m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
+                    { 2, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified), 20, 11, 50m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
+                    { 3, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified), 100, 21, 40m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
+                    { 4, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Unspecified), 2147483647, 101, 30m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Id", "CreatedAt", "Name" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "Customer" },
+                    { 2, new DateTime(2025, 9, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), "Admin" },
+                    { 3, new DateTime(2025, 9, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), "SuperAdmin" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "ContactNumber", "CreatedAt", "Email", "IsActive", "IsEmailVerified", "Name", "Password", "RoleId" },
+                values: new object[,]
+                {
+                    { 1, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "zbrkhakwani@gmail.com", true, false, "Zubair Khakwani", "Zubair!", 3 },
+                    { 2, "03330337272", new DateTime(2025, 9, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), "shaheersk12@gmail.com", true, false, "Shaheer Khawjikzai", "Shaheer1!", 3 }
                 });
 
             migrationBuilder.InsertData(
@@ -216,13 +352,33 @@ namespace FBMMultiMessenger.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DefaultMessage_UserId",
-                table: "DefaultMessage",
+                name: "IX_DefaultMessages_UserId",
+                table: "DefaultMessages",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentVerifications_SubscriptionId",
+                table: "PaymentVerifications",
+                column: "SubscriptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentVerifications_UserId",
+                table: "PaymentVerifications",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Subscriptions_UserId",
                 table: "Subscriptions",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_RoleId",
+                table: "Users",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VerificationTokens_UserId",
+                table: "VerificationTokens",
                 column: "UserId");
         }
 
@@ -233,19 +389,34 @@ namespace FBMMultiMessenger.Data.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
-                name: "Subscriptions");
+                name: "PaymentVerifications");
+
+            migrationBuilder.DropTable(
+                name: "PricingTiers");
+
+            migrationBuilder.DropTable(
+                name: "Settings");
+
+            migrationBuilder.DropTable(
+                name: "VerificationTokens");
 
             migrationBuilder.DropTable(
                 name: "Chats");
 
             migrationBuilder.DropTable(
+                name: "Subscriptions");
+
+            migrationBuilder.DropTable(
                 name: "Accounts");
 
             migrationBuilder.DropTable(
-                name: "DefaultMessage");
+                name: "DefaultMessages");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
         }
     }
 }

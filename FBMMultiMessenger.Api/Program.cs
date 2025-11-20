@@ -39,9 +39,11 @@ namespace FBMMultiMessengerServer
                 builder.Services.RegisterMediatR();
                 builder.Services.RegisterAutoMapper(typeof(IServiceCollectionExtension).GetTypeInfo().Assembly, typeof(Program).GetTypeInfo().Assembly);
                 builder.Services.AddTokenAuth(builder.Configuration);
+                builder.Services.AddCors(builder.Configuration);
                 builder.Services.RegisterServices();
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
                 var app = builder.Build();
 
                 if (!Directory.Exists("Logs"))
@@ -76,10 +78,10 @@ namespace FBMMultiMessengerServer
 
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.UseCors("AllowMyApp");
                 app.UseStaticFiles();
                 app.MapHub<ChatHub>("/chathub");
                 app.MapControllers();
-
                 app.Run();
             }
             catch (Exception ex)
