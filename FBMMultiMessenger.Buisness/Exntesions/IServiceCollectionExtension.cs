@@ -20,7 +20,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
         public static IServiceCollection RegisterDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection")!;
-            services.AddDbContext<ApplicationDbContext>(opt => opt.UseSqlServer(connectionString));
+            services.AddDbContext<ApplicationDbContext>(opt => opt.UseNpgsql(connectionString));
             return services;
         }
 

@@ -147,6 +147,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         private async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
             var account = await _dbContext.Accounts
+                                          .Include(u => u.User)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                                &&
                                                                x.UserId == request.UserId, cancellationToken);

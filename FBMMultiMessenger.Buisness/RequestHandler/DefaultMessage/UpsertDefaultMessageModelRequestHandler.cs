@@ -1,12 +1,9 @@
-﻿using Azure.Core;
-using FBMMultiMessenger.Buisness.Request.DefaultMessage;
+﻿using FBMMultiMessenger.Buisness.Request.DefaultMessage;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
 {
