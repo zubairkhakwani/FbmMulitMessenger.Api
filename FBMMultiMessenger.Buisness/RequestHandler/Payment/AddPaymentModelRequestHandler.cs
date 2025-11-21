@@ -7,6 +7,7 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {
@@ -68,59 +69,69 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
             }
 
             var currentUserId = currentUser.Id;
-            var paymentProofImg = request.PaymentImg;
-            if (paymentProofImg is null)
+            var paymentProofImages = request.PaymentImages;
+
+            if (paymentProofImages is null)
             {
                 return BaseResponse<AddPaymentProofModelResponse>.Error("Please provide payment proof picture to continue.");
             }
 
-            var paymentProofs = await _dbContext.PaymentVerifications
-                                                       .Where(x => x.UserId == currentUserId)
-                                                       .ToListAsync(cancellationToken);
-            paymentProofs = paymentProofs
-                           .OrderByDescending(x => x.UploadedAt)
-                           .ToList();
+            var latestPaymentProof = await _dbContext.PaymentVerifications
+                                                     .Where(x => x.UserId == currentUserId)
+                                                     .OrderByDescending(x => x.CreatedAt)
+                                                     .FirstOrDefaultAsync(cancellationToken);
 
-            var latestPaymentProof = paymentProofs.FirstOrDefault() ?? new PaymentVerification();
-
-            if (latestPaymentProof.Status == PaymentStatus.Pending)
+            if (latestPaymentProof?.Status == PaymentStatus.Pending)
             {
                 return BaseResponse<AddPaymentProofModelResponse>.Error("Your previous payment proof is still under review. Please wait for approval before submitting a new one.\r\n");
             }
 
-
-            var wwwRootPath = _webHostEnvironment.WebRootPath;
-            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(paymentProofImg.FileName);
-            string productPath = @"Images\PaymentProofs\User-" + currentUserId;
-            string finalPath = Path.Combine(wwwRootPath, productPath);
-
-            if (!Directory.Exists(finalPath))
-            {
-                Directory.CreateDirectory(finalPath);
-            }
-
-            using (var fileStream = new FileStream(Path.Combine(finalPath, fileName), FileMode.Create))
-            {
-                paymentProofImg.CopyTo(fileStream);
-            }
-
-            var paymentProof = new PaymentVerification()
+            var paymentVerification = new PaymentVerification()
             {
                 AccountsPurchased = request.AccountsPurchased,
-                FilePath = @"\" + productPath + @"\" + fileName,
-                FileName = fileName,
                 PurchasePrice = purcahsedPrice,
                 ActualPrice = actualPurchasePrice,
                 Status = PaymentStatus.Pending,
-                UploadedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
                 UserId = currentUserId,
-                SubmissionNote = request.Note
+                SubmissionNote = request.Note,
             };
 
-            await _dbContext.PaymentVerifications.AddAsync(paymentProof, cancellationToken);
+            await _dbContext.PaymentVerifications.AddAsync(paymentVerification, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            var wwwRootPath = _webHostEnvironment.WebRootPath;
+            var paymentVerificationImages = new List<PaymentVerificationImage>();
 
+            foreach (var paymentProofImg in paymentProofImages)
+            {
+                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(paymentProofImg.FileName);
+                string productPath = @"Images\PaymentProofs\User-" + currentUserId;
+                string finalPath = Path.Combine(wwwRootPath, productPath);
+
+                if (!Directory.Exists(finalPath))
+                {
+                    Directory.CreateDirectory(finalPath);
+                }
+
+                using (var fileStream = new FileStream(Path.Combine(finalPath, fileName), FileMode.Create))
+                {
+                    paymentProofImg.CopyTo(fileStream);
+                }
+
+                var paymentVerificationImg = new PaymentVerificationImage()
+                {
+                    FilePath = @"\" + productPath + @"\" + fileName,
+                    FileName = fileName,
+                    PaymentVerificationId = paymentVerification.Id,
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                paymentVerificationImages.Add(paymentVerificationImg);
+            }
+
+            await _dbContext.PaymentVerificationImages.AddRangeAsync(paymentVerificationImages, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<AddPaymentProofModelResponse>.Success("Payment proof submitted successfully! We'll review and activate your subscription soon.", new AddPaymentProofModelResponse());
 

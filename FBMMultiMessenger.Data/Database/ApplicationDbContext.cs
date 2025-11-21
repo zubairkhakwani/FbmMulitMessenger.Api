@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<VerificationToken> VerificationTokens { get; set; }
         public DbSet<PricingTier> PricingTiers { get; set; }
         public DbSet<PaymentVerification> PaymentVerifications { get; set; }
+        public DbSet<PaymentVerificationImage> PaymentVerificationImages { get; set; }
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }

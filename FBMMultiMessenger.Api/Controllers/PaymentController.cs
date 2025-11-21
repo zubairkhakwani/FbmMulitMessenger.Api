@@ -32,5 +32,16 @@ namespace FBMMultiMessenger.Api.Controllers
             var httpResponse = _mapper.Map<BaseResponse<AddPaymentProofHttpResponse>>(response);
             return httpResponse;
         }
+
+        [Authorize]
+        [HttpGet("me/status")]
+        public async Task<BaseResponse<GetMyVerificationStatusHttpResponse>> GetStatus()
+        {
+            var response = await _mediator.Send(new GetMyVerificationStatusModelRequest());
+
+            var httpResponse = _mapper.Map<BaseResponse<GetMyVerificationStatusHttpResponse>>(response);
+            return httpResponse;
+        }
+
     }
 }

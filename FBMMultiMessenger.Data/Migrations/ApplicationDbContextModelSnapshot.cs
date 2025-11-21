@@ -214,13 +214,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("HandledByUserId")
                         .HasColumnType("integer");
@@ -246,9 +241,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<int?>("SubscriptionId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
@@ -261,6 +253,35 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("PaymentVerifications");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerificationImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PaymentVerificationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentVerificationId");
+
+                    b.ToTable("PaymentVerificationImages");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTier", b =>
@@ -662,6 +683,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerificationImage", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", "PaymentVerification")
+                        .WithMany("PaymentVerificationImages")
+                        .HasForeignKey("PaymentVerificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PaymentVerification");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -708,6 +740,11 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
                 {
                     b.Navigation("Accounts");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", b =>
+                {
+                    b.Navigation("PaymentVerificationImages");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>

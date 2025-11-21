@@ -22,10 +22,6 @@
 		<ProjectReference Include="..\FBMMultiMessenger.Buisness\FBMMultiMessenger.Buisness.csproj" />
 		<ProjectReference Include="..\FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="wwwroot\Images\PaymentProofs\" />
-	</ItemGroup>
 	
 	<ItemGroup>
 		<None Update="BrowserExtension\**\*">

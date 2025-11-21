@@ -8,7 +8,6 @@ namespace FBMMultiMessenger.Data.Database.DbModels
     {
         public int Id { get; set; }
 
-        [Required]
         [ForeignKey(nameof(User))]
         public int UserId { get; set; }
 
@@ -18,19 +17,13 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(Subscription))]
         public int? SubscriptionId { get; set; }
 
-        [Required]
-        public string FileName { get; set; } = string.Empty;
-
-        [Required]
-        public string FilePath { get; set; } = string.Empty;
-
         public int AccountsPurchased { get; set; }
         public decimal PurchasePrice { get; set; }
         public decimal ActualPrice { get; set; }
 
         public string? SubmissionNote { get; set; } // a note that can be send by the user when submitting payment verification
         public string? ReviewNote { get; set; } // a note that can be send by the admin when rejecting/approving payment verification
-        public DateTime UploadedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         public PaymentStatus Status { get; set; }
         public PaymentRejectionReason RejectionReason { get; set; }
@@ -38,11 +31,10 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public DateTime? ApprovedAt { get; set; }
         public DateTime? RejectedAt { get; set; }
 
-        //Navigation Property
+        //Navigation Properties
         public virtual User User { get; set; } = null!;
-
         public virtual User? HandledByUser { get; set; }
         public virtual Subscription? Subscription { get; set; }
-
+        public virtual List<PaymentVerificationImage> PaymentVerificationImages { get; set; } = new List<PaymentVerificationImage>();
     }
 }

@@ -12,6 +12,10 @@ namespace FBMMultiMessenger.Buisness.Mapping.Payment
             CreateMap<AddPaymentProofHttpRequest, AddPaymentProofModelRequest>();
             CreateMap<AddPaymentProofModelResponse, AddPaymentProofHttpResponse>();
             CreateMap<BaseResponse<AddPaymentProofModelResponse>, BaseResponse<AddPaymentProofHttpResponse>>();
+
+
+            CreateMap<GetMyVerificationStatusModelResponse, GetMyVerificationStatusHttpResponse>();
+            CreateMap<BaseResponse<GetMyVerificationStatusModelResponse>, BaseResponse<GetMyVerificationStatusHttpResponse>>();
         }
     }
 }

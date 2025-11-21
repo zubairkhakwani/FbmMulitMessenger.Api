@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -197,14 +197,12 @@ namespace FBMMultiMessenger.Data.Migrations
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     HandledByUserId = table.Column<int>(type: "integer", nullable: true),
                     SubscriptionId = table.Column<int>(type: "integer", nullable: true),
-                    FileName = table.Column<string>(type: "text", nullable: false),
-                    FilePath = table.Column<string>(type: "text", nullable: false),
                     AccountsPurchased = table.Column<int>(type: "integer", nullable: false),
                     PurchasePrice = table.Column<decimal>(type: "numeric", nullable: false),
                     ActualPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     SubmissionNote = table.Column<string>(type: "text", nullable: true),
                     ReviewNote = table.Column<string>(type: "text", nullable: true),
-                    UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     RejectionReason = table.Column<int>(type: "integer", nullable: false),
                     ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -264,6 +262,28 @@ namespace FBMMultiMessenger.Data.Migrations
                         name: "FK_Chats_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentVerificationImages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PaymentVerificationId = table.Column<int>(type: "integer", nullable: false),
+                    FileName = table.Column<string>(type: "text", nullable: false),
+                    FilePath = table.Column<string>(type: "text", nullable: false),
+                    UploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentVerificationImages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PaymentVerificationImages_PaymentVerifications_PaymentVerif~",
+                        column: x => x.PaymentVerificationId,
+                        principalTable: "PaymentVerifications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -368,6 +388,11 @@ namespace FBMMultiMessenger.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PaymentVerificationImages_PaymentVerificationId",
+                table: "PaymentVerificationImages",
+                column: "PaymentVerificationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaymentVerifications_HandledByUserId",
                 table: "PaymentVerifications",
                 column: "HandledByUserId");
@@ -405,7 +430,7 @@ namespace FBMMultiMessenger.Data.Migrations
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
-                name: "PaymentVerifications");
+                name: "PaymentVerificationImages");
 
             migrationBuilder.DropTable(
                 name: "PricingTiers");
@@ -420,10 +445,13 @@ namespace FBMMultiMessenger.Data.Migrations
                 name: "Chats");
 
             migrationBuilder.DropTable(
-                name: "Subscriptions");
+                name: "PaymentVerifications");
 
             migrationBuilder.DropTable(
                 name: "Accounts");
+
+            migrationBuilder.DropTable(
+                name: "Subscriptions");
 
             migrationBuilder.DropTable(
                 name: "DefaultMessages");

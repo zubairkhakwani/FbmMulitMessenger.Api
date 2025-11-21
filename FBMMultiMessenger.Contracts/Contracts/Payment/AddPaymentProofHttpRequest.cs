@@ -6,7 +6,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Payment
     public class AddPaymentProofHttpRequest
     {
         [Required(ErrorMessage = "Please provide payment proof")]
-        public IFormFile PaymentImg { get; set; } = null!;
+        public List<IFormFile> PaymentImages { get; set; } = null!;
 
         [Required]
         [Range(1, 10000, ErrorMessage = "Accounts purchased must be between 1 and 10000.")]
