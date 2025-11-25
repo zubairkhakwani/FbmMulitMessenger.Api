@@ -81,7 +81,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             });
 
             //Inform our console app to close browser.
-            var consoleUser = $"Console_{currentUser.Id.ToString()}";
+            var consoleUser = $"LocalServer_{currentUser.Id}";
             await _hubContext.Clients.Group(consoleUser)
                .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
 

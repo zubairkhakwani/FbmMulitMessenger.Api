@@ -20,8 +20,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         public decimal FbListingPrice { get; set; }
         public string? FbListingImage { get; set; }
         public string? UserProfileImage { get; set; }
-        public string? LastMessage { get; set; }
-        public string? LastMessageFrom { get; set; } // You or Hadia.
+        public string? MessagePreview { get; set; }
+        public string? SenderName { get; set; } // You or Hadia.
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
 

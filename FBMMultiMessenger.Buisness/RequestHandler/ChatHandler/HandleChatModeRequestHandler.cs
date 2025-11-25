@@ -1,4 +1,6 @@
-﻿using FBMMultiMessenger.Buisness.Notifaciton;
+﻿using FBMMultiMessenger.Buisness.Exntesions;
+using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
@@ -91,13 +93,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 chatReference = newChat;
             }
 
-            var userProfileImg = chatReference?.UserProfileImage;
-            if (chatReference is not null)
+            else if (chatReference is not null)
             {
+                var userProfileImg = chatReference.UserProfileImage;
+                var fbListingTitle = chatReference.FbListingTitle;
+                var fbListingImage = chatReference.FBListingImage;
+
                 if (request.UserProfileImg is not null && userProfileImg is null)
                 {
                     chatReference.UserProfileImage = request.UserProfileImg;
                 }
+                if (request.FbListingTitle is not null && fbListingTitle is null)
+                {
+                    chatReference.FbListingTitle = request.FbListingTitle;
+                }
+
+                if (request.FbListingImg is not null && fbListingImage is null)
+                {
+                    chatReference.FBListingImage = request.FbListingImg;
+                }
+
                 chatReference.UpdatedAt = today;
                 chatReference.IsRead = !request.IsReceived;
             }
@@ -134,7 +149,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
 
             //Get active subscription of the current user.
-            var activeSubscription = _dbContext.Subscriptions
+            var activeSubscription = _dbContext
+                                     .Subscriptions
+                                     .AsNoTracking()
                                      .Where(x => x.StartedAt <= today
                                             &&
                                      x.ExpiredAt > today
@@ -205,7 +222,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
         private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
         {
-            var sendMessageToUserId = $"User_{chat.UserId}";
+            var sendMessageToUserId = $"App_{chat.UserId}";
 
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
@@ -229,11 +246,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 StartedAt = CreatedAt,
             };
 
+            var result = ChatMessagesHelper.GetMessagePreview(request.ToMessagePreviewRequest());
+
+            receivedChat.MessagPreview = result.MessagPreview;
+            receivedChat.MessagePreviewFrom = result.SenderName;
+
+
             await _hubContext.Clients.Group(sendMessageToUserId)
                 .SendAsync("HandleMessage", receivedChat, cancellationToken);
         }
 
-        // Add this new method to the class
         private void CleanupOldOTIDs(DateTime currentTime)
         {
             var keysToRemove = _processedOTIDs

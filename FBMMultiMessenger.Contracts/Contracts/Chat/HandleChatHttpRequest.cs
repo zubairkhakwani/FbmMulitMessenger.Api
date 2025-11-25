@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Runtime;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FBMMultiMessenger.Contracts.Contracts.Chat
+﻿namespace FBMMultiMessenger.Contracts.Contracts.Chat
 {
     public class HandleChatHttpRequest
     {
@@ -60,8 +51,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public string? FbListingLocation { get; set; }
         public decimal? FbListingPrice { get; set; }
         public string? UserProfileImage { get; set; }
-        public string LastMessage { get; set; } = string.Empty;
-        public string LastMessageFrom { get; set; } = string.Empty;
+        public string MessagPreview { get; set; } = string.Empty;
+        public string MessagePreviewFrom { get; set; } = string.Empty;
 
         public bool IsRead { get; set; }
         public bool IsTextMessage { get; set; }

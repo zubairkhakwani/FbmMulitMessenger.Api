@@ -125,7 +125,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = x.CreatedAt,
             }).ToList();
 
-            await _hubContext.Clients.Group($"Console_{currentUserId}")
+            await _hubContext.Clients.Group($"LocalServer_{currentUserId}")
                  .SendAsync("HandleUpsertAccount", newAccountsHttpResponse, cancellationToken);
 
 

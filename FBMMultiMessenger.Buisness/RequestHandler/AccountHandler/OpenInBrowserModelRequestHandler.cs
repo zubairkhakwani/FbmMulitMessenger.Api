@@ -7,12 +7,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -34,9 +28,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var currentUserId = currentUser!.Id;
 
             var account = await _dbContext.Accounts
+                                    .AsNoTracking()
                                     .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                          &&
-                                                         x.UserId == currentUserId);
+                                                         x.UserId == currentUserId, cancellationToken);
 
             if (account is null)
             {
@@ -49,13 +44,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 Id =  account.Id,
                 Name = account.Name,
                 Cookie = account.Cookie,
+                IsBrowserOpenRequest = true,
                 CreatedAt = account.CreatedAt
             };
 
             //Inform our console app to open browser if not opened.
-            var consoleUser = $"Console_{currentUserId.ToString()}";
+            var consoleUser = $"LocalServer_{currentUserId}";
             await _hubContext.Clients.Group(consoleUser)
-               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
 
             return BaseResponse<object>.Error("Your request has been proccessed successfully.");
         }

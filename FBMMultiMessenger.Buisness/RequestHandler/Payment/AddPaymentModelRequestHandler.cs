@@ -7,7 +7,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {

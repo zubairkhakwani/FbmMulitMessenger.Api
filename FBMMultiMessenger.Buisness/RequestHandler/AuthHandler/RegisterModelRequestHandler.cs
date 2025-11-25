@@ -1,6 +1,7 @@
 ﻿using AutoMapper.Configuration.Annotations;
 using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -19,7 +20,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         private readonly ApplicationDbContext _dbContext;
         private readonly IEmailService _emailService;
 
-        public RegisterModelRequestHandler(ApplicationDbContext dbContext,IEmailService emailService)
+        public RegisterModelRequestHandler(ApplicationDbContext dbContext, IEmailService emailService)
         {
             this._dbContext=dbContext;
             this._emailService=emailService;
@@ -27,7 +28,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         public async Task<BaseResponse<RegisterModelResponse>> Handle(RegisterModelRequest request, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
-                                       .FirstOrDefaultAsync(x => x.Email.ToLower() == request.Email.ToLower());
+                                       .FirstOrDefaultAsync(x => x.Email.ToLower() == request.Email.ToLower(), cancellationToken);
 
             if (user is not null)
             {
@@ -41,7 +42,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 ContactNumber = request.ContactNumber,
                 Password = request.Password,
                 CreatedAt = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                RoleId = (int)Roles.Customer
             };
 
             await _dbContext.Users.AddAsync(newUser, cancellationToken);

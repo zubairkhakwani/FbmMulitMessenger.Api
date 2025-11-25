@@ -138,8 +138,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = newAccount.CreatedAt
             };
 
-            await _hubContext.Clients.Group($"Console_{request.UserId}")
-               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
+            //await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
+            //   .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
@@ -194,7 +194,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     IsCookieChanged = newCookie != previousCookie,
                 };
 
-                await _hubContext.Clients.Group($"Console_{request.UserId}")
+                await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
                    .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
             }
 

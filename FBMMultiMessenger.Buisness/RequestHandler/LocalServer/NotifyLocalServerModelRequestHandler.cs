@@ -1,5 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Request.Extension;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
@@ -10,9 +10,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
+namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class NotifyExtensionModelRequestHandler : IRequestHandler<NotifyExtensionModelRequest, BaseResponse<NotifyExtensionModelResponse>>
+    internal class NotifyLocalServerModelRequestHandler : IRequestHandler<NotifyLocalServerModelRequest, BaseResponse<NotifyLocalServerModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
@@ -21,19 +21,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public NotifyExtensionModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
+        public NotifyLocalServerModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
         {
             _dbContext=dbContext;
-            this._currentUserService=currentUserService;
+            _currentUserService=currentUserService;
             _hubContext = hubContext;
             _chatHub = chatHub;
-            this._webHostEnvironment=webHostEnvironment;
+            _webHostEnvironment=webHostEnvironment;
         }
-        public async Task<BaseResponse<NotifyExtensionModelResponse>> Handle(NotifyExtensionModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<NotifyLocalServerModelResponse>> Handle(NotifyLocalServerModelRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(request.Message) && request.Files is null && request?.Files?.Count == 0)
             {
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Please enter a message or attach a file to send.");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Please enter a message or attach a file to send.");
             }
 
             var currentUser = _currentUserService.GetCurrentUser();
@@ -41,7 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
             if (currentUser is null)
             {
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid Request, Please login again to continue");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid Request, Please login again to continue");
             }
 
 
@@ -54,7 +54,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
             if (chat is null)
             {
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Invalid request, Chat does not exist");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid request, Chat does not exist");
             }
 
             var today = DateTime.UtcNow;
@@ -65,12 +65,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                                                             .OrderByDescending(x => x.StartedAt)
                                                             .FirstOrDefault();
 
-            var response = new NotifyExtensionModelResponse();
+            var response = new NotifyLocalServerModelResponse();
 
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
             if (activeSubscription is null)
             {
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
             }
 
 
@@ -79,7 +79,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             if (today >= endDate)
             {
                 response.IsSubscriptionExpired = true;
-                return BaseResponse<NotifyExtensionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true);
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true);
             }
 
 
@@ -93,22 +93,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
 
 
-            //Notify extension that user is trying to send message from our app. 
-            var sendChatMessage = new NotifyExtensionDTO()
+            //Notify localserver that user is trying to send message from our app. 
+            var sendChatMessage = new NotifyLocalServerDTO()
             {
                 IsMessageFromApp = true,
                 ChatId = chat.Id,
                 FbChatId = request.FbChatId,
+                FbAccountId = chat.FbAccountId ?? string.Empty,
                 Message = request.Message,
                 OfflineUniqueId = request.OfflineUniqueId,
                 MediaPaths = mediaPaths
             };
 
-            await _hubContext.Clients.Group($"Extension_{chat.FbAccountId}")
-                .SendAsync("SendMessage", sendChatMessage, cancellationToken);
+            await _hubContext.Clients.Group($"LocalServer_{chat.UserId}")
+                .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
 
 
-            return BaseResponse<NotifyExtensionModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
+            return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }
 
         public List<string> HandleMediaFiles(List<IFormFile> files, string wwwRootPath)

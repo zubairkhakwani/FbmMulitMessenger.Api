@@ -32,7 +32,7 @@
       "match_about_blank": true,
       "match_origin_as_fallback": true,
       "matches": [ "https://*.facebook.com/*" ],
-      "run_at": "document_start",
+      "run_at": "document_idle",
       "world": "MAIN"
     }
   ],

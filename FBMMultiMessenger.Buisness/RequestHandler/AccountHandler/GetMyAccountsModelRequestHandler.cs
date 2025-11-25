@@ -33,6 +33,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             var response = await accounts
                                 .Skip((request.PageNo - 1) * request.PageSize)
                                 .Take(request.PageSize)
+                                .AsNoTracking()
                                 .Select(x => new GetMyAccountsModelResponse()
 
                                 {

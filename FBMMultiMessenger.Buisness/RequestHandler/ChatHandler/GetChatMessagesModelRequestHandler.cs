@@ -30,28 +30,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             // Get chat ID first
             var chatId = await _dbContext.Chats
-                .Where(m => m.FBChatId == request.FbChatId && m.UserId == currentUser.Id)
-                .Select(m => m.Id)
-                .FirstOrDefaultAsync(cancellationToken);
+                                         .AsNoTracking()
+                                         .Where(m => m.FBChatId == request.FbChatId && m.UserId == currentUser.Id)
+                                         .Select(m => m.Id)
+                                         .FirstOrDefaultAsync(cancellationToken);
 
             if (chatId == 0)
             {
                 return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Chat not found", new());
-            } 
+            }
 
             // Bulk update (fast, no loading into memory)
             await _dbContext.Chats
-                .Where(c => c.Id == chatId)
-                .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
+                            .Where(c => c.Id == chatId)
+                            .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
 
             await _dbContext.ChatMessages
-                .Where(m => m.ChatId == chatId)
-                .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
+                            .Where(m => m.ChatId == chatId)
+                            .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
 
-            // Load messages for response (with AsNoTracking for performance)
             var chatMessages = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Where(cm => cm.ChatId == chatId)
+                .OrderBy(x => x.Id)
                 .Select(x => new GetChatMessagesModelResponse()
                 {
                     FbChatId = request.FbChatId,

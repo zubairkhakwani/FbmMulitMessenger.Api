@@ -8,6 +8,12 @@ namespace FBMMultiMessenger.Contracts.Enums
         Pending = 2,
         Rejected = 3
     }
+    public enum Roles
+    {
+        Customer = 1,
+        Admin = 2,
+        SuperAdmin = 3
+    }
 
     public enum PaymentRejectionReason
     {

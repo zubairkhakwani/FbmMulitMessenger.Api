@@ -1,9 +1,6 @@
 // Global FIFO queue - array of objects
 let pendingMessages = [];
 
-console.log("Hello world the file has been changed.");
-console.log("Hello world the file has been changed twice.");
-
 let messageQueue = [];
 let isProcessingMessage = false;
 
@@ -229,7 +226,7 @@ let isProcessingMessage = false;
                 messages = mediaResult.audio;
             }
 
-            //Navigate to requested chat only if we are receiving a message because we are sending message we already be on the right chat as iam navigating there as well
+            //Navigate to requested chat only if we are receiving a message because if we are sending message we will already be on the right chat
             if (!IsSent) {
                 await NavigateToRequestedChat(fbChatId);
             }
@@ -472,6 +469,11 @@ let isProcessingMessage = false;
         let videoUrls = cleanString.match(
             /https:\/\/scontent[^" ]+\.(?:mp4|mov|avi|mkv|webm)[^" ]*/gi
         );
+
+        //identifies the actual/downloadable video
+        if (videoUrls) {
+            videoUrls = videoUrls.filter((url) => url.includes("dl=1"));
+        }
 
         // Step 6: match audio URLs (Facebook audio messages)
         let audioUrls = cleanString.match(
@@ -729,12 +731,14 @@ async function NavigateToRequestedChat(fbChatId) {
         TriggerClickEvent(marketPlaceElement);
     }
 
+    await waitForElement(`a[href*="/messages/t/${fbChatId}/"]`, 10000);
 
     let chatElement = document.querySelector(
         `a[href*="/messages/t/${fbChatId}/"]`
     );
 
     if (chatElement) {
+        console.log("Clicking the right chat element");
         TriggerClickEvent(chatElement);
     }
 
@@ -753,7 +757,6 @@ async function waitForUrl(urlPattern, timeout = 30000) {
                 resolve(window.location.href);
             }
 
-            // Timeout
             if (Date.now() - startTime > timeout) {
                 clearInterval(checkUrl);
                 console.log(`Timeout waiting for URL: ${urlPattern}`);
@@ -762,7 +765,7 @@ async function waitForUrl(urlPattern, timeout = 30000) {
 
             console.log('waiting for chat url');
 
-        }, 100); // Check every 100ms
+        }, 100);
     });
 }
 
@@ -771,6 +774,8 @@ function GetListingInfo(fbChatId) {
     let anchorElement = document.querySelector(
         `a[href*="/messages/t/${fbChatId}/"]`
     );
+
+    console.log(anchorElement);
 
     let fbListingTitle = anchorElement?.querySelector(
         'span[dir="auto"] > span'
@@ -850,38 +855,58 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-//TODO: CLOSE POPUP
 (function CloseFbChatRecoverPopup() {
-    const totalTriesToCloseFbChatRecoverPopup = 100;
+    const totalTriesToCloseFbChatRecoverPopup = 20;
     let attemptedTries = 0;
     let closeBtn;
+    let dontRestoreButton;
+    let timeoutId;
 
     const intervalId = setInterval(() => {
         attemptedTries++;
 
+        if (attemptedTries >= totalTriesToCloseFbChatRecoverPopup) {
+            //console.log("FORCE STOPPING - Max attempts reached!");
+            clearInterval(intervalId);
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+            //console.log("Interval cleared. If you see this message repeating, something is very wrong.");
+            return;
+        }
+
         if (!closeBtn) {
-            closeBtn = document.querySelector(
-                'div[role="dialog"] div[role="button"]'
-            );
+            closeBtn = document.querySelector('div[role="dialog"] div[aria-label="Close"][role="button"]');
+           // console.log("Close button found?", !!closeBtn);
         }
 
         if (closeBtn) {
+            console.log("Clicking close button...");
             TriggerClickEvent(closeBtn);
-            setTimeout(() => {
-                let dontRestoreButton = document.querySelectorAll(
-                    'div[role="button"][aria-label="Don\'t restore messages"]'
-                )[1];
+
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            timeoutId = setTimeout(() => {
+
+                if (!dontRestoreButton) {
+                    dontRestoreButton = document.querySelectorAll(
+                        'div[role="button"][aria-label="Don\'t restore messages"]'
+                    )[1];
+                }
+                console.log(dontRestoreButton);
+               // console.log("Don't restore button found?", !!dontRestoreButton);
 
                 if (dontRestoreButton) {
+                    //console.log("SUCCESS - Clicking don't restore and stopping!");
                     TriggerClickEvent(dontRestoreButton);
                     clearInterval(intervalId);
+                    clearTimeout(timeoutId);
                 }
             }, 500);
         }
-
-        if (attemptedTries >= totalTriesToCloseFbChatRecoverPopup) {
-            clearInterval(intervalId);
-        }
     }, 2000);
+
+    console.log("CloseFbChatRecoverPopup started with interval ID:", intervalId);
 })();

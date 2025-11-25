@@ -295,155 +295,293 @@ namespace FBMMultiMessenger.Buisness.Service
 <html>
 <head>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }}
-        .container {{ max-width: 800px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }}
-        .header {{ background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%); color: white; padding: 50px 30px; text-align: center; position: relative; }}
-        .header::before {{ content: '✨'; position: absolute; top: 20px; left: 30px; font-size: 30px; animation: sparkle 2s infinite; }}
-        .header::after {{ content: '✨'; position: absolute; top: 20px; right: 30px; font-size: 30px; animation: sparkle 2s infinite 1s; }}
-        @keyframes sparkle {{ 0%, 100% {{ opacity: 0.3; }} 50% {{ opacity: 1; }} }}
-        .welcome-icon {{ font-size: 80px; margin-bottom: 20px; }}
-        .content {{ padding: 40px 30px; }}
-        .welcome-message {{ text-align: center; margin: 30px 0; }}
-        .welcome-message h2 {{ color: #0866FF; font-size: 28px; margin-bottom: 10px; }}
-        .welcome-message p {{ color: #4a5568; font-size: 16px; line-height: 1.8; }}
-        .feature-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 40px 0; }}
-        .feature-card {{ background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); padding: 25px; border-radius: 12px; text-align: center; border: 2px solid #e2e8f0; }}
-        .feature-icon {{ font-size: 40px; margin-bottom: 10px; }}
-        .feature-card h3 {{ color: #2d3748; font-size: 16px; margin: 10px 0; }}
-        .feature-card p {{ color: #718096; font-size: 14px; margin: 0; }}
-        .cta-section {{ background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%); padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0; }}
-        .cta-button {{ display: inline-block; background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%); color: white; padding: 15px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; margin: 15px 0; box-shadow: 0 4px 12px rgba(8, 102, 255, 0.3); }}
-        .user-info-box {{ background: #f7fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #0866FF; margin: 25px 0; }}
-        .social-links {{ text-align: center; margin: 30px 0; }}
-        .social-links a {{ display: inline-block; margin: 0 10px; color: #0866FF; text-decoration: none; font-size: 14px; }}
-        .tips-section {{ background: #fffaf0; border: 2px dashed #fbd38d; border-radius: 12px; padding: 25px; margin: 30px 0; }}
-        .tips-section h3 {{ color: #744210; margin: 0 0 15px 0; font-size: 18px; }}
-        .tips-section ul {{ margin: 0; padding-left: 20px; color: #975a16; }}
-        .tips-section li {{ margin-bottom: 10px; font-size: 14px; }}
-        .footer {{ background: #f7fafc; text-align: center; padding: 30px 20px; color: #718096; font-size: 13px; }}
+        body {{ 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }}
+        .container {{ 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+        }}
+        .header {{ 
+            background: linear-gradient(135deg, #0866FF 0%, #042B5C 100%); 
+            color: white; 
+            padding: 40px 30px; 
+            text-align: center; 
+        }}
+        .header h1 {{ 
+            margin: 0 0 10px 0; 
+            font-size: 28px; 
+        }}
+        .header p {{ 
+            margin: 0; 
+            font-size: 16px; 
+            opacity: 0.9; 
+        }}
+        .content {{ 
+            padding: 40px 30px; 
+        }}
+        .welcome-text {{ 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }}
+        .welcome-text h2 {{ 
+            color: #0866FF; 
+            font-size: 24px; 
+            margin: 0 0 15px 0; 
+        }}
+        .welcome-text p {{ 
+            color: #555; 
+            font-size: 16px; 
+            line-height: 1.8; 
+        }}
+        .section {{ 
+            margin: 30px 0; 
+            padding: 25px; 
+            background: #f8f9fa; 
+            border-radius: 8px; 
+            border-left: 4px solid #0866FF; 
+        }}
+        .section h3 {{ 
+            color: #2d3748; 
+            font-size: 18px; 
+            margin: 0 0 15px 0; 
+        }}
+        .section p {{ 
+            color: #555; 
+            margin: 0 0 10px 0; 
+            font-size: 15px; 
+        }}
+        .pricing-table {{ 
+            margin: 20px 0; 
+            border-collapse: collapse; 
+            width: 100%; 
+        }}
+        .pricing-table th, 
+        .pricing-table td {{ 
+            padding: 12px; 
+            text-align: left; 
+            border-bottom: 1px solid #e2e8f0; 
+        }}
+        .pricing-table th {{ 
+            background: #0866FF; 
+            color: white; 
+            font-weight: 600; 
+        }}
+        .pricing-table tr:last-child td {{ 
+            border-bottom: none; 
+        }}
+        .highlight-box {{ 
+            background: #fff3cd; 
+            border: 2px solid #ffc107; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin: 25px 0; 
+            text-align: center; 
+        }}
+        .highlight-box strong {{ 
+            color: #856404; 
+            font-size: 16px; 
+        }}
+        .steps {{ 
+            counter-reset: step-counter; 
+            list-style: none; 
+            padding: 0; 
+        }}
+        .steps li {{ 
+            counter-increment: step-counter; 
+            margin: 20px 0; 
+            padding-left: 50px; 
+            position: relative; 
+            font-size: 15px; 
+            color: #555; 
+        }}
+        .steps li:before {{ 
+            content: counter(step-counter); 
+            position: absolute; 
+            left: 0; 
+            top: -5px; 
+            background: #0866FF; 
+            color: white; 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 18px; 
+        }}
+        .steps li strong {{ 
+            color: #2d3748; 
+        }}
+        .support-box {{ 
+            background: #e6f7ff; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin: 30px 0; 
+            text-align: center; 
+        }}
+        .support-box p {{ 
+            margin: 0 0 10px 0; 
+            color: #0066cc; 
+        }}
+        .footer {{ 
+            background: #f8f9fa; 
+            text-align: center; 
+            padding: 25px; 
+            color: #6c757d; 
+            font-size: 13px; 
+        }}
+        .footer p {{ 
+            margin: 5px 0; 
+        }}
         @media only screen and (max-width: 600px) {{
-            .container {{ width: 100%; margin: 0; }}
-            .header {{ padding: 30px 15px; }}
-            .content {{ padding: 20px 15px; }}
-            .feature-grid {{ grid-template-columns: 1fr; gap: 15px; }}
-            .welcome-icon {{ font-size: 60px; }}
-            .welcome-message h2 {{ font-size: 22px; }}
-            .cta-button {{ padding: 12px 30px; font-size: 14px; }}
+            .content {{ 
+                padding: 25px 20px; 
+            }}
+            .section {{ 
+                padding: 20px 15px; 
+            }}
+            .steps li {{ 
+                padding-left: 45px; 
+            }}
         }}
     </style>
 </head>
 <body>
     <div class='container'>
         <div class='header'>
-            <div class='welcome-icon'>🎉</div>
-            <h1 style='margin: 0; font-size: 32px;'>Welcome to FBM Multi Messenger!</h1>
-            <p style='margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;'>Your journey to seamless communication starts here</p>
+            <h1>🎉 Welcome to FBM Multi Messenger!</h1>
+            <p>Your trusted partner for multi-account messaging</p>
         </div>
         
         <div class='content'>
-            <div class='welcome-message'>
+            <div class='welcome-text'>
                 <h2>Hello, {userName}! 👋</h2>
-                <p>We're thrilled to have you join our community! Your account has been successfully created, and you're all set to explore the amazing features of FBM Multi Messenger.</p>
+                <p>Congratulations on taking the first step towards effortless multi-account management! Your account has been successfully created, and you're now in the right hands.</p>
+                <p style='margin-top: 15px;'><strong>We're here to guide you every step of the way.</strong></p>
             </div>
             
-            <div class='user-info-box'>
-                <p style='margin: 0 0 10px 0; color: #2d3748; font-weight: 600;'>📧 Account Details:</p>
-                <p style='margin: 5px 0; color: #4a5568;'><strong>Name:</strong> {userName}</p>
-                <p style='margin: 5px 0; color: #4a5568;'><strong>Email:</strong> {userEmail}</p>
-                <p style='margin: 15px 0 0 0; color: #718096; font-size: 13px;'>Keep this information safe and secure.</p>
+            <div class='section'>
+                <h3>🚀 Why Choose FBM Multi Messenger?</h3>
+                <p>✓ <strong>Trusted by thousands</strong> of businesses and professionals</p>
+                <p>✓ <strong>Secure & reliable</strong> platform with 24/7 support</p>
+                <p>✓ <strong>Easy setup</strong> - get started in minutes</p>
+                <p>✓ <strong>Flexible pricing</strong> with incredible discounts</p>
             </div>
-            
-            <div style='text-align: center; margin: 30px 0;'>
-                <h3 style='color: #2d3748; font-size: 22px; margin-bottom: 20px;'>✨ What You Can Do Now</h3>
+
+            <div class='highlight-box'>
+                <strong>🎁 Special Launch Offer - Save Up To 70%!</strong>
             </div>
-            
-            <div class='feature-grid'>
-                <div class='feature-card'>
-                    <div class='feature-icon'>💬</div>
-                    <h3>Multi-Platform Messaging</h3>
-                    <p>Connect all your messaging accounts in one place</p>
-                </div>
-                <div class='feature-card'>
-                    <div class='feature-icon'>🔔</div>
-                    <h3>Smart Notifications</h3>
-                    <p>Never miss an important message again</p>
-                </div>
-                <div class='feature-card'>
-                    <div class='feature-icon'>🎨</div>
-                    <h3>Customizable Interface</h3>
-                    <p>Personalize your messaging experience</p>
-                </div>
-                <div class='feature-card'>
-                    <div class='feature-icon'>🔒</div>
-                    <h3>Secure & Private</h3>
-                    <p>Your conversations are encrypted and safe</p>
-                </div>
+
+            <div class='section'>
+                <h3>💰 Our Pricing & Exclusive Discounts</h3>
+                <p>We believe in rewarding our customers. The more accounts you manage, the more you save!</p>
+                
+                <table class='pricing-table'>
+                    <tr>
+                        <th>Accounts</th>
+                        <th>Discount</th>
+                        <th>Your Savings</th>
+                    </tr>
+                    <tr>
+                        <td>1-10 accounts</td>
+                        <td>Standard Rate</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td>11-20 accounts</td>
+                        <td><strong style='color: #0866FF;'>50% OFF</strong></td>
+                        <td>Save Big! 💰</td>
+                    </tr>
+                    <tr>
+                        <td>21-100 accounts</td>
+                        <td><strong style='color: #0866FF;'>60% OFF</strong></td>
+                        <td>Massive Savings! 🎉</td>
+                    </tr>
+                    <tr>
+                        <td>100+ accounts</td>
+                        <td><strong style='color: #0866FF;'>70% OFF</strong></td>
+                        <td>Maximum Savings! 🚀</td>
+                    </tr>
+                </table>
             </div>
-            
-            <div class='cta-section'>
-                <h3 style='color: #2d3748; margin: 0 0 10px 0; font-size: 20px;'>Ready to Get Started?</h3>
-                <p style='color: #4a5568; margin: 0 0 20px 0;'>Launch the app and start connecting with your contacts!</p>
-                <a href='#' class='cta-button'>Open FBM Multi Messenger</a>
-            </div>
-            
-            <div class='tips-section'>
-                <h3>💡 Quick Tips to Get Started:</h3>
-                <ul>
-                    <li><strong>Complete your profile:</strong> Add a photo and bio to personalize your account</li>
-                    <li><strong>Connect accounts:</strong> Link your Facebook, Instagram, and other messaging platforms</li>
-                    <li><strong>Customize settings:</strong> Set up notifications and preferences the way you like them</li>
-                    <li><strong>Explore features:</strong> Check out our tutorials section to make the most of FBM</li>
+
+            <div class='section'>
+                <h3>📋 How to Complete Your Setup - Simple 4-Step Process</h3>
+                <ul class='steps'>
+                    <li>
+                        <strong>Use Our Pricing Calculator</strong><br>
+                        On your screen, you'll see our interactive pricing calculator. Simply enter the number of accounts you want to manage, and watch as the price updates automatically with your applicable discount!
+                    </li>
+                    <li>
+                        <strong>Review Your Order</strong><br>
+                        Click the <strong>""Proceed to Checkout""</strong> button. You'll see a complete breakdown of your subscription details, final amount, and payment instructions.
+                    </li>
+                    <li>
+                        <strong>Make Your Payment</strong><br>
+                        Send the displayed amount to the payment details shown on your screen. Make sure to save your transaction receipt or take a screenshot of the payment confirmation.
+                    </li>
+                    <li>
+                        <strong>Submit Payment Verification</strong><br>
+                        Upload your payment receipt/screenshot through the verification form. Our team will verify your payment within 24 hours and activate your subscription immediately.
+                    </li>
                 </ul>
             </div>
-            
-            <div style='background: #ebf8ff; border-left: 4px solid #4299e1; padding: 20px; border-radius: 6px; margin: 25px 0;'>
-                <p style='margin: 0; color: #2c5282; font-size: 14px;'>
-                    <strong>🎁 Special Welcome Bonus:</strong> As a new member, you get premium features free for 30 days! Enjoy unlimited messaging and advanced customization options.
+
+            <div class='highlight-box'>
+                <p style='margin: 0; color: #856404;'><strong>⚡ Quick Approval:</strong> Most payments are verified within 2-6 hours during business hours!</p>
+            </div>
+
+            <div class='section'>
+                <h3>🔒 Safe & Secure Process</h3>
+                <p>Your payment information is handled securely. Our verification team manually reviews each transaction to ensure your account is activated correctly and safely.</p>
+                <p style='margin-top: 10px;'><strong>What happens after verification?</strong></p>
+                <p>✓ Instant subscription activation<br>
+                   ✓ Full access to all features<br>
+                   ✓ Email confirmation with subscription details<br>
+                   ✓ Dedicated support for your account setup</p>
+            </div>
+
+            <div class='support-box'>
+                <p><strong>Need Help? We're Here For You! 💬</strong></p>
+                <p>Our support team is available 24/7 to assist you with any questions.</p>
+                <p style='margin-top: 15px;'>
+                    📧 Email: support@fbmmultimessenger.com<br>
                 </p>
             </div>
-            
-            <div style='text-align: center; margin: 30px 0; padding: 20px; background: #f7fafc; border-radius: 8px;'>
-                <p style='color: #4a5568; margin: 0 0 15px 0; font-size: 15px;'>Need help getting started?</p>
-                <div style='margin: 15px 0;'>
-                    <a href='#' style='color: #0866FF; text-decoration: none; font-weight: 600; margin: 0 15px;'>📚 Help Center</a>
-                    <a href='#' style='color: #0866FF; text-decoration: none; font-weight: 600; margin: 0 15px;'>💬 Contact Support</a>
-                    <a href='#' style='color: #0866FF; text-decoration: none; font-weight: 600; margin: 0 15px;'>🎥 Video Tutorials</a>
-                </div>
-            </div>
-            
+
             <div style='text-align: center; margin: 30px 0;'>
-                <p style='color: #4a5568; font-size: 15px; line-height: 1.8;'>
-                    Thank you for choosing FBM Multi Messenger. We're committed to making your messaging experience seamless and enjoyable.
+                <p style='font-size: 15px; color: #555; line-height: 1.8;'>
+                    Thank you for choosing FBM Multi Messenger. We're excited to have you on board and committed to making your experience exceptional.
                 </p>
-                <p style='margin-top: 20px; color: #2d3748;'>
-                    <strong>Welcome aboard! 🚀</strong><br>
+                <p style='margin-top: 25px; font-size: 16px;'>
+                    <strong style='color: #2d3748;'>Welcome to the family! 🎊</strong><br>
                     <span style='color: #0866FF; font-weight: 600;'>The FBM Multi Messenger Team</span>
                 </p>
-            </div>
-            
-            <div class='social-links'>
-                <p style='color: #718096; margin-bottom: 15px;'>Follow us for updates and tips:</p>
-                <a href='#'>Facebook</a> • 
-                <a href='#'>Twitter</a> • 
-                <a href='#'>Instagram</a> • 
-                <a href='#'>YouTube</a>
             </div>
         </div>
         
         <div class='footer'>
             <p><strong>© {DateTime.Now.Year} FBM Multi Messenger. All rights reserved.</strong></p>
-            <p>You're receiving this email because you created an account with us.</p>
+            <p style='margin-top: 10px;'>You're receiving this email because you created an account with us.</p>
             <p style='margin-top: 15px;'>
                 <a href='#' style='color: #0866FF; text-decoration: none;'>Privacy Policy</a> | 
-                <a href='#' style='color: #0866FF; text-decoration: none;'>Terms of Service</a> | 
-                <a href='#' style='color: #0866FF; text-decoration: none;'>Unsubscribe</a>
+                <a href='#' style='color: #0866FF; text-decoration: none;'>Terms of Service</a>
             </p>
         </div>
     </div>
 </body>
 </html>";
         }
-
-
     }
 }

@@ -20,7 +20,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     await Groups.AddToGroupAsync(Context.ConnectionId, userId);
                     await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
 
-                    Console.WriteLine($"User {userId} Connected");
+                    Console.WriteLine($"User with id {userId} connected");
                 }
             }
             catch (Exception ex)
@@ -46,7 +46,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
         }
 
         // Notify extension about the message
-        public async Task NotifyExtension(string toExptensionId, NotifyExtensionDTO messageRequest)
+        public async Task NotifyExtension(string toExptensionId, NotifyLocalServerDTO messageRequest)
         {
             // Send to the registered extension
             if (_connections.ContainsKey(toExptensionId))
@@ -63,7 +63,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             if (userId != null)
             {
                 _connections.TryRemove(userId, out _);
-                Console.WriteLine($"User {userId} disconnected");
+                Console.WriteLine($"User with id {userId} disconnected");
             }
             await base.OnDisconnectedAsync(exception);
         }

@@ -10,7 +10,7 @@ let isReconnecting = false;
 async function initializeSignalR() {
     try {
         signalRConnection = new signalR.HubConnectionBuilder()
-            .withUrl(`${baseUrl}/chathub`, {
+            .withUrl(`${baseUrl}/extensionHub`, {
                 withCredentials: true,
             })
             .withAutomaticReconnect([0, 2000, 10000, 30000])
@@ -109,7 +109,7 @@ async function startSignalRConnection() {
 async function registerExtensionUser() {
     try {
         if (signalRConnection && isConnected) {
-            await signalRConnection.invoke("RegisterUser", `Extension_${fbAccountId}`);
+            await signalRConnection.invoke("RegisterExtension", `Extension_${fbAccountId}`);
             console.log("Extension registered as user");
         }
     } catch (error) {
@@ -193,7 +193,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: "Bearer " + token,
+                Accept: "application/json",
             },
             body: JSON.stringify(request.detail),
         })

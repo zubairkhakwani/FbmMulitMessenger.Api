@@ -1,15 +1,10 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace FBMMultiMessenger.Buisness.Request.Extension
+namespace FBMMultiMessenger.Buisness.Request.LocalServer
 {
-    public class NotifyExtensionModelRequest : IRequest<BaseResponse<NotifyExtensionModelResponse>>
+    public class NotifyLocalServerModelRequest : IRequest<BaseResponse<NotifyLocalServerModelResponse>>
     {
         public string FbChatId { get; set; } = null!;
         public string Message { get; set; } = null!;
@@ -18,7 +13,7 @@ namespace FBMMultiMessenger.Buisness.Request.Extension
         public List<IFormFile>? Files { get; set; }
     }
 
-    public class NotifyExtensionModelResponse
+    public class NotifyLocalServerModelResponse
     {
         public bool IsSubscriptionExpired { get; set; }
     }

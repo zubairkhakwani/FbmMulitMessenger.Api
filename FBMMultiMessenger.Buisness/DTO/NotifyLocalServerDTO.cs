@@ -1,11 +1,11 @@
 ﻿namespace FBMMultiMessenger.Buisness.DTO
 {
-
-    //This class is responsible for notifying our browser extension that user has send a message from our app.
-    public class NotifyExtensionDTO
+    //This class is responsible for notifying our local server that user has send a message from our app.
+    public class NotifyLocalServerDTO
     {
         public int ChatId { get; set; }
-        public string FbChatId { get; set; } = null!;
+        public string FbChatId { get; set; } = string.Empty;
+        public string FbAccountId { get; set; } = string.Empty;
         public string Message { get; set; } = null!;
         public string OfflineUniqueId { get; set; } = string.Empty;
 

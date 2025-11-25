@@ -1,15 +1,11 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
 {

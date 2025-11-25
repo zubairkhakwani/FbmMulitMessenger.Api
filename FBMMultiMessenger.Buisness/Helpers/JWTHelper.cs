@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Data.Database.DbModels;
+﻿using FBMMultiMessenger.Buisness.Models;
+using FBMMultiMessenger.Data.Database.DbModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System;
