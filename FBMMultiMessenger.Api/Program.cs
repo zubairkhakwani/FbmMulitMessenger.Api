@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using System.Reflection;
-namespace FBMMultiMessengerServer
+namespace FBMMultiMessenger.Api
 {
     public class Program
     {
@@ -15,7 +15,11 @@ namespace FBMMultiMessengerServer
         {
             try
             {
-                var builder = WebApplication.CreateBuilder(args);
+                var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+                {
+                    Args = args,
+                    ContentRootPath = AppContext.BaseDirectory
+                });
 
                 var logger = new LoggerConfiguration()
                  .MinimumLevel.Debug()
@@ -31,15 +35,13 @@ namespace FBMMultiMessengerServer
                     .WriteTo.File("Logs\\log-.txt", rollingInterval: RollingInterval.Day));
 
                 // Add services to the container.
-
-
                 builder.Services.AddControllers();
                 builder.Services.RegisterDatabase(builder.Configuration);
                 builder.Services.AddSwagger();
                 builder.Services.RegisterMediatR();
                 builder.Services.RegisterAutoMapper(typeof(IServiceCollectionExtension).GetTypeInfo().Assembly, typeof(Program).GetTypeInfo().Assembly);
                 builder.Services.AddTokenAuth(builder.Configuration);
-                builder.Services.AddCors(builder.Configuration);
+               // builder.Services.AddCors(builder.Configuration);
                 builder.Services.RegisterServices();
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
