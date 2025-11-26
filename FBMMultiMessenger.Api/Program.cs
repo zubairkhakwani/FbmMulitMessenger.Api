@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using System.Reflection;
+using System.Text.Json;
+
 namespace FBMMultiMessenger.Api
 {
     public class Program
@@ -15,11 +17,7 @@ namespace FBMMultiMessenger.Api
         {
             try
             {
-                var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-                {
-                    Args = args,
-                    ContentRootPath = AppContext.BaseDirectory
-                });
+                var builder = WebApplication.CreateBuilder(args);
 
                 var logger = new LoggerConfiguration()
                  .MinimumLevel.Debug()
@@ -93,7 +91,7 @@ namespace FBMMultiMessenger.Api
                     Directory.CreateDirectory("Logs");
                 }
 
-                File.WriteAllText($"Logs\\crash-{DateTime.Now:yyyy MM dd hh mm ss}-{Guid.NewGuid()}.txt", $"Error while starting application: exception is {ex.Message}.\n Stack Strace : {ex.StackTrace} ");
+                File.WriteAllText($"Logs\\crash-{DateTime.Now:yyyy MM dd hh mm ss}-{Guid.NewGuid()}.txt", $"Error while starting application: exception is {ex.Message}.\n inner => {ex.InnerException?.Message} \n Stack Strace : {ex.StackTrace} ");
 
                 Log.Fatal(ex, "An error occurred while starting the application");
             }

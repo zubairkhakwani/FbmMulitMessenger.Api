@@ -27,44 +27,46 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
                 return BaseResponse<GetMySubscriptionModelResponse>.Error("Invalid Request, Please login again to continue.");
             }
 
+            var today = DateTime.UtcNow;
 
-            var activeSubscription = await _dbContext.Subscriptions
-                                               .Where(x => x.StartedAt <= DateTime.UtcNow && x.ExpiredAt > DateTime.UtcNow
-                                                      && x.UserId == currentUser.Id)
-                                               .OrderByDescending(x => x.StartedAt)
-                                               .FirstOrDefaultAsync(cancellationToken);
+            var userSubscriptions = await _dbContext.Subscriptions
+                                               .AsNoTracking()
+                                               .Where(u => u.UserId == currentUser.Id).ToListAsync(cancellationToken);
 
-            if (activeSubscription is null)
+            if (!userSubscriptions.Any())
             {
-                var failResponse = new GetMySubscriptionModelResponse();
-                failResponse.HasActiveSubscription = false;
-                failResponse.IsExpired = false;
+                var noSubscriptionResponse = new GetMySubscriptionModelResponse();
+                noSubscriptionResponse.HasActiveSubscription = false;
+                noSubscriptionResponse.IsExpired = false;
 
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true, failResponse);
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true, noSubscriptionResponse);
             }
 
-            var today = DateTime.Now;
-            var expiredAt = activeSubscription.ExpiredAt;
+            var activeSubscription = userSubscriptions?
+                                                .Where(x => x.StartedAt <= today && x.ExpiredAt > today)
+                                                .OrderByDescending(x => x.StartedAt)
+                                                .FirstOrDefault();
+
+            var expiredAt = activeSubscription?.ExpiredAt;
 
             var response = new GetMySubscriptionModelResponse()
             {
-                MaxLimit = activeSubscription.MaxLimit,
-                LimitUsed = activeSubscription.LimitUsed,
-                StartedAt = activeSubscription.StartedAt,
-                ExpiredAt = activeSubscription.ExpiredAt,
+                MaxLimit = activeSubscription?.MaxLimit ?? 0,
+                LimitUsed  = activeSubscription?.LimitUsed ?? 0,
+                StartedAt = activeSubscription?.StartedAt ?? new DateTime(),
+                ExpiredAt = activeSubscription?.ExpiredAt ?? new DateTime(),
             };
 
-            if (today >= expiredAt)
+            if (activeSubscription is null || today >= expiredAt)
             {
                 response.HasActiveSubscription = false;
                 response.IsExpired = true;
-
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, response);
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oops! Your subscription has expired. Renew today to pick up right where you left off!", redirectToPackages: true, response);
             }
 
+            response.IsExpired = false;
             response.HasActiveSubscription = true;
             return BaseResponse<GetMySubscriptionModelResponse>.Success("You have an active subscription", response);
-
         }
     }
 }

@@ -47,21 +47,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
             };
 
             var today = DateTime.Now;
-            var activeSubscription = user.Subscriptions?
+
+            var userSubscriptions = user.Subscriptions;
+            var hasAnySubscription = userSubscriptions.Any();
+
+            if (!hasAnySubscription)
+            {
+                return BaseResponse<LoginModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Ready to unlock the full experience? Subscribe now to unlock powerful features and take your experience to the next level!", redirectToPackages: true, response);
+            }
+
+            var activeSubscription = userSubscriptions?
                                                 .Where(x => x.StartedAt <= today && x.ExpiredAt > today)
                                                 .OrderByDescending(x => x.StartedAt)
                                                 .FirstOrDefault();
 
-            if (activeSubscription is null)
-            {
-                return BaseResponse<LoginModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true, response);
-            }
+            var expiredAt = activeSubscription?.ExpiredAt;
 
-            var expiredAt = activeSubscription.ExpiredAt;
-            if (today >= expiredAt)
+            if (activeSubscription is null || today >= expiredAt)
             {
                 response.IsSubscriptionExpired = true;
-                return BaseResponse<LoginModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, response);
+                return BaseResponse<LoginModelResponse>.Error("Oops! Your subscription has expired. Renew today to pick up right where you left off!", redirectToPackages: true, response);
             }
 
             return BaseResponse<LoginModelResponse>.Success("Logged in successfully", response);

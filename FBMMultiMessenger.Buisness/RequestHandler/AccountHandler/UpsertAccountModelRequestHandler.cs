@@ -56,16 +56,35 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                        .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken: cancellationToken);
+
             if (user is null)
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
             }
 
-            if (!user.IsEmailVerified)
-            {
-                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
+            var userSubscriptions = user.Subscriptions;
 
-                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
+            if (!userSubscriptions.Any())
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
+            }
+
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+            var response = new UpsertAccountModelResponse();
+
+            if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
+            {
+                response.IsSubscriptionExpired = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, response);
+            }
+
+            var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
+
+            if (isLimitReaced)
+            {
+                response.IsLimitExceeded = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
             }
 
             var userAccounts = user.Accounts;
@@ -76,41 +95,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
             }
 
-
-            var today = DateTime.UtcNow;
-            var userSubscriptions = user.Subscriptions;
-
-            var activeSubscription = userSubscriptions
-                                          .Where(x => x.UserId == request.UserId
-                                             &&
-                                             x.StartedAt <= today
-                                             &&
-                                             x.ExpiredAt > today)
-                                          .OrderByDescending(x => x.StartedAt)
-                                          .FirstOrDefault();
-
-            if (activeSubscription is null)
+            if (!user.IsEmailVerified)
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true);
-            }
+                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
 
-            var maxLimit = activeSubscription.MaxLimit;
-            var limitUsed = activeSubscription.LimitUsed;
-
-            var response = new UpsertAccountModelResponse();
-
-            if (limitUsed >= maxLimit)
-            {
-                response.IsLimitExceeded = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
-            }
-
-            var expiryDate = activeSubscription.ExpiredAt;
-
-            if (today >= expiryDate)
-            {
-                response.IsSubscriptionExpired = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("Your subscription has expired. Please renew to continue using this feature.", redirectToPackages: true, response);
+                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
             var newAccount = new Account()
@@ -127,8 +116,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-
-
             //Inform our server to open browser .
             var newAccountHttpResponse = new AccountDTO()
             {
@@ -138,8 +125,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = newAccount.CreatedAt
             };
 
-            //await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
-            //   .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
+            await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
+               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
@@ -184,7 +171,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 _dbContext.Accounts.Update(account);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                //Inform our server to close/re-open browser accordingly.
+                //Inform our local server to close/re-open browser accordingly.
                 var newAccountHttpResponse = new AccountDTO()
                 {
                     Id =  account.Id,
@@ -202,7 +189,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         }
 
 
-
+        #region Helper Method
         private (bool isValid, int? currentUserId, string? fbAccountIda, string errorMessage) ValidateRequest(string cookie, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
@@ -223,5 +210,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             return (true, currentUser.Id, fbAccountId, "Validation Successful");
         }
+
+        #endregion
     }
 }

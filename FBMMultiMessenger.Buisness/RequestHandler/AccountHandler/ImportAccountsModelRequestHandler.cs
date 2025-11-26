@@ -5,14 +5,12 @@ using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -54,6 +52,32 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
             }
 
+            var userSubscriptions = user.Subscriptions;
+
+            if (!userSubscriptions.Any())
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.");
+            }
+
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+            var response = new UpsertAccountModelResponse();
+
+            if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
+            {
+                response.IsSubscriptionExpired = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts in bulk.", redirectToPackages: true, response);
+            }
+
+            var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
+            var limitLeft = activeSubscription.MaxLimit - activeSubscription.LimitUsed;
+
+            if (isLimitReaced)
+            {
+                response.IsLimitExceeded = true;
+                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
+            }
+
             if (!user.IsEmailVerified)
             {
                 var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
@@ -61,44 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
-
             var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, request);
-
-            var today = DateTime.UtcNow;
-            var userSubscriptions = user.Subscriptions;
-
-            var activeSubscription = userSubscriptions
-                                          .Where(x => x.UserId == currentUserId
-                                             &&
-                                             x.StartedAt <= today
-                                             &&
-                                             x.ExpiredAt > today)
-                                          .OrderByDescending(x => x.StartedAt)
-                                          .FirstOrDefault();
-
-            if (activeSubscription is null)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.", redirectToPackages: true);
-            }
-
-            var maxLimit = activeSubscription.MaxLimit;
-            var limitUsed = activeSubscription.LimitUsed;
-            var limitLeft = maxLimit - limitUsed;
-
-            if (limitUsed >= maxLimit)
-            {
-                // response.IsLimitExceeded = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.");
-            }
-
-            var expiryDate = activeSubscription.ExpiredAt;
-
-            if (today >= expiryDate)
-            {
-                //response.IsSubscriptionExpired = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("Your subscription has expired. Please renew to continue using this feature.");
-            }
-
             sanitizedAccounts = sanitizedAccounts.Take(limitLeft).ToList();
 
             var newAccounts = sanitizedAccounts.Select(x => new Account()
@@ -113,10 +100,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             activeSubscription.LimitUsed+= sanitizedAccounts.Count;
 
-            await _dbContext.Accounts.AddRangeAsync(newAccounts);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
-            //Inform our server app to open browsers .
+            //Inform our local server app to open browsers .
             var newAccountsHttpResponse = newAccounts.Select(x => new AccountDTO()
             {
                 Id = x.Id,

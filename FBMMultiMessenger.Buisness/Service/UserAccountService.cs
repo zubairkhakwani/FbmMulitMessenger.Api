@@ -19,6 +19,37 @@ namespace FBMMultiMessenger.Buisness.Service
             this._dbContext=dbContext;
             this._emailService=emailService;
         }
+
+        public Subscription? GetActiveSubscription(List<Subscription> subscriptions)
+        {
+            var today = DateTime.UtcNow;
+            var activeSubscription = subscriptions
+                                         .Where(x =>
+                                            x.StartedAt <= today
+                                            &&
+                                            x.ExpiredAt > today)
+                                         .OrderByDescending(x => x.StartedAt)
+                                         .FirstOrDefault();
+
+            return activeSubscription;
+        }
+
+        public bool HasLimitExceeded(Subscription subscription)
+        {
+            var maxLimit = subscription.MaxLimit;
+            var limitUsed = subscription.LimitUsed;
+
+            return limitUsed >= maxLimit;
+        }
+
+        public bool IsSubscriptionExpired(Subscription subscription)
+        {
+            var today = DateTime.UtcNow;
+            var expiryDate = subscription?.ExpiredAt;
+
+            return today >= expiryDate;
+        }
+
         public async Task<BaseResponse<EmailVerificationResponse>> ProcessEmailVerificationAsync(User user, CancellationToken cancellationToken)
         {
 
