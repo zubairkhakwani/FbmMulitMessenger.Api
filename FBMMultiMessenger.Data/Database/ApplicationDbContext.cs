@@ -51,10 +51,10 @@ namespace FBMMultiMessenger.Data.DB
                 );
 
             modelBuilder.Entity<PricingTier>().HasData(
-                new PricingTier() { Id =1, MinAccounts = 1, MaxAccounts = 10, PricePerAccount = 100, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 11, 17), DateTimeKind.Utc) },
-                new PricingTier() { Id =2, MinAccounts = 11, MaxAccounts = 20, PricePerAccount = 50, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 11, 17), DateTimeKind.Utc) },
-                new PricingTier() { Id =3, MinAccounts = 21, MaxAccounts = 100, PricePerAccount = 40, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 11, 17), DateTimeKind.Utc) },
-                new PricingTier() { Id =4, MinAccounts = 101, MaxAccounts = int.MaxValue, PricePerAccount = 30, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 11, 17), DateTimeKind.Utc) }
+                new PricingTier() { Id =1, MinAccounts = 1, MaxAccounts = 10, PricePerAccount = 100 },
+                new PricingTier() { Id =2, MinAccounts = 11, MaxAccounts = 20, PricePerAccount = 50 },
+                new PricingTier() { Id =3, MinAccounts = 21, MaxAccounts = 100, PricePerAccount = 40 },
+                new PricingTier() { Id =4, MinAccounts = 101, MaxAccounts = int.MaxValue, PricePerAccount = 30 }
                 );
         }
     }

@@ -28,8 +28,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
 
             }).ToList();
 
-
-
             return BaseResponse<List<GetAllPricingModelResponse>>.Success("Operation performed successully", response);
         }
     }

@@ -6,8 +6,5 @@
         public int MinAccounts { get; set; }
         public int MaxAccounts { get; set; }
         public decimal PricePerAccount { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
     }
 }

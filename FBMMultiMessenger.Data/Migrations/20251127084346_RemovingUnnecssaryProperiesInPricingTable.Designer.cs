@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251127084346_RemovingUnnecssaryProperiesInPricingTable")]
+    partial class RemovingUnnecssaryProperiesInPricingTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -292,6 +295,12 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsBaseValue")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("MaxAccounts")
                         .HasColumnType("integer");
 
@@ -301,6 +310,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<decimal>("PricePerAccount")
                         .HasColumnType("numeric");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.ToTable("PricingTiers");
@@ -309,30 +321,42 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsBaseValue = false,
                             MaxAccounts = 10,
                             MinAccounts = 1,
-                            PricePerAccount = 100m
+                            PricePerAccount = 100m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             Id = 2,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsBaseValue = false,
                             MaxAccounts = 20,
                             MinAccounts = 11,
-                            PricePerAccount = 50m
+                            PricePerAccount = 50m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             Id = 3,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsBaseValue = false,
                             MaxAccounts = 100,
                             MinAccounts = 21,
-                            PricePerAccount = 40m
+                            PricePerAccount = 40m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         },
                         new
                         {
                             Id = 4,
+                            CreatedAt = new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsBaseValue = false,
                             MaxAccounts = 2147483647,
                             MinAccounts = 101,
-                            PricePerAccount = 30m
+                            PricePerAccount = 30m,
+                            UpdatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
                 });
 
