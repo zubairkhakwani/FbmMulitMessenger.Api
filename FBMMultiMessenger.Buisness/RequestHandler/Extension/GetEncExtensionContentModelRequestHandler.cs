@@ -17,7 +17,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
         private readonly IHubContext<ChatHub> _hubContext = hubContext;
         private readonly ApplicationDbContext _dbContext = dbContext;
 
-        //This handler will get called by our desktop app and server (that runs browser on user machine).
         public async Task<BaseResponse<GetEncExtensionContentModelResponse>> Handle(GetEncExtensionContentModelRequest request, CancellationToken cancellationToken)
         {
             try
@@ -53,7 +52,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
                 var extensionVersion = settings?.Extension_Version;
 
-                // we only update settings if the request is from our desktop app => UpdateServer will only be true if the request is from our desktop app
+                // we only update settings if the request is from our portal => UpdateServer will only be true if the request is from our portal
                 if (request.UpdateServer)
                 {
                     if (settings == null)
@@ -96,10 +95,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     Css = encryptedExtensionFiles
                 };
 
-                //Only be true if the reqeust is from our desktop app.
+                //Only be true if the reqeust is from our portal.
                 if (request.UpdateServer)
                 {
-                    //Inform our server that extension file has been changed.
+                    //Inform all local server that extension file has been changed.
 
                     await _hubContext.Clients.Group("AllServers")
                        .SendAsync("HandleExtensionFilesChanged", response, cancellationToken);

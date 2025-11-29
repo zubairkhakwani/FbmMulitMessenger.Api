@@ -39,7 +39,7 @@ namespace FBMMultiMessenger.Api
                 builder.Services.RegisterMediatR();
                 builder.Services.RegisterAutoMapper(typeof(IServiceCollectionExtension).GetTypeInfo().Assembly, typeof(Program).GetTypeInfo().Assembly);
                 builder.Services.AddTokenAuth(builder.Configuration);
-               // builder.Services.AddCors(builder.Configuration);
+               builder.Services.AddCors(builder.Configuration);
                 builder.Services.RegisterServices();
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -78,8 +78,16 @@ namespace FBMMultiMessenger.Api
 
                 app.UseAuthentication();
                 app.UseAuthorization();
-                app.UseCors("AllowMyApp");
-                app.UseStaticFiles();
+                app.UseCors("AllowedOrigins");
+                app.UseStaticFiles(new StaticFileOptions
+                {
+                    OnPrepareResponse = ctx =>
+                    {
+                        ctx.Context.Response.Headers.Add("Access-Control-Allow-Origin", "https://localhost:7072");
+                        ctx.Context.Response.Headers.Add("Access-Control-Allow-Methods", "GET");
+                        ctx.Context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                    }
+                });
                 app.MapHub<ChatHub>("/chathub");
                 app.MapControllers();
                 app.Run();

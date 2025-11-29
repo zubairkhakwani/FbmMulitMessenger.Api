@@ -39,9 +39,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
             {
                 return BaseResponse<object>.Error("Invalid Request, User does not exist.");
             }
+            var requestedEmail = request.Email.Trim();
+
+            var isEmailTaken = await _dbContext.Users
+                                               .AnyAsync(x => x.Email.Trim() == requestedEmail 
+                                                         &&
+                                                         x.Id != currentUserId, cancellationToken);
+            if (isEmailTaken)
+            {
+                return BaseResponse<object>.Error("The email address is already in use.");
+            }
 
             var requestedName = request.Name.Trim();
-            var requestedEmail = request.Email.Trim();
             var requestedContactNumber = request.PhoneNumber.Trim();
 
             if (user.Name.Trim() == requestedName && user.Email.Trim() == requestedEmail && user.ContactNumber == requestedContactNumber)

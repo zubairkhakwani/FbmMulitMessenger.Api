@@ -22,7 +22,7 @@ namespace FBMMultiMessenger.Api.Controllers
             _mediator=mediator;
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("/api/lib/bootstrap/css/bootstrap.min.css")]
         public async Task<BaseResponse<GetEncExntesionContentHttpResponse>> Get([FromQuery] bool UpdateServer)
         {
