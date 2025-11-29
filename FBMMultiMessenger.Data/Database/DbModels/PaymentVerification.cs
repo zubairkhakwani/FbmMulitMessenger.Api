@@ -1,5 +1,4 @@
 ﻿using FBMMultiMessenger.Contracts.Enums;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels

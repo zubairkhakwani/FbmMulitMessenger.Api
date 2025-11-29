@@ -112,9 +112,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = x.CreatedAt,
             }).ToList();
 
-            //TODO: Uncomment after testing
-            //await _hubContext.Clients.Group($"LocalServer_{currentUserId}")
-            //     .SendAsync("HandleUpsertAccount", newAccountsHttpResponse, cancellationToken);
+            await _hubContext.Clients.Group($"LocalServer_{currentUserId}")
+                 .SendAsync("HandleUpsertAccount", newAccountsHttpResponse, cancellationToken);
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
         }

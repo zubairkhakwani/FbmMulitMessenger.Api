@@ -7,6 +7,7 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using System.Net.NetworkInformation;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {
@@ -85,7 +86,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 return BaseResponse<AddPaymentProofModelResponse>.Error("Your previous payment proof is still under review. Please wait for approval before submitting a new one.\r\n");
             }
 
-           
+
             using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             try
@@ -139,13 +140,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 
                 await transaction.CommitAsync(cancellationToken);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                if (!Directory.Exists("Logs"))
+                {
+                    Directory.CreateDirectory("Logs");
+                }
+
+                var fileName = $"Logs\\Add-payment-verification-failed-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
+                File.WriteAllText(fileName, $"Message:{ex.Message}\n => {ex.InnerException} \n Trace: {ex.StackTrace}");
+
                 await transaction.RollbackAsync(cancellationToken);
                 return BaseResponse<AddPaymentProofModelResponse>.Error(
                  "Failed to submit payment proof. Please try again or contact support if the issue persists.");
             }
-           
+
 
             return BaseResponse<AddPaymentProofModelResponse>.Success("Payment proof submitted successfully! We'll review and activate your subscription soon.", new AddPaymentProofModelResponse());
 
