@@ -718,11 +718,6 @@ async function NavigateToRequestedChat(fbChatId) {
     const expectedUrl = `messages/t/${fbChatId}`;
     const currentUrl = window.location.href;
 
-    if (currentUrl.includes(expectedUrl)) {
-        console.log('already correct chat opened');
-        return;
-    }
-
     const marketPlaceElement = document.querySelector(
         'div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]'
     );
@@ -730,6 +725,14 @@ async function NavigateToRequestedChat(fbChatId) {
     if (marketPlaceElement) {
         TriggerClickEvent(marketPlaceElement);
     }
+
+
+    if (currentUrl.includes(expectedUrl)) {
+        console.log('already correct chat opened');
+        return;
+    }
+
+    
 
     await waitForElement(`a[href*="/messages/t/${fbChatId}/"]`, 10000);
 

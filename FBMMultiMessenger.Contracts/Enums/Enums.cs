@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.CustomDataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Contracts.Enums
 {
@@ -50,4 +51,47 @@ namespace FBMMultiMessenger.Contracts.Enums
         [RejectionReason("Other", "Other reason - see notes")]
         OTHER = 23
     }
+
+    public enum ContactSubject
+    {
+        [Display(Name = "General Inquiry")]
+        General_Inquiry = 1,
+
+        [Display(Name = "Technical Support")]
+        Technical_Support = 2,
+
+        [Display(Name = "Billing & Payment")]
+        Billing_Payment = 3,
+
+        [Display(Name = "Feature Request")]
+        Feature_Request = 4,
+
+        [Display(Name = "Bug Report")]
+        Bug_Report = 5,
+
+        [Display(Name = "Partnership Opportunity")]
+        Partnership = 6,
+
+        [Display(Name = "Sales Inquiry")]
+        Sales_Inquiry = 7,
+
+        [Display(Name = "Account Issue")]
+        Account_Issue = 8,
+
+        [Display(Name = "Feedback & Suggestions")]
+        Feedback = 9,
+
+        [Display(Name = "Privacy & Security")]
+        Privacy_Security = 10,
+
+        [Display(Name = "Refund Request")]
+        Refund_Request = 11,
+
+        [Display(Name = "Product Information")]
+        Product_Information = 12,
+
+        [Display(Name = "Other")]
+        Other = 13
+    }
+
 }
