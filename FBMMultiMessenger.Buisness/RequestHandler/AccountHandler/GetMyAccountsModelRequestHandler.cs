@@ -28,19 +28,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<PageableResponse<GetMyAccountsModelResponse>>.Error("Invlaid Request, Please login again to continue.");
             }
 
-            var accounts = _dbContext.Accounts.Where(x => x.UserId == currentUser.Id);
+            var accounts = _dbContext.Accounts
+                                     .Include(dm => dm.DefaultMessage)
+                                     .Where(x => x.UserId == currentUser.Id);
 
             var response = await accounts
                                 .Skip((request.PageNo - 1) * request.PageSize)
                                 .Take(request.PageSize)
                                 .AsNoTracking()
                                 .Select(x => new GetMyAccountsModelResponse()
-
                                 {
                                     Id = x.Id,
                                     Name = x.Name,
                                     Cookie =  x.Cookie,
-                                    CreatedAt = x.CreatedAt
+                                    CreatedAt = x.CreatedAt,
+                                    DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null
                                 }).ToListAsync();
 
             //Apply filter

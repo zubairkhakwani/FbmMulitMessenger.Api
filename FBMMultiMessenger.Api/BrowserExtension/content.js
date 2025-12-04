@@ -25,6 +25,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "setDefaultMessage") {
+        try {
+            let defaultMessage = request.data;
+            setDefaultMessage(defaultMessage);
+
+        } catch (error) {
+            console.error("Error setting default message", error);
+        }
+        sendResponse({ success: true });
+    }
+});
+
 var defaultTemplate = `{
     "root": {
         "children": [{
@@ -49,6 +63,19 @@ function setMessage(data) {
             type: "SET_FACEBOOK_MESSAGE",
             data: data,
             defaultTemplate: defaultTemplate,
+        },
+
+        "*"
+    );
+}
+
+
+
+function setDefaultMessage(defaultMessage) {
+    window.postMessage(
+        {
+            type: "SET_DEFAULT_MESSAGE",
+            data: defaultMessage,
         },
 
         "*"

@@ -16,9 +16,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
         }
         public async Task<BaseResponse<List<GetAllPricingModelResponse>>> Handle(GetAllPricingModelRequest request, CancellationToken cancellationToken)
         {
-            var pricingTiers = await _dbContext.PricingTiers
+            var pricingTiers = await _dbContext
+                                         .PricingTiers
+                                         .OrderBy(x => x.MinAccounts)
                                          .ToListAsync(cancellationToken);
-
 
             var response = pricingTiers.Select(x => new GetAllPricingModelResponse()
             {

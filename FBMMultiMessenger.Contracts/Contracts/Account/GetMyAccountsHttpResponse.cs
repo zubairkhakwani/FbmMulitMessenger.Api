@@ -10,7 +10,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         public int Id { get; set; }
         public required string Name { get; set; }
         public required string Cookie { get; set; }
-        public bool IsActive { get; set; }
+        public string? DefaultMessage { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
