@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Data.DB
                 new User() { Id = 1, Name="Zubair Khakwani", Email = "zbrkhakwani@gmail.com", Password="Zubair!", ContactNumber="03330337272", IsActive = true, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), RoleId = 3 },
                 new User() { Id = 2, Name="Shaheer Khawjikzai", Email = "shaheersk12@gmail.com", Password="Shaheer1!", ContactNumber="03330337272", IsActive = true, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), RoleId = 3 },
                 new User() { Id = 3, Name="Test_Customer", Email = "test@gmail.com", Password="Test1!", ContactNumber="03330337272", IsActive = true, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), RoleId = 1 },
-                new User() { Id = 4, Name="Test_Admin", Email = "admin@gmail.com", Password="Admin1!", ContactNumber="03330337272", IsActive = true, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), RoleId = 1 }
+                new User() { Id = 4, Name="Test_Admin", Email = "admin@gmail.com", Password="Admin1!", ContactNumber="03330337272", IsActive = true, CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), RoleId = 2 }
 
 
                 );

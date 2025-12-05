@@ -9,11 +9,32 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "ContactUs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FirstName = table.Column<string>(type: "text", nullable: false),
+                    LastName = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    Subject = table.Column<int>(type: "integer", nullable: false),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    IsReplied = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    RepliedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ContactUs", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "PricingTiers",
                 columns: table => new
@@ -22,9 +43,7 @@ namespace FBMMultiMessenger.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MinAccounts = table.Column<int>(type: "integer", nullable: false),
                     MaxAccounts = table.Column<int>(type: "integer", nullable: false),
-                    PricePerAccount = table.Column<decimal>(type: "numeric", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    PricePerAccount = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -318,13 +337,13 @@ namespace FBMMultiMessenger.Data.Migrations
 
             migrationBuilder.InsertData(
                 table: "PricingTiers",
-                columns: new[] { "Id", "CreatedAt", "MaxAccounts", "MinAccounts", "PricePerAccount", "UpdatedAt" },
+                columns: new[] { "Id", "MaxAccounts", "MinAccounts", "PricePerAccount" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc), 10, 1, 100m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 2, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc), 20, 11, 50m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 3, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc), 100, 21, 40m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) },
-                    { 4, new DateTime(2025, 11, 17, 0, 0, 0, 0, DateTimeKind.Utc), 2147483647, 101, 30m, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified) }
+                    { 1, 10, 1, 100m },
+                    { 2, 20, 11, 50m },
+                    { 3, 100, 21, 40m },
+                    { 4, 2147483647, 101, 30m }
                 });
 
             migrationBuilder.InsertData(
@@ -345,7 +364,7 @@ namespace FBMMultiMessenger.Data.Migrations
                     { 1, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "zbrkhakwani@gmail.com", true, false, "Zubair Khakwani", "Zubair!", 3 },
                     { 2, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "shaheersk12@gmail.com", true, false, "Shaheer Khawjikzai", "Shaheer1!", 3 },
                     { 3, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "test@gmail.com", true, false, "Test_Customer", "Test1!", 1 },
-                    { 4, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", true, false, "Test_Admin", "Admin1!", 1 }
+                    { 4, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", true, false, "Test_Admin", "Admin1!", 2 }
                 });
 
             migrationBuilder.InsertData(
@@ -428,6 +447,9 @@ namespace FBMMultiMessenger.Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ChatMessages");
+
+            migrationBuilder.DropTable(
+                name: "ContactUs");
 
             migrationBuilder.DropTable(
                 name: "PaymentVerificationImages");

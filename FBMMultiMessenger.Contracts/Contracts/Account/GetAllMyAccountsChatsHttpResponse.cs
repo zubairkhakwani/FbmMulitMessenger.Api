@@ -17,7 +17,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         public string FbChatId { get; set; } = null!;
         public string FbListingTitle { get; set; } = null!;
         public string FbListingLocation { get; set; } = null!;
-        public decimal FbListingPrice { get; set; }
+        public decimal? FbListingPrice { get; set; }
         public string? FbListingImage { get; set; }
         public string? UserProfileImage { get; set; }
         public string? MessagePreview { get; set; }

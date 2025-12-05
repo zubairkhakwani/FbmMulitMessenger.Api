@@ -11,6 +11,9 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public ContactSubject Subject { get; set; }
         public string Message { get; set; } = string.Empty;
         public bool IsRead { get; set; }
+        public bool IsReplied { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime RepliedAt { get; set; }
+
     }
 }

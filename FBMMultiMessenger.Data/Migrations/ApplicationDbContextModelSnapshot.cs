@@ -191,6 +191,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsReplied")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -198,6 +201,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("RepliedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Subject")
                         .HasColumnType("integer");
@@ -581,7 +587,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             IsEmailVerified = false,
                             Name = "Test_Admin",
                             Password = "Admin1!",
-                            RoleId = 1
+                            RoleId = 2
                         });
                 });
 
