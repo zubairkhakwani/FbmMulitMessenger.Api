@@ -13,7 +13,8 @@ namespace FBMMultiMessenger.Contracts.Enums
     {
         Customer = 1,
         Admin = 2,
-        SuperAdmin = 3
+        SuperAdmin = 3,
+        SuperServer = 4
     }
 
     public enum PaymentRejectionReason
@@ -94,4 +95,16 @@ namespace FBMMultiMessenger.Contracts.Enums
         Other = 13
     }
 
+
+    public enum AccountStatus
+    {
+        [AccountStatusAttribute("Active", "Account is currently running and actively being used on a server.")]
+        Active = 1,
+
+        [AccountStatusAttribute("Inactive", "Account is idle and not currently assigned to any server.")]
+        Inactive = 2,
+
+        [AccountStatusAttribute("In Progress", "Account is being launched on a server.")]
+        InProgress = 3,
+    }
 }

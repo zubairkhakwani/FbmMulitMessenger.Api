@@ -1,7 +1,9 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -28,8 +30,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var currentUserId = currentUser!.Id;
 
             var account = await _dbContext.Accounts
-                                    .AsNoTracking()
-                                    .FirstOrDefaultAsync(x => x.Id == request.AccountId
+                                          .Include(ls => ls.LocalServer)
+                                          .Include(u => u.User)
+                                          .ThenInclude(ls => ls.LocalServers)
+                                          .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                          &&
                                                          x.UserId == currentUserId, cancellationToken);
 
@@ -38,6 +42,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<object>.Error("Invalid request, Account does not exist.");
             }
 
+            var accountLocalServer = account.LocalServer;
+
+            if (accountLocalServer is not null &&  account.Status == AccountStatus.Active)
+            {
+                return BaseResponse<object>.Error("Account is already active and running.");
+            }
 
             var newAccountHttpResponse = new AccountDTO()
             {
@@ -48,12 +58,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = account.CreatedAt
             };
 
-            //Inform our console app to open browser if not opened.
-            var consoleUser = $"LocalServer_{currentUserId}";
-            await _hubContext.Clients.Group(consoleUser)
-               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
+            var userLocalServers = account.User.LocalServers;
 
-            return BaseResponse<object>.Error("Your request has been proccessed successfully.");
+            var powerFullSystem = LocalServerHelper.GetAvailablePowerfulServer(userLocalServers);
+
+            if (powerFullSystem is null)
+            {
+                return BaseResponse<object>.Error("No available server found to run the account.");
+            }
+
+            account.Status = AccountStatus.InProgress;
+            account.LocalServerId = powerFullSystem.Id;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            //Inform our console app to open browser if not opened.
+            await _hubContext.Clients.Group($"{powerFullSystem.UniqueId}")
+               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+
+
+            return BaseResponse<object>.Success("Account is being opened in the browser", new object());
         }
     }
 }

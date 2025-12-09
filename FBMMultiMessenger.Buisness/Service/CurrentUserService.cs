@@ -28,6 +28,7 @@ namespace FBMMultiMessenger.Buisness.Service
             var idClaim = user.FindFirst("Id")?.Value;
             var nameClaim = user.FindFirst(ClaimTypes.Name)?.Value;
             var emailClaim = user.FindFirst(ClaimTypes.Email)?.Value;
+            var RoleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
 
             if (string.IsNullOrWhiteSpace(idClaim))
             {
@@ -39,9 +40,9 @@ namespace FBMMultiMessenger.Buisness.Service
             {
                 Id = int.Parse(idClaim),
                 Name = nameClaim ?? string.Empty,
-                Email = emailClaim ?? string.Empty
+                Email = emailClaim ?? string.Empty,
+                Role = RoleClaim ?? string.Empty
             };
-
         }
 
 
@@ -50,6 +51,7 @@ namespace FBMMultiMessenger.Buisness.Service
             public int Id { get; set; }
             public string Name { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
+            public string Role { get; set; } = string.Empty;
         }
     }
 }

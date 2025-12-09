@@ -109,5 +109,25 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
+        [Authorize]
+        [HttpPost("allocate")]
+        public async Task<BaseResponse<List<AllocateAccountsHttpResponse>>> AllocateAccounts([FromBody] AllocateAccountsHttpRequest httpRequest)
+        {
+            BaseResponse<List<AllocateAccountsModelResponse>> response = await _mediator.Send(_mapper.Map<AllocateAccountsModelRequest>(httpRequest));
+            BaseResponse<List<AllocateAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<AllocateAccountsHttpResponse>>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpPost("update-status")]
+        public async Task<BaseResponse<UpdateAccountStatusHttpResponse>> UpdateStatus([FromBody] UpdateAccountStatusHttpRequest httpRequest)
+        {
+            BaseResponse<UpdateAccountStatusModelResponse> response = await _mediator.Send(_mapper.Map<UpdateAccountStatusModelRequest>(httpRequest));
+            BaseResponse<UpdateAccountStatusHttpResponse> httpResponse = _mapper.Map<BaseResponse<UpdateAccountStatusHttpResponse>>(response);
+
+            return httpResponse;
+        }
     }
 }

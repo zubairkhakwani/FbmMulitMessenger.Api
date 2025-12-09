@@ -26,9 +26,10 @@ namespace FBMMultiMessenger.Buisness.Helpers
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                  new Claim("Id",model.UserId.ToString()!),
-                  new Claim(ClaimTypes.Name,model.Name!),
-                  new Claim(ClaimTypes.Email,model.Email!),
+                  new Claim("Id",model.UserId.ToString()),
+                  new Claim(ClaimTypes.Name,model.Name),
+                  new Claim(ClaimTypes.Email,model.Email),
+                  new Claim(ClaimTypes.Role,model.Role),
                   new Claim(JwtRegisteredClaimNames.Jti, accessTokenId),
                   new Claim(ClaimTypes.Expiration, expiryDate.ToString()),
                 }),

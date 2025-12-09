@@ -5,6 +5,7 @@ using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -43,10 +44,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var currentUserId = currentUser.Id;
 
             var user = await _dbContext.Users
-                                        .Include(a => a.Accounts)
-                                        .Include(p => p.VerificationTokens)
-                                        .Include(s => s.Subscriptions)
-                                        .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
+                                       .Include(ls => ls.LocalServers)
+                                       .Include(a => a.Accounts)
+                                       .Include(p => p.VerificationTokens)
+                                       .Include(s => s.Subscriptions)
+                                       .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
             if (user is null)
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
@@ -94,6 +96,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 FbAccountId = x.FbAccountId,
                 Cookie = x.Cookie,
                 UserId  = currentUserId,
+                Status = AccountStatus.Inactive,
                 CreatedAt = DateTime.UtcNow,
 
             }).ToList();
@@ -103,17 +106,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            //Inform our local server app to open browsers .
-            var newAccountsHttpResponse = newAccounts.Select(x => new AccountDTO()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Cookie = x.Cookie,
-                CreatedAt = x.CreatedAt,
-            }).ToList();
 
-            await _hubContext.Clients.Group($"LocalServer_{currentUserId}")
-                 .SendAsync("HandleUpsertAccount", newAccountsHttpResponse, cancellationToken);
+            var userLocalServers = user.LocalServers;
+            var powerFullServer = LocalServerHelper.GetAvailablePowerfulServer(userLocalServers);
+
+            if (powerFullServer is not null)
+            {
+                var remainingSlots = powerFullServer.MaxBrowserCapacity - powerFullServer.MaxBrowserCapacity;
+
+                //Inform our local server app to open browsers.
+                var newAccountsHttpResponse = newAccounts.Select(x => new AccountDTO()
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Cookie = x.Cookie,
+                    CreatedAt = x.CreatedAt,
+                }).Take(remainingSlots).ToList();
+
+                await _hubContext.Clients.Group($"{powerFullServer.UniqueId}")
+                     .SendAsync("HandleImportAccounts", newAccountsHttpResponse, cancellationToken);
+            }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
         }

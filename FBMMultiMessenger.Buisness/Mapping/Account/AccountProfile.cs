@@ -49,6 +49,15 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<EmailVerificationResponse, UpsertAccountModelResponse>();
             CreateMap<BaseResponse<EmailVerificationResponse>, BaseResponse<UpsertAccountModelResponse>>();
+
+            CreateMap<AllocateAccountsHttpRequest, AllocateAccountsModelRequest>();
+            CreateMap<AllocateAccountsModelResponse, AllocateAccountsHttpResponse>();
+            CreateMap<BaseResponse<List<AllocateAccountsModelResponse>>, BaseResponse<List<AllocateAccountsHttpResponse>>>();
+
+
+            CreateMap<UpdateAccountStatusHttpRequest, UpdateAccountStatusModelRequest>();
+            CreateMap<UpdateAccountStatusModelResponse, UpdateAccountStatusHttpResponse>();
+            CreateMap<BaseResponse<UpdateAccountStatusModelResponse>, BaseResponse<UpdateAccountStatusHttpResponse>>();
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251208054903_UpdatingSchema")]
+    partial class UpdatingSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -50,9 +53,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -257,9 +257,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ActiveBrowserCount")
-                        .HasColumnType("integer");
-
                     b.Property<int>("CoreCount")
                         .HasColumnType("integer");
 
@@ -269,6 +266,9 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<int>("CpuThreadCount")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("CurrentClockSpeedMHz")
                         .HasColumnType("integer");
@@ -287,9 +287,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int>("LogicalProcessors")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MaxBrowserCapacity")
                         .HasColumnType("integer");
 
                     b.Property<int>("MaxClockSpeedMHz")
@@ -311,9 +308,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("RegisteredAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("SystemUUID")
                         .IsRequired()
                         .HasColumnType("text");
@@ -323,10 +317,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<double>("TotalStorageGB")
                         .HasColumnType("double precision");
-
-                    b.Property<string>("UniqueId")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
@@ -514,12 +504,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             Id = 3,
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "SuperAdmin"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "SuperServer"
                         });
                 });
 
@@ -554,9 +538,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("CanRunOnOurServer")
-                        .HasColumnType("boolean");
-
                     b.Property<DateTime>("ExpiredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -585,7 +566,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
-                            CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
                             LimitUsed = 0,
@@ -596,7 +576,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 2,
-                            CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
                             LimitUsed = 0,
@@ -696,18 +675,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             Name = "Test_Admin",
                             Password = "Admin1!",
                             RoleId = 2
-                        },
-                        new
-                        {
-                            Id = 5,
-                            ContactNumber = "03330337272",
-                            CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "super@gmail.com",
-                            IsActive = true,
-                            IsEmailVerified = false,
-                            Name = "Super_Server",
-                            Password = "Super1!",
-                            RoleId = 4
                         });
                 });
 

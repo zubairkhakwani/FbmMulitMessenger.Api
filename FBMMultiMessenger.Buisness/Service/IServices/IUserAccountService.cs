@@ -9,6 +9,7 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
         Task<BaseResponse<EmailVerificationResponse>> ProcessEmailVerificationAsync(User user, CancellationToken cancellationToken);
 
         Subscription? GetActiveSubscription(List<Subscription> subscriptions);
+        Subscription? GetLastActiveSubscription(List<Subscription> subscriptions);
 
         bool HasLimitExceeded(Subscription subscription);
 

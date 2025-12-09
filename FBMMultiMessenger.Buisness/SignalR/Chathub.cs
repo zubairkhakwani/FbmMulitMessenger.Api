@@ -1,5 +1,7 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Contracts.Contracts.Chat;
+﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
+using FBMMultiMessenger.Contracts.Contracts.LocalServer;
+using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
@@ -7,20 +9,52 @@ namespace FBMMultiMessenger.Buisness.SignalR
 {
     public class ChatHub : Hub
     {
-        private static ConcurrentDictionary<string, string> _connections = new ConcurrentDictionary<string, string>();
+        private static ConcurrentDictionary<string, ConnectionMetadata> _connections = new ConcurrentDictionary<string, ConnectionMetadata>();
         public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
+        private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
 
-        public async Task RegisterUser(string userId)
+        public ChatHub(IMediator mediator, IMapper mapper)
+        {
+            this._mediator=mediator;
+            this._mapper=mapper;
+        }
+
+        public async Task RegisterLocalServer(string localServerId)
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(userId))
+                var metadata = new ConnectionMetadata()
                 {
-                    _connections[userId] = Context.ConnectionId;
-                    await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-                    await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
+                    UserId = localServerId,
+                    IsLocalServer = true,
+                    ConnectedAt = DateTime.UtcNow
+                };
 
-                    Console.WriteLine($"User with id {userId} connected");
+                _connections[Context.ConnectionId] = metadata;
+                await Groups.AddToGroupAsync(Context.ConnectionId, localServerId);
+                await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
+
+                Console.WriteLine($"User with id {localServerId} connected");
+            }
+
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        public async Task RegisterApp(string appId)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(appId))
+                {
+                    _connections[Context.ConnectionId] = new ConnectionMetadata() { UserId = appId };
+
+                    await Groups.AddToGroupAsync(Context.ConnectionId, appId);
+
+                    Console.WriteLine($"User with id {appId} connected");
                 }
             }
             catch (Exception ex)
@@ -29,43 +63,31 @@ namespace FBMMultiMessenger.Buisness.SignalR
             }
         }
 
-        public async Task MessageReceived(string toUserId, HandleChatHttpResponse message)
-        {
-            if (_connections.ContainsKey(toUserId))
-            {
-                await Clients.Client(_connections[toUserId]).SendAsync("ReceiveMessage", message);
-            }
-        }
 
-        public void HandleNotification(string deviceId, string fbChatId)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            if (!_devices.ContainsKey(deviceId))
-            {
-                _devices.TryAdd(deviceId, fbChatId);
-            }
-        }
+            var connectionMetadata = _connections.FirstOrDefault(x => x.Key == Context.ConnectionId).Value;
 
-        // Notify extension about the message
-        public async Task NotifyExtension(string toExptensionId, NotifyLocalServerDTO messageRequest)
-        {
-            // Send to the registered extension
-            if (_connections.ContainsKey(toExptensionId))
+            if (connectionMetadata != null)
             {
-                await Clients.Client(_connections[toExptensionId])
-                    .SendAsync("SendMessage", messageRequest);
-            }
-        }
+                _connections.TryRemove(Context.ConnectionId, out var _);
 
+                var userId = connectionMetadata.UserId;
+                if (connectionMetadata.IsLocalServer)
+                {
+                    var response = await _mediator.Send(new HandleLocalServerDisconnectionModelRequest() { LocalServerId = userId });
+                }
 
-        public override async Task OnDisconnectedAsync(Exception exception)
-        {
-            var userId = _connections.FirstOrDefault(x => x.Value == Context.ConnectionId).Key;
-            if (userId != null)
-            {
-                _connections.TryRemove(userId, out _);
                 Console.WriteLine($"User with id {userId} disconnected");
             }
             await base.OnDisconnectedAsync(exception);
+        }
+
+        public class ConnectionMetadata
+        {
+            public string UserId { get; set; } = string.Empty;
+            public bool IsLocalServer { get; set; }
+            public DateTime ConnectedAt { get; set; }
         }
     }
 }

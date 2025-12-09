@@ -33,6 +33,15 @@ namespace FBMMultiMessenger.Buisness.Service
 
             return activeSubscription;
         }
+        public Subscription? GetLastActiveSubscription(List<Subscription> subscriptions)
+        {
+            var today = DateTime.UtcNow;
+            var lastActiveSubscription = subscriptions
+                                         .OrderByDescending(x => x.StartedAt)
+                                         .FirstOrDefault();
+
+            return lastActiveSubscription;
+        }
 
         public bool HasLimitExceeded(Subscription subscription)
         {

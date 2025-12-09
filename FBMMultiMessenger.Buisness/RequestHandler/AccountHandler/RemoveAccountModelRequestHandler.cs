@@ -36,12 +36,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 return BaseResponse<ToggleAcountStatusModelResponse>.Error("Invalid Request, Please select any account to delete.");
             }
 
-
             var accounts = await _dbContext.Accounts
-                                          .Include(u => u.User)
-                                          .ThenInclude(s => s.Subscriptions)
-                                          .Where(x => x.UserId == currentUser.Id
-                                                               &&
+                                           .Include(ls => ls.LocalServer)
+                                           .Include(u => u.User)
+                                           .ThenInclude(s => s.Subscriptions)
+                                           .Where(x => x.UserId == currentUser.Id
+                                                  &&
                                                  request.AccountIds.Any(id => id == x.Id))
                                           .ToListAsync(cancellationToken);
 
@@ -80,10 +80,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 CreatedAt = x.CreatedAt,
             });
 
-            //Inform our console app to close browser.
-            var consoleUser = $"LocalServer_{currentUser.Id}";
-            await _hubContext.Clients.Group(consoleUser)
-               .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
+            //If account is running on local server, we need to inform local server to close browser.
+            if (account.LocalServer is not null)
+            {
+                await _hubContext.Clients.Group($"{account.LocalServer.UniqueId}")
+                   .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
+            }
+
 
             var responseMessage = count > 1 ? "Selected accounts" : "Account";
 

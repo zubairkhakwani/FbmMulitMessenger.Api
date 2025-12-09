@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FBMMultiMessenger.Contracts.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
@@ -17,9 +13,14 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(DefaultMessage))]
         public int? DefaultMessageId { get; set; }
 
+        [ForeignKey(nameof(LocalServer))]
+        public int? LocalServerId { get; set; }
+
         public required string Name { get; set; }
         public required string FbAccountId { get; set; }
         public required string Cookie { get; set; }
+        public AccountStatus Status { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
@@ -27,6 +28,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         //Navigation Properties
         public User User { get; set; } = null!;
         public DefaultMessage? DefaultMessage { get; set; }
+        public LocalServer? LocalServer { get; set; }
         public List<Chat> Chats { get; set; } = new List<Chat>();
     }
 }

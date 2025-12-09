@@ -32,6 +32,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
 
             // Fetch user from database
             var user = await _dbContext.Users
+                                       .Include(r => r.Role)
                                        .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password, cancellationToken);
 
@@ -54,6 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 UserId = user.Id,
                 Name = user.Name,
                 Email = user.Email,
+                Role = user.Role.Name.ToString(),
                 Key = _secretKey
             };
             var token = JWTHelper.GenerateAccessToken(generateTokenModel);

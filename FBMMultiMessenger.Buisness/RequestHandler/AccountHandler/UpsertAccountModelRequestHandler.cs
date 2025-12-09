@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -52,6 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         private async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
+                                       .Include(ls => ls.LocalServers)
                                        .Include(a => a.Accounts)
                                        .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
@@ -102,12 +106,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
+            var powerfullServer = LocalServerHelper.GetAvailablePowerfulServer(user.LocalServers);
+
             var newAccount = new Account()
             {
                 UserId = request.UserId,
                 Cookie = request.Cookie,
                 Name = request.Name,
                 FbAccountId = fbAccountId,
+                Status = AccountStatus.Inactive,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -116,17 +123,22 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            //Inform our server to open browser .
-            var newAccountHttpResponse = new AccountDTO()
-            {
-                Id =  newAccount.Id,
-                Name = newAccount.Name,
-                Cookie = newAccount.Cookie,
-                CreatedAt = newAccount.CreatedAt
-            };
 
-            await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
-               .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
+            if (powerfullServer is not null)
+            {
+                // Inform our local server to open a new browser instance.
+                var newAccountHttpResponse = new AccountDTO()
+                {
+                    Id =  newAccount.Id,
+                    Name = newAccount.Name,
+                    Cookie = newAccount.Cookie,
+                    CreatedAt = newAccount.CreatedAt
+                };
+
+                //TODO 
+                //await _hubContext.Clients.Group($"{powerfullServer.UniqueId}")
+                //   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+            }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
         }
@@ -135,6 +147,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var account = await _dbContext.Accounts
                                           .Include(u => u.User)
+                                          .ThenInclude(ls => ls.LocalServers)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                                &&
                                                                x.UserId == request.UserId, cancellationToken);
@@ -163,6 +176,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             if (shouldUpdate)
             {
+                var isCookieChanged = newCookie != previousCookie;
+
+                //on which the account is running
+                var accountLocalServer = account.LocalServer;
+
                 account.Name = newAccountName;
                 account.Cookie = newCookie;
                 account.FbAccountId = fbAccountId;
@@ -171,18 +189,33 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 _dbContext.Accounts.Update(account);
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                //Inform our local server to close/re-open browser accordingly.
-                var newAccountHttpResponse = new AccountDTO()
+                if (isCookieChanged && accountLocalServer is not null)
                 {
-                    Id =  account.Id,
-                    Name = account.Name,
-                    Cookie = account.Cookie,
-                    CreatedAt = account.CreatedAt,
-                    IsCookieChanged = newCookie != previousCookie,
-                };
+                    var accountsStatusModel = new AccountsStatusSignalRModel();
+                    accountsStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name);
 
-                await _hubContext.Clients.Group($"LocalServer_{request.UserId}")
-                   .SendAsync("HandleUpsertAccount", new List<AccountDTO>() { newAccountHttpResponse }, cancellationToken);
+                    //Inform our app to update the account status.
+                    await _hubContext.Clients.Group($"App_{request.UserId}")
+                      .SendAsync("HandleAccountStatus", accountsStatusModel, cancellationToken);
+                }
+
+
+                if (accountLocalServer is not null)
+                {
+                    //Inform our local server to close/re-open browser accordingly.
+                    var newAccountHttpResponse = new AccountDTO()
+                    {
+                        Id =  account.Id,
+                        Name = account.Name,
+                        Cookie = account.Cookie,
+                        CreatedAt = account.CreatedAt,
+                        IsCookieChanged = newCookie != previousCookie,
+                    };
+
+                    //TODO
+                    // await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
+                    //.SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                }
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", new UpsertAccountModelResponse());

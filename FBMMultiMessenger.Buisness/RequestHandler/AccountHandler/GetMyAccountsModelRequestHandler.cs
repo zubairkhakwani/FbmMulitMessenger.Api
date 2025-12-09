@@ -1,5 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -41,8 +43,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                     Id = x.Id,
                                     Name = x.Name,
                                     Cookie =  x.Cookie,
-                                    CreatedAt = x.CreatedAt,
-                                    DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null
+                                    DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
+                                    Status = AccountStatusExtension.GetInfo(x.Status).Name,
+                                    CreatedAt = x.CreatedAt
                                 }).ToListAsync();
 
             //Apply filter

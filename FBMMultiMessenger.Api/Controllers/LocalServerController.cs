@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
-using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
+using FBMMultiMessenger.Contracts.Contracts.LocalServer;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +31,19 @@ namespace FBMMultiMessenger.Api.Controllers
             BaseResponse<NotifyLocalServerModelResponse> response = await _mediator.Send(request);
 
             BaseResponse<NotifyLocalServerHttpResponse> httpResponse = _mapper.Map<BaseResponse<NotifyLocalServerHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        [Authorize]
+        [HttpPost("register")]
+        public async Task<BaseResponse<RegisterLocalServerHttpResponse>> Register([FromBody] RegisterLocalServerHttpRequest httpRequest)
+        {
+            RegisterLocalServerModelRequest request = _mapper.Map<RegisterLocalServerModelRequest>(httpRequest);
+
+            BaseResponse<RegisterLocalServerModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<RegisterLocalServerHttpResponse> httpResponse = _mapper.Map<BaseResponse<RegisterLocalServerHttpResponse>>(response);
 
             return httpResponse;
         }
