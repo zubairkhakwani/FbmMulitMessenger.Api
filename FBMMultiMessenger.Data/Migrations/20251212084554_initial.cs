@@ -128,6 +128,73 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LocalServers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UniqueId = table.Column<string>(type: "text", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    TotalMemoryGB = table.Column<double>(type: "double precision", nullable: false),
+                    LogicalProcessors = table.Column<int>(type: "integer", nullable: false),
+                    ProcessorName = table.Column<string>(type: "text", nullable: false),
+                    CoreCount = table.Column<int>(type: "integer", nullable: false),
+                    MaxClockSpeedMHz = table.Column<int>(type: "integer", nullable: false),
+                    CurrentClockSpeedMHz = table.Column<int>(type: "integer", nullable: false),
+                    CpuArchitecture = table.Column<string>(type: "text", nullable: false),
+                    CpuThreadCount = table.Column<int>(type: "integer", nullable: false),
+                    GraphicsCards = table.Column<string>(type: "text", nullable: false),
+                    TotalStorageGB = table.Column<double>(type: "double precision", nullable: false),
+                    HasSSD = table.Column<bool>(type: "boolean", nullable: false),
+                    OperatingSystem = table.Column<string>(type: "text", nullable: false),
+                    Is64BitOS = table.Column<bool>(type: "boolean", nullable: false),
+                    SystemUUID = table.Column<string>(type: "text", nullable: false),
+                    MotherboardSerial = table.Column<string>(type: "text", nullable: false),
+                    ProcessorId = table.Column<string>(type: "text", nullable: false),
+                    MaxBrowserCapacity = table.Column<int>(type: "integer", nullable: false),
+                    ActiveBrowserCount = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsOnline = table.Column<bool>(type: "boolean", nullable: false),
+                    IsSuperServer = table.Column<bool>(type: "boolean", nullable: false),
+                    RegisteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LocalServers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LocalServers_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Proxies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Ip_Port = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Password = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Proxies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Proxies_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Subscriptions",
                 columns: table => new
                 {
@@ -136,6 +203,7 @@ namespace FBMMultiMessenger.Data.Migrations
                     MaxLimit = table.Column<int>(type: "integer", nullable: false),
                     LimitUsed = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CanRunOnOurServer = table.Column<bool>(type: "boolean", nullable: false),
                     StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpiredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserId = table.Column<int>(type: "integer", nullable: false)
@@ -185,9 +253,12 @@ namespace FBMMultiMessenger.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     DefaultMessageId = table.Column<int>(type: "integer", nullable: true),
+                    LocalServerId = table.Column<int>(type: "integer", nullable: true),
+                    ProxyId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     FbAccountId = table.Column<string>(type: "text", nullable: false),
                     Cookie = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -198,6 +269,16 @@ namespace FBMMultiMessenger.Data.Migrations
                         name: "FK_Accounts_DefaultMessages_DefaultMessageId",
                         column: x => x.DefaultMessageId,
                         principalTable: "DefaultMessages",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Accounts_LocalServers_LocalServerId",
+                        column: x => x.LocalServerId,
+                        principalTable: "LocalServers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Accounts_Proxies_ProxyId",
+                        column: x => x.ProxyId,
+                        principalTable: "Proxies",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Accounts_Users_UserId",
@@ -353,7 +434,8 @@ namespace FBMMultiMessenger.Data.Migrations
                 {
                     { 1, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "Customer" },
                     { 2, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "Admin" },
-                    { 3, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "SuperAdmin" }
+                    { 3, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "SuperAdmin" },
+                    { 4, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "SuperServer" }
                 });
 
             migrationBuilder.InsertData(
@@ -364,22 +446,36 @@ namespace FBMMultiMessenger.Data.Migrations
                     { 1, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "zbrkhakwani@gmail.com", true, false, "Zubair Khakwani", "Zubair!", 3 },
                     { 2, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "shaheersk12@gmail.com", true, false, "Shaheer Khawjikzai", "Shaheer1!", 3 },
                     { 3, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "test@gmail.com", true, false, "Test_Customer", "Test1!", 1 },
-                    { 4, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", true, false, "Test_Admin", "Admin1!", 2 }
+                    { 4, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", true, false, "Test_Admin", "Admin1!", 2 },
+                    { 5, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "super@gmail.com", true, false, "Super_Server", "Super1!", 4 }
                 });
 
             migrationBuilder.InsertData(
                 table: "Subscriptions",
-                columns: new[] { "Id", "ExpiredAt", "IsActive", "LimitUsed", "MaxLimit", "StartedAt", "UserId" },
+                columns: new[] { "Id", "CanRunOnOurServer", "ExpiredAt", "IsActive", "LimitUsed", "MaxLimit", "StartedAt", "UserId" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 1 },
-                    { 2, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 2 }
+                    { 1, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 1 },
+                    { 2, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 2 },
+                    { 3, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 3 },
+                    { 4, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 4 },
+                    { 5, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 1000, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 5 }
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_DefaultMessageId",
                 table: "Accounts",
                 column: "DefaultMessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Accounts_LocalServerId",
+                table: "Accounts",
+                column: "LocalServerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Accounts_ProxyId",
+                table: "Accounts",
+                column: "ProxyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_UserId",
@@ -407,6 +503,11 @@ namespace FBMMultiMessenger.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LocalServers_UserId",
+                table: "LocalServers",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PaymentVerificationImages_PaymentVerificationId",
                 table: "PaymentVerificationImages",
                 column: "PaymentVerificationId");
@@ -424,6 +525,11 @@ namespace FBMMultiMessenger.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PaymentVerifications_UserId",
                 table: "PaymentVerifications",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Proxies_UserId",
+                table: "Proxies",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -477,6 +583,12 @@ namespace FBMMultiMessenger.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "DefaultMessages");
+
+            migrationBuilder.DropTable(
+                name: "LocalServers");
+
+            migrationBuilder.DropTable(
+                name: "Proxies");
 
             migrationBuilder.DropTable(
                 name: "Users");
