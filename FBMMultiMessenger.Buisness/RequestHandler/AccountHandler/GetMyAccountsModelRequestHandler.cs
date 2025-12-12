@@ -1,6 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
@@ -31,6 +30,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             }
 
             var accounts = _dbContext.Accounts
+                                     .Include(p => p.Proxy)
                                      .Include(dm => dm.DefaultMessage)
                                      .Where(x => x.UserId == currentUser.Id);
 
@@ -45,8 +45,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                     Cookie =  x.Cookie,
                                     DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
                                     Status = AccountStatusExtension.GetInfo(x.Status).Name,
-                                    CreatedAt = x.CreatedAt
-                                }).ToListAsync();
+                                    CreatedAt = x.CreatedAt,
+                                    Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
+                                    {
+                                        Id = x.Proxy.Id,
+                                        Name = x.Proxy.Name,
+                                        Ip_Port = x.Proxy.Ip_Port,
+                                    }
+                                }).ToListAsync(cancellationToken);
 
             //Apply filter
             if (!string.IsNullOrWhiteSpace(request.Keyword))

@@ -15,25 +15,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class ImportAccountsModelRequestHandler : IRequestHandler<ImportAccountsModelRequest, BaseResponse<UpsertAccountModelResponse>>
+    internal class ImportAccountsModelRequestHandler(ApplicationDbContext _dbContext, IHubContext<ChatHub> _hubContext, IUserAccountService _userAccountService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IMapper mapper, CurrentUserService currentUserService) : IRequestHandler<ImportAccountsModelRequest, BaseResponse<UpsertAccountModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly IUserAccountService _userAccountService;
-        private readonly IMapper _mapper;
-        private readonly CurrentUserService _currentUserService;
-
-        public ImportAccountsModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext, IUserAccountService userAccountService, IMapper mapper, CurrentUserService currentUserService)
-        {
-            this._dbContext=dbContext;
-            this._hubContext=hubContext;
-            this._userAccountService=userAccountService;
-            this._mapper=mapper;
-            this._currentUserService=currentUserService;
-        }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(ImportAccountsModelRequest request, CancellationToken cancellationToken)
         {
-            var currentUser = _currentUserService.GetCurrentUser();
+            var currentUser = currentUserService.GetCurrentUser();
 
             //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
             if (currentUser == null)
@@ -44,6 +30,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var currentUserId = currentUser.Id;
 
             var user = await _dbContext.Users
+                                       .Include(p => p.Proxies)
                                        .Include(ls => ls.LocalServers)
                                        .Include(a => a.Accounts)
                                        .Include(p => p.VerificationTokens)
@@ -80,14 +67,22 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
             }
 
+            var isProxyNotProvided = request.Accounts.Any(x => x.ProxyId == null);
+
+            if (activeSubscription.CanRunOnOurServer && isProxyNotProvided)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy for all the accounts", result: response);
+            }
+
             if (!user.IsEmailVerified)
             {
                 var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
 
-                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
+                return mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
-            var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, request);
+            var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, user.Proxies, isProxyRequired: activeSubscription.CanRunOnOurServer, request);
+
             sanitizedAccounts = sanitizedAccounts.Take(limitLeft).ToList();
 
             var newAccounts = sanitizedAccounts.Select(x => new Account()
@@ -98,62 +93,116 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 UserId  = currentUserId,
                 Status = AccountStatus.Inactive,
                 CreatedAt = DateTime.UtcNow,
-
             }).ToList();
-
-            activeSubscription.LimitUsed+= sanitizedAccounts.Count;
 
             await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+            var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
 
-            var userLocalServers = user.LocalServers;
-            var powerFullServer = LocalServerHelper.GetAvailablePowerfulServer(userLocalServers);
+            var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
 
-            if (powerFullServer is not null)
+            foreach (var newAccount in newAccounts)
             {
-                var remainingSlots = powerFullServer.MaxBrowserCapacity - powerFullServer.MaxBrowserCapacity;
+                var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
 
-                //Inform our local server app to open browsers.
-                var newAccountsHttpResponse = newAccounts.Select(x => new AccountDTO()
+                if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
                 {
-                    Id = x.Id,
-                    Name = x.Name,
-                    Cookie = x.Cookie,
-                    CreatedAt = x.CreatedAt,
-                }).Take(remainingSlots).ToList();
+                    newAccount.LocalServerId = leastLoadedServer.Id;
+                    newAccount.Status = AccountStatus.InProgress;
+                    leastLoadedServer.ActiveBrowserCount++;
 
-                await _hubContext.Clients.Group($"{powerFullServer.UniqueId}")
-                     .SendAsync("HandleImportAccounts", newAccountsHttpResponse, cancellationToken);
+                    var accountDTO = new AccountDTO
+                    {
+                        Id = newAccount.Id,
+                        Name = newAccount.Name,
+                        Cookie = newAccount.Cookie,
+                        CreatedAt = newAccount.CreatedAt,
+                    };
+
+                    if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
+                    {
+                        serverAccountAssignments[leastLoadedServer.UniqueId] = new List<AccountDTO>();
+                    }
+
+                    serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
+                }
+            }
+
+            activeSubscription.LimitUsed+= sanitizedAccounts.Count;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Send assignments to servers via SignalR
+            foreach (var (uniqueId, accounts) in serverAccountAssignments)
+            {
+                try
+                {
+                    //here unique id is the identifier that tells signalR Connection
+                    await _hubContext.Clients.Group($"{uniqueId}")
+                        .SendAsync("HandleImportAccounts", accounts, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to notify server {uniqueId}: {ex.Message}");
+                }
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
         }
 
-        public List<ImportAccounts> GetSanitizedAccounts(List<Account> userAccounts, ImportAccountsModelRequest request)
+        public List<ImportAccounts> GetSanitizedAccounts(
+                                                           List<Account> existingUserAccounts,
+                                                           List<Data.Database.DbModels.Proxy> userProxies,
+                                                           bool isProxyRequired,
+                                                           ImportAccountsModelRequest request)
         {
-            var uniqueAccounts = request.Accounts.DistinctBy(a => a.Cookie).ToList();
+            var uniqueAccounts = request.Accounts
+                .DistinctBy(a => a.Cookie)
+                .ToList();
 
-            for (int i = 0; i < uniqueAccounts.Count; i++)
+            var validatedAccounts = new List<ImportAccounts>();
+
+            foreach (var account in uniqueAccounts)
             {
-                var account = uniqueAccounts[i];
-
-                var (isValid, fbAccountId)  = FBCookieValidatior.Validate(account.Cookie);
-
-                if (!isValid || fbAccountId == null)
+                // Validate proxy if provided
+                if (!string.IsNullOrWhiteSpace(account.ProxyId))
                 {
-                    uniqueAccounts.RemoveAt(i);
+                    if (!int.TryParse(account.ProxyId, out int proxyId))
+                    {
+                        continue;
+                    }
+
+                    bool isUserOwnedProxy = userProxies.Any(p => p.Id == proxyId);
+                    if (!isUserOwnedProxy)
+                    {
+                        continue;
+                    }
+                }
+                else if (isProxyRequired)
+                {
+                    continue;
+                }
+
+                var (isValidCookie, fbAccountId) = FBCookieValidatior.Validate(account.Cookie);
+
+                if (!isValidCookie || fbAccountId == null)
+                {
                     continue;
                 }
 
                 account.FbAccountId = fbAccountId;
+
+                bool accountAlreadyExists = existingUserAccounts.Any(existing => existing.FbAccountId == fbAccountId);
+
+                if (!accountAlreadyExists)
+                {
+                    validatedAccounts.Add(account);
+                }
             }
 
-            var sanitizedAccounts = uniqueAccounts
-                                    .Where(x => !userAccounts
-                                    .Any(s => x.FbAccountId == s.FbAccountId)).ToList();
-
-            return sanitizedAccounts;
+            return validatedAccounts;
         }
     }
 }

@@ -16,6 +16,9 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(LocalServer))]
         public int? LocalServerId { get; set; }
 
+        [ForeignKey(nameof(Proxy))]
+        public int? ProxyId { get; set; }
+
         public required string Name { get; set; }
         public required string FbAccountId { get; set; }
         public required string Cookie { get; set; }
@@ -29,6 +32,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public User User { get; set; } = null!;
         public DefaultMessage? DefaultMessage { get; set; }
         public LocalServer? LocalServer { get; set; }
+        public Proxy? Proxy { get; set; }
         public List<Chat> Chats { get; set; } = new List<Chat>();
     }
 }

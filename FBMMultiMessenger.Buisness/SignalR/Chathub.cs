@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
-using FBMMultiMessenger.Contracts.Contracts.LocalServer;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
@@ -11,13 +11,11 @@ namespace FBMMultiMessenger.Buisness.SignalR
     {
         private static ConcurrentDictionary<string, ConnectionMetadata> _connections = new ConcurrentDictionary<string, ConnectionMetadata>();
         public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
-        private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
+        private readonly ILocalServerService _localServerService;
 
-        public ChatHub(IMediator mediator, IMapper mapper)
+        public ChatHub(ILocalServerService localServerService)
         {
-            this._mediator=mediator;
-            this._mapper=mapper;
+            this._localServerService=localServerService;
         }
 
         public async Task RegisterLocalServer(string localServerId)
@@ -32,8 +30,12 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 };
 
                 _connections[Context.ConnectionId] = metadata;
+
                 await Groups.AddToGroupAsync(Context.ConnectionId, localServerId);
+
                 await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
+
+                await _localServerService.HandleServerOnlineAsync(localServerId);
 
                 Console.WriteLine($"User with id {localServerId} connected");
             }
@@ -75,7 +77,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 var userId = connectionMetadata.UserId;
                 if (connectionMetadata.IsLocalServer)
                 {
-                    var response = await _mediator.Send(new HandleLocalServerDisconnectionModelRequest() { LocalServerId = userId });
+                    await _localServerService.HandleServerOfflineAsync(userId);
                 }
 
                 Console.WriteLine($"User with id {userId} disconnected");

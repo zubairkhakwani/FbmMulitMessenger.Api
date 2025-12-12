@@ -3,7 +3,9 @@ using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Request.Extension;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Contracts.LocalServer;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 
@@ -19,6 +21,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<BaseResponse<UpsertAccountModelResponse>, BaseResponse<UpsertAccountHttpResponse>>();
 
+            CreateMap<AccountProxyModelResponse, AccountProxyHttpResponse>();
             CreateMap<GetMyAccountsHttpRequest, GetMyAccountsModelRequest>();
             CreateMap<GetMyAccountsModelResponse, GetMyAccountsHttpResponse>();
 
@@ -50,9 +53,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
             CreateMap<EmailVerificationResponse, UpsertAccountModelResponse>();
             CreateMap<BaseResponse<EmailVerificationResponse>, BaseResponse<UpsertAccountModelResponse>>();
 
-            CreateMap<AllocateAccountsHttpRequest, AllocateAccountsModelRequest>();
-            CreateMap<AllocateAccountsModelResponse, AllocateAccountsHttpResponse>();
-            CreateMap<BaseResponse<List<AllocateAccountsModelResponse>>, BaseResponse<List<AllocateAccountsHttpResponse>>>();
+
 
 
             CreateMap<UpdateAccountStatusHttpRequest, UpdateAccountStatusModelRequest>();

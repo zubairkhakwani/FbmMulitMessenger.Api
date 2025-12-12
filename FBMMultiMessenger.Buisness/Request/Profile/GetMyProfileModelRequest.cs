@@ -1,9 +1,10 @@
-﻿using FBMMultiMessenger.Contracts.Shared;
+﻿using FBMMultiMessenger.Contracts.Response;
+using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 
 namespace FBMMultiMessenger.Buisness.Request.Profile
 {
-    public class GetMyProfileModelRequest : IRequest<BaseResponse<GetMyProfileModelResponse>>
+    public class GetMyProfileModelRequest : PageableRequest, IRequest<BaseResponse<GetMyProfileModelResponse>>
     {
     }
     public class GetMyProfileModelResponse

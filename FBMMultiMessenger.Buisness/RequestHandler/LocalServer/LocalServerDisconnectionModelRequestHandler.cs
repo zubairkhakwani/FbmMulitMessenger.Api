@@ -12,28 +12,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class HandleLocalServerDisconnectionModelRequestHandler : IRequestHandler<HandleLocalServerDisconnectionModelRequest, BaseResponse<HandleLocalServerDisconnectionModelResponse>>
+    //TOODO
+    internal class LocalServerDisconnectionModelRequestHandler : IRequestHandler<LocalServerDisconnectionModelRequest, BaseResponse<LocalServerDisconnectionModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public HandleLocalServerDisconnectionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
+        public LocalServerDisconnectionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
         {
             this._dbContext=dbContext;
             this._hubContext=hubContext;
         }
-        public async Task<BaseResponse<HandleLocalServerDisconnectionModelResponse>> Handle(HandleLocalServerDisconnectionModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<LocalServerDisconnectionModelResponse>> Handle(LocalServerDisconnectionModelRequest request, CancellationToken cancellationToken)
         {
             var localServer = await _dbContext.LocalServers
                                               .Include(a => a.Accounts)
                                               .Include(u => u.User)
                                               .ThenInclude(s => s.LocalServers)
-                                              .FirstOrDefaultAsync(ls => ls.UniqueId == request.LocalServerId, cancellationToken);
+                                              .FirstOrDefaultAsync(ls => ls.UniqueId == request.UniqueId, cancellationToken);
 
             if (localServer is null)
             {
-                return BaseResponse<HandleLocalServerDisconnectionModelResponse>.Error("Local server not found.");
+                return BaseResponse<LocalServerDisconnectionModelResponse>.Error("Local server not found.");
             }
+
+            //Mark this server as offline
+            localServer.IsOnline = false;
 
             var accounts = localServer.Accounts;
 
@@ -65,7 +69,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                return BaseResponse<HandleLocalServerDisconnectionModelResponse>.Success(reason, new HandleLocalServerDisconnectionModelResponse());
+                return BaseResponse<LocalServerDisconnectionModelResponse>.Success(reason, new LocalServerDisconnectionModelResponse());
             }
 
             var remainingSlots = powerfulServer.MaxBrowserCapacity - powerfulServer.ActiveBrowserCount;
@@ -81,7 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
                 //Prepare SignalR model
                 accountStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name);
-            } 
+            }
 
             foreach (var account in remainingAccounts)
             {
@@ -92,12 +96,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 accountStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name);
             }
 
+
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _hubContext.Clients.Group($"App_{localServer.UserId}")
+            await _hubContext.Clients.Group($"App_{userId}")
                 .SendAsync("HandleAccountStatus", accountStatusModel, cancellationToken);
 
-            return BaseResponse<HandleLocalServerDisconnectionModelResponse>.Success("Accounts have been reassigned to another server or set to inactive based on server capacity.", new HandleLocalServerDisconnectionModelResponse());
+            return BaseResponse<LocalServerDisconnectionModelResponse>.Success("Accounts have been reassigned to another server or set to inactive based on server capacity.", new LocalServerDisconnectionModelResponse());
         }
     }
 }

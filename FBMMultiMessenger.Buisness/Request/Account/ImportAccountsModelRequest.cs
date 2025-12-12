@@ -1,5 +1,4 @@
-﻿using FBMMultiMessenger.Contracts.Contracts.Account;
-using FBMMultiMessenger.Contracts.Shared;
+﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
@@ -13,6 +12,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public string Name { get; set; } = null!;
 
         public string Cookie { get; set; } = null!;
+        public string? ProxyId { get; set; }
 
         public string FbAccountId { get; set; } = string.Empty; //This will be generated in the handler by parsing the cookie so no need to pass fbAccountId
     }

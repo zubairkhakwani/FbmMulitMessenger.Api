@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -41,6 +42,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             }
 
+            var isParsed = Enum.TryParse<Roles>(currentUser.Role, out Roles currentUserRole);
+
+            if (!isParsed)
+            {
+                return BaseResponse<RegisterLocalServerModelResponse>.Error("Your account permissions are not configured correctly. Please contact support.");
+            }
+
+
             var newLocalServer = new Data.Database.DbModels.LocalServer
             {
                 UniqueId = LocalServerHelper.GenereatetUniqueId(request.SystemUUID),
@@ -63,6 +72,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 ProcessorId = request.ProcessorId,
                 MaxBrowserCapacity = request.MaxBrowserCapacity,
                 IsActive = true,
+                IsSuperServer = currentUserRole == Roles.SuperServer,
                 RegisteredAt = DateTime.UtcNow
             };
 

@@ -1,7 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
@@ -12,27 +12,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class OpenInBrowserModelRequestHandler : IRequestHandler<OpenInBrowserModelRequest, BaseResponse<object>>
+    internal class OpenInBrowserModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IUserAccountService _accountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<OpenInBrowserModelRequest, BaseResponse<object>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
-        private readonly IHubContext<ChatHub> _hubContext;
-
-        public OpenInBrowserModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
-        {
-            this._dbContext=dbContext;
-            this._currentUserService=currentUserService;
-            this._hubContext=hubContext;
-        }
         public async Task<BaseResponse<object>> Handle(OpenInBrowserModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
             var currentUserId = currentUser!.Id;
 
             var account = await _dbContext.Accounts
-                                          .Include(ls => ls.LocalServer)
                                           .Include(u => u.User)
-                                          .ThenInclude(ls => ls.LocalServers)
+                                          .ThenInclude(s => s.Subscriptions)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                          &&
                                                          x.UserId == currentUserId, cancellationToken);
@@ -44,9 +33,28 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var accountLocalServer = account.LocalServer;
 
-            if (accountLocalServer is not null &&  account.Status == AccountStatus.Active)
+            if ((accountLocalServer is not null &&  account.Status == AccountStatus.Active) || account.Status == AccountStatus.InProgress)
             {
-                return BaseResponse<object>.Error("Account is already active and running.");
+                var message = account.Status == AccountStatus.Active ? "Account is already active and running." : "Please wait account is in progress";
+                return BaseResponse<object>.Error(message);
+            }
+
+            var userSubscriptions = account.User.Subscriptions;
+
+            var activeSubscription = _accountService.GetActiveSubscription(userSubscriptions)
+                                     ??
+                                     _accountService.GetLastActiveSubscription(userSubscriptions);
+
+
+            var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription!);
+
+            var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
+
+            var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
+
+            if (assignedServer is null)
+            {
+                return BaseResponse<object>.Error("Unable to launch account.");
             }
 
             var newAccountHttpResponse = new AccountDTO()
@@ -58,24 +66,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = account.CreatedAt
             };
 
-            var userLocalServers = account.User.LocalServers;
-
-            var powerFullSystem = LocalServerHelper.GetAvailablePowerfulServer(userLocalServers);
-
-            if (powerFullSystem is null)
-            {
-                return BaseResponse<object>.Error("No available server found to run the account.");
-            }
-
             account.Status = AccountStatus.InProgress;
-            account.LocalServerId = powerFullSystem.Id;
+            account.LocalServerId = assignedServer.Id;
+            assignedServer.ActiveBrowserCount++;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             //Inform our console app to open browser if not opened.
-            await _hubContext.Clients.Group($"{powerFullSystem.UniqueId}")
-               .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
-
+            await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
+                    .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
 
             return BaseResponse<object>.Success("Account is being opened in the browser", new object());
         }

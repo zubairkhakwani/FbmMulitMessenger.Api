@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Notifaciton;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.Background;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -107,6 +108,9 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
             services.AddScoped<IUserAccountService, UserAccountService>();
+            services.AddScoped<ILocalServerService, LocalServerService>();
+            services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
+            services.AddHostedService<LocalServerHeartbeatMonitorService>();
             return services;
         }
 

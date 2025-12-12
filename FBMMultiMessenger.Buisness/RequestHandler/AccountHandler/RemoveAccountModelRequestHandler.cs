@@ -54,6 +54,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
             }
 
             var subscriptions = account.User.Subscriptions;
+            var assignedServer = account.LocalServer;
+
             var count = accounts.Count;
 
             var today = DateTime.UtcNow;
@@ -64,9 +66,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                                 .OrderByDescending(x => x.StartedAt)
                                                 .FirstOrDefault();
 
-            if (activeSubscription is not null && activeSubscription.LimitUsed > 0)
+            if (activeSubscription?.LimitUsed > 0)
             {
                 activeSubscription.LimitUsed -= count;
+            }
+
+            if (assignedServer is not null)
+            {
+                assignedServer.ActiveBrowserCount-= count;
             }
 
             _dbContext.RemoveRange(accounts);
@@ -80,13 +87,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 CreatedAt = x.CreatedAt,
             });
 
-            //If account is running on local server, we need to inform local server to close browser.
+            //We need to inform local server to close browser.
             if (account.LocalServer is not null)
             {
                 await _hubContext.Clients.Group($"{account.LocalServer.UniqueId}")
                    .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
             }
-
 
             var responseMessage = count > 1 ? "Selected accounts" : "Account";
 

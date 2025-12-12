@@ -2,7 +2,6 @@
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Contracts.Contracts.LocalServer;
 using FBMMultiMessenger.Contracts.Shared;
-using Microsoft.Extensions.Configuration;
 
 namespace FBMMultiMessenger.Buisness.Mapping.LocalServer
 {
@@ -14,6 +13,13 @@ namespace FBMMultiMessenger.Buisness.Mapping.LocalServer
 
             CreateMap<RegisterLocalServerModelResponse, RegisterLocalServerHttpResponse>();
             CreateMap<BaseResponse<RegisterLocalServerModelResponse>, BaseResponse<RegisterLocalServerHttpResponse>>();
+
+            CreateMap<GetLocalServerAccountsModelResponse, GetLocalServerAccountsHttpResponse>();
+            CreateMap<BaseResponse<List<GetLocalServerAccountsModelResponse>>, BaseResponse<List<GetLocalServerAccountsHttpResponse>>>();
+
+            CreateMap<LocalServerHeartBeatHttpRequet, LocalServerHeartbeatModelRequest>();
+            CreateMap<LocalServerHeartbeatModelResponse, LocalServerHeartBeatHttpResponse>();
+            CreateMap<BaseResponse<LocalServerHeartbeatModelResponse>, BaseResponse<LocalServerHeartBeatHttpResponse>>();
         }
     }
 }

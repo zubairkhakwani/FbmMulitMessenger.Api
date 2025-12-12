@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
@@ -106,16 +107,6 @@ namespace FBMMultiMessenger.Api.Controllers
             OpenInBrowserModelRequest request = new OpenInBrowserModelRequest() { AccountId = accountId };
 
             BaseResponse<object> httpResponse = await _mediator.Send(request);
-
-            return httpResponse;
-        }
-
-        [Authorize]
-        [HttpPost("allocate")]
-        public async Task<BaseResponse<List<AllocateAccountsHttpResponse>>> AllocateAccounts([FromBody] AllocateAccountsHttpRequest httpRequest)
-        {
-            BaseResponse<List<AllocateAccountsModelResponse>> response = await _mediator.Send(_mapper.Map<AllocateAccountsModelRequest>(httpRequest));
-            BaseResponse<List<AllocateAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<AllocateAccountsHttpResponse>>>(response);
 
             return httpResponse;
         }

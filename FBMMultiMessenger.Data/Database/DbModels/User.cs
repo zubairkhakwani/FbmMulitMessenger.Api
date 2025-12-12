@@ -25,6 +25,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<DefaultMessage> DefaultMessages { get; set; } = new List<DefaultMessage>();
         public List<VerificationToken> VerificationTokens { get; set; } = new List<VerificationToken>();
         public List<LocalServer> LocalServers { get; set; } = new List<LocalServer>();
+        public List<Proxy> Proxies { get; set; } = new List<Proxy>();
 
         public Role Role { get; set; } = null!;
 

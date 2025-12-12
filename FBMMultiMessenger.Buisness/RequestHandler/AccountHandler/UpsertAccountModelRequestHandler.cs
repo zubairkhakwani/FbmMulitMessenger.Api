@@ -17,22 +17,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    public class UpsertAccountModelRequestHandler : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
+    public class UpsertAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IHubContext<ChatHub> _hubContext, IMapper _mapper) : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
-        private readonly IUserAccountService _userAccountService;
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly IMapper _mapper;
-
-        public UpsertAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IUserAccountService userAccountService, IHubContext<ChatHub> hubContext, IMapper mapper)
-        {
-            _dbContext=dbContext;
-            _currentUserService=currentUserService;
-            this._userAccountService=userAccountService;
-            _hubContext = hubContext;
-            this._mapper=mapper;
-        }
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
             (bool isValid, int? currentUserId, string? fbAccountId, string errorMessage) = ValidateRequest(request.Cookie, cancellationToken);
@@ -55,7 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         private async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
             var user = await _dbContext.Users
-                                       .Include(ls => ls.LocalServers)
+                                       .Include(p => p.Proxies)
                                        .Include(a => a.Accounts)
                                        .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
@@ -99,6 +85,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
             }
 
+            if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when adding account");
+            }
+
+            int? proxyId = null;
+
+            if (!string.IsNullOrWhiteSpace(request.ProxyId))
+            {
+                var userProxies = user.Proxies;
+
+                proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
+
+                var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
+
+                if (!isValidUserProxy)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
+                }
+            }
+
+
+
             if (!user.IsEmailVerified)
             {
                 var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
@@ -106,7 +115,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
-            var powerfullServer = LocalServerHelper.GetAvailablePowerfulServer(user.LocalServers);
+            var elegibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+            var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
+            var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
             var newAccount = new Account()
             {
@@ -115,16 +126,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 Name = request.Name,
                 FbAccountId = fbAccountId,
                 Status = AccountStatus.Inactive,
+                LocalServerId = assignedServer?.Id,
+                ProxyId = proxyId,
                 CreatedAt = DateTime.UtcNow
             };
 
             activeSubscription.LimitUsed++;
 
+            if (assignedServer is not null)
+            {
+                assignedServer.ActiveBrowserCount++;
+            }
+
             await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
 
-            if (powerfullServer is not null)
+            if (assignedServer is not null)
             {
                 // Inform our local server to open a new browser instance.
                 var newAccountHttpResponse = new AccountDTO()
@@ -136,8 +154,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 };
 
                 //TODO 
-                //await _hubContext.Clients.Group($"{powerfullServer.UniqueId}")
-                //   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
+                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
@@ -148,6 +166,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var account = await _dbContext.Accounts
                                           .Include(u => u.User)
                                           .ThenInclude(ls => ls.LocalServers)
+                                          .Include(u => u.User)
+                                          .ThenInclude(p => p.Proxies)
+                                          .Include(u => u.User)
+                                          .ThenInclude(s => s.Subscriptions)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                                &&
                                                                x.UserId == request.UserId, cancellationToken);
@@ -158,6 +180,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             var user = account.User;
+
+            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions) ?? _userAccountService.GetLastActiveSubscription(user.Subscriptions);
+
+            if (activeSubscription is not null && activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when editing account");
+            }
+
+            int? proxyId = null;
+
+            if (!string.IsNullOrWhiteSpace(request.ProxyId))
+            {
+                var userProxies = user.Proxies;
+
+                proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
+
+                var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
+
+                if (!isValidUserProxy)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
+                }
+            }
 
             if (!user.IsEmailVerified)
             {
@@ -172,7 +217,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var newAccountName = request.Name.Trim();
             var previousAccountName = account.Name.Trim();
 
-            var shouldUpdate = newCookie != previousCookie || newAccountName != previousAccountName;
+            var newProxyId = proxyId;
+            var previousProxyId = account.ProxyId;
+
+            var shouldUpdate = newCookie != previousCookie || newAccountName != previousAccountName ||  newProxyId != previousProxyId;
 
             if (shouldUpdate)
             {
@@ -184,6 +232,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 account.Name = newAccountName;
                 account.Cookie = newCookie;
                 account.FbAccountId = fbAccountId;
+                account.ProxyId = proxyId;
                 account.UpdatedAt = DateTime.UtcNow;
 
                 _dbContext.Accounts.Update(account);
@@ -213,8 +262,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     };
 
                     //TODO
-                    // await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
-                    //.SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                    await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
+                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
                 }
             }
 

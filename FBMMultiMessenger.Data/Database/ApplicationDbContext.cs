@@ -21,6 +21,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<PaymentVerificationImage> PaymentVerificationImages { get; set; }
         public DbSet<ContactUs> ContactUs { get; set; }
         public DbSet<LocalServer> LocalServers { get; set; }
+        public DbSet<Proxy> Proxies { get; set; }
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }
@@ -49,7 +50,12 @@ namespace FBMMultiMessenger.Data.DB
             modelBuilder.Entity<Subscription>().HasData(
 
                 new Subscription() { Id =1, UserId = 1, MaxLimit = 100, LimitUsed=0, StartedAt =DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) },
-                new Subscription() { Id =2, UserId = 2, MaxLimit = 100, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) }
+                new Subscription() { Id =2, UserId = 2, MaxLimit = 100, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) },
+
+                new Subscription() { Id =3, UserId = 3, MaxLimit = 50, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) },
+                new Subscription() { Id =4, UserId = 4, MaxLimit = 50, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) },
+                new Subscription() { Id =5, UserId = 5, MaxLimit = 1000, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) }
+
                 );
 
             modelBuilder.Entity<PricingTier>().HasData(

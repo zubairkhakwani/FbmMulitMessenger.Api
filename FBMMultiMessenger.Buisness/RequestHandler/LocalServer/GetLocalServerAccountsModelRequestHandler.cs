@@ -1,5 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
-using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
@@ -12,17 +12,17 @@ using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
+namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class AllocateAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<AllocateAccountsModelRequest, BaseResponse<List<AllocateAccountsModelResponse>>>
+    internal class GetLocalServerAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<GetLocalServerAccountsModelRequest, BaseResponse<List<GetLocalServerAccountsModelResponse>>>
     {
-        public async Task<BaseResponse<List<AllocateAccountsModelResponse>>> Handle(AllocateAccountsModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<List<GetLocalServerAccountsModelResponse>>> Handle(GetLocalServerAccountsModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
             if (currentUser is null)
             {
-                return BaseResponse<List<AllocateAccountsModelResponse>>.Error("Invalid Request, please login again to continue");
+                return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Invalid Request, please login again to continue");
             }
 
             var isParsed = Enum.TryParse<Roles>(currentUser.Role, out var userRole);
@@ -33,7 +33,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             if (localServer is null)
             {
-                return BaseResponse<List<AllocateAccountsModelResponse>>.Error("Local server not registered.");
+                return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Local server not registered.");
             }
 
             List<Account> accountsToAllocate;
@@ -55,8 +55,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     })
                     .Where(x => x.ActiveSubscription != null && x.ActiveSubscription.CanRunOnOurServer)
                     .SelectMany(x => x.User.Accounts ?? Enumerable.Empty<Account>())
-                    .Where(a => a.LocalServerId == null)
-                    .Take(request.Count)
+                    .Where(a => a.LocalServerId == null || a.LocalServerId == localServer.Id)
+                    .OrderByDescending(a => a.LocalServerId == localServer.Id)
+                    .Take(request.Limit)
                     .ToList();
             }
             else
@@ -66,8 +67,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                                      .Where(u => u.Id == currentUserId)
                                                      .Include(u => u.Accounts)
                                                      .SelectMany(u => u.Accounts)
-                                                     .Where(a => a.LocalServerId == null)
-                                                     .Take(request.Count)
+                                                     .Where(a => a.LocalServerId == null || a.LocalServerId == localServer.Id)
+                                                     .OrderByDescending(a => a.LocalServerId == localServer.Id)
+                                                     .Take(request.Limit)
                                                      .ToListAsync(cancellationToken);
             }
 
@@ -86,7 +88,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             await _dbContext.SaveChangesAsync(cancellationToken);
 
 
-            var responseData = accountsToAllocate.Select(a => new AllocateAccountsModelResponse
+            var responseData = accountsToAllocate.Select(a => new GetLocalServerAccountsModelResponse
             {
                 Id = a.Id,
                 Name = a.Name,
@@ -99,7 +101,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             await _hubContext.Clients.Group($"App_{currentUserId}")
                         .SendAsync("HandleAccountStatus", accountStatusSignalR, cancellationToken);
 
-            return BaseResponse<List<AllocateAccountsModelResponse>>.Success("Accounts allocated successfully.", responseData);
+            return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Success("Accounts allocated successfully.", responseData);
         }
     }
 }

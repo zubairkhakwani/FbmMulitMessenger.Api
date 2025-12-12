@@ -51,6 +51,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("ProxyId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
@@ -65,6 +68,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasIndex("DefaultMessageId");
 
                     b.HasIndex("LocalServerId");
+
+                    b.HasIndex("ProxyId");
 
                     b.HasIndex("UserId");
 
@@ -286,6 +291,12 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSuperServer")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("LogicalProcessors")
                         .HasColumnType("integer");
 
@@ -477,6 +488,45 @@ namespace FBMMultiMessenger.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Ip_Port")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Proxies");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>
                 {
                     b.Property<int>("Id")
@@ -603,6 +653,39 @@ namespace FBMMultiMessenger.Data.Migrations
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CanRunOnOurServer = false,
+                            ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = false,
+                            LimitUsed = 0,
+                            MaxLimit = 50,
+                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CanRunOnOurServer = false,
+                            ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = false,
+                            LimitUsed = 0,
+                            MaxLimit = 50,
+                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CanRunOnOurServer = false,
+                            ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = false,
+                            LimitUsed = 0,
+                            MaxLimit = 1000,
+                            StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = 5
                         });
                 });
 
@@ -764,6 +847,10 @@ namespace FBMMultiMessenger.Data.Migrations
                         .WithMany("Accounts")
                         .HasForeignKey("LocalServerId");
 
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Proxy", "Proxy")
+                        .WithMany("Accounts")
+                        .HasForeignKey("ProxyId");
+
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
                         .WithMany("Accounts")
                         .HasForeignKey("UserId")
@@ -773,6 +860,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("DefaultMessage");
 
                     b.Navigation("LocalServer");
+
+                    b.Navigation("Proxy");
 
                     b.Navigation("User");
                 });
@@ -861,6 +950,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("PaymentVerification");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany("Proxies")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -919,6 +1019,11 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("PaymentVerificationImages");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
+                {
+                    b.Navigation("Accounts");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>
                 {
                     b.Navigation("Users");
@@ -931,6 +1036,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("DefaultMessages");
 
                     b.Navigation("LocalServers");
+
+                    b.Navigation("Proxies");
 
                     b.Navigation("Subscriptions");
 

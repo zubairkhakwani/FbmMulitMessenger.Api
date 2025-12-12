@@ -48,5 +48,31 @@ namespace FBMMultiMessenger.Api.Controllers
             return httpResponse;
         }
 
+        [Authorize]
+        [HttpGet("{serverId}/accounts")]
+        public async Task<BaseResponse<List<GetLocalServerAccountsHttpResponse>>> GetLocalServerAccounts([FromRoute] string serverId, [FromQuery] int limit)
+        {
+            var request = new GetLocalServerAccountsModelRequest()
+            {
+                LocalServerId = serverId,
+                Limit = limit
+            };
+
+            BaseResponse<List<GetLocalServerAccountsModelResponse>> response = await _mediator.Send(request);
+            BaseResponse<List<GetLocalServerAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GetLocalServerAccountsHttpResponse>>>(response);
+
+            return httpResponse;
+        }
+
+
+        [Authorize]
+        [HttpGet("heartbeat")]
+        public async Task<BaseResponse<LocalServerHeartBeatHttpResponse>> Hearbeat([FromBody] LocalServerHeartBeatHttpRequet httpRequet)
+        {
+            BaseResponse<LocalServerHeartbeatModelResponse> response = await _mediator.Send(_mapper.Map<LocalServerHeartbeatModelRequest>(httpRequet));
+            BaseResponse<LocalServerHeartBeatHttpResponse> httpResponse = _mapper.Map<BaseResponse<LocalServerHeartBeatHttpResponse>>(response);
+
+            return httpResponse;
+        }
     }
 }

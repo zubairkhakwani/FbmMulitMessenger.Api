@@ -1,17 +1,16 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
-using System.ComponentModel.DataAnnotations;
 
-namespace FBMMultiMessenger.Buisness.Request.Account
+namespace FBMMultiMessenger.Buisness.Request.LocalServer
 {
-    public class AllocateAccountsModelRequest : IRequest<BaseResponse<List<AllocateAccountsModelResponse>>>
+    public class GetLocalServerAccountsModelRequest : IRequest<BaseResponse<List<GetLocalServerAccountsModelResponse>>>
     {
-        public int Count { get; set; }
+        public int Limit { get; set; }
 
         public string LocalServerId { get; set; } = null!;
     }
 
-    public class AllocateAccountsModelResponse
+    public class GetLocalServerAccountsModelResponse
     {
         public int Id { get; set; }
         public required string Name { get; set; }
