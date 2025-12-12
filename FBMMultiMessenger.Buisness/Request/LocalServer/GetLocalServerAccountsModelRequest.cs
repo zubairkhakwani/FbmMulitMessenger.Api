@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
+using Org.BouncyCastle.Asn1.Crmf;
 
 namespace FBMMultiMessenger.Buisness.Request.LocalServer
 {
@@ -17,5 +18,15 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
         public required string Cookie { get; set; }
         public string? DefaultMessage { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public LocalServerAccountsProxyModelResponse? Proxy { get; set; }
+    }
+
+    public class LocalServerAccountsProxyModelResponse
+    {
+        public int Id { get; set; }
+        public string Ip_Port { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }

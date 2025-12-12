@@ -14,6 +14,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.LocalServer
             CreateMap<RegisterLocalServerModelResponse, RegisterLocalServerHttpResponse>();
             CreateMap<BaseResponse<RegisterLocalServerModelResponse>, BaseResponse<RegisterLocalServerHttpResponse>>();
 
+            CreateMap<LocalServerAccountsProxyModelResponse, LocalServerAccountsProxyHttpResponse>();
+
             CreateMap<GetLocalServerAccountsModelResponse, GetLocalServerAccountsHttpResponse>();
             CreateMap<BaseResponse<List<GetLocalServerAccountsModelResponse>>, BaseResponse<List<GetLocalServerAccountsHttpResponse>>>();
 

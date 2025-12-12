@@ -43,6 +43,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 // For SuperServer: Get accounts from users who have active subscriptions with CanRunOnOurServer = true
                 var eligibleUsers = await _dbContext.Users
                     .Include(u => u.Accounts)
+                    .ThenInclude(p => p.Proxy)
                     .Include(u => u.Subscriptions)
                     .ToListAsync(cancellationToken);
 
@@ -66,6 +67,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 accountsToAllocate = await _dbContext.Users
                                                      .Where(u => u.Id == currentUserId)
                                                      .Include(u => u.Accounts)
+                                                     .ThenInclude(p => p.Proxy)
                                                      .SelectMany(u => u.Accounts)
                                                      .Where(a => a.LocalServerId == null || a.LocalServerId == localServer.Id)
                                                      .OrderByDescending(a => a.LocalServerId == localServer.Id)
@@ -95,6 +97,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 Cookie = a.Cookie,
                 DefaultMessage = a.DefaultMessage?.Message,
                 CreatedAt = a.CreatedAt,
+                Proxy = a.Proxy == null ? null : new LocalServerAccountsProxyModelResponse()
+                {
+                    Id = a.Proxy.Id,
+                    Ip_Port = a.Proxy.Ip_Port,
+                    Name = a.Proxy.Name,
+                    Password = a.Proxy.Password
+                }
 
             }).ToList();
 
