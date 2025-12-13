@@ -35,7 +35,8 @@ namespace FBMMultiMessenger.Buisness.SignalR
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
 
-                await _localServerService.HandleServerOnlineAsync(localServerId);
+                //TODO: Uncomment 
+                //await _localServerService.HandleServerOnlineAsync(localServerId);
 
                 Console.WriteLine($"User with id {localServerId} connected");
             }

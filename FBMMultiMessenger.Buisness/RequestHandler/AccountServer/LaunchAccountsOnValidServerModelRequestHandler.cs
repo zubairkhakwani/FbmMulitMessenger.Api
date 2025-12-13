@@ -21,8 +21,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
                 return BaseResponse<LaunchAccountsOnValidServerModelResponse>.Error("No accounts to launch");
             }
 
-
-
             var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
             var successfulAccounts = new List<int>();
             var failedAccounts = new List<(int AccountId, string Reason)>();
@@ -45,25 +43,28 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
                     // Try super servers first if subscription allows
                     if (activeSubscription.CanRunOnOurServer)
                     {
-                        var superServers = _dbContext.LocalServers.Where(ls => ls.IsActive && ls.IsSuperServer).ToList();
+                        var superServers = _dbContext.LocalServers.Where(ls => ls.IsActive && ls.IsOnline && ls.IsSuperServer).ToList();
 
                         var powerfulSuperServers = _localServerService.GetPowerfulServers(superServers);
+                        var leastUsedServer = _localServerService.GetLeastLoadedServer(powerfulSuperServers);
 
-                        if (powerfulSuperServers?.Count > 0)
+                        if (leastUsedServer is not null)
                         {
-                            assignedServer = TryAssignToServer(powerfulSuperServers);
+                            assignedServer = leastUsedServer;
                         }
                     }
 
-                    // Fall back to user's own servers
-                    if (assignedServer is null)
+                    // If subscription does not allow use user's own servers
+                    else
                     {
-                        var userServers = account.User.LocalServers;
+                        var userServers = account.User.LocalServers.Where(us => us.IsActive && us.IsOnline).ToList();
                         var userPowerfulServers = _localServerService.GetPowerfulServers(userServers);
 
-                        if (userPowerfulServers?.Count > 0)
+                        var leastUsedServer = _localServerService.GetLeastLoadedServer(userPowerfulServers);
+
+                        if (leastUsedServer is not null)
                         {
-                            assignedServer = TryAssignToServer(userPowerfulServers);
+                            assignedServer = leastUsedServer;
                         }
                     }
 
@@ -105,8 +106,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
             await _dbContext.SaveChangesAsync(cancellationToken);
 
 
-
-
             // Send assignments to servers via SignalR
             foreach (var (uniqueId, accounts) in serverAccountAssignments)
             {
@@ -144,18 +143,5 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
 
             return BaseResponse<LaunchAccountsOnValidServerModelResponse>.Success(message, response);
         }
-
-
-        #region Helper Methods
-
-        private static Data.Database.DbModels.LocalServer? TryAssignToServer(List<Data.Database.DbModels.LocalServer> servers)
-        {
-            return servers
-                .Where(s => s.ActiveBrowserCount < s.MaxBrowserCapacity)
-                .OrderBy(s => s.ActiveBrowserCount)
-                .FirstOrDefault();
-        }
-
-        #endregion
     }
 }

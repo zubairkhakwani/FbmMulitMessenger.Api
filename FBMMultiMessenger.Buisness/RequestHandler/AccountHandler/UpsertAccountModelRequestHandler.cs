@@ -153,7 +153,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     CreatedAt = newAccount.CreatedAt
                 };
 
-                //TODO 
                 await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
                    .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
             }
@@ -240,14 +239,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 if (isCookieChanged && accountLocalServer is not null)
                 {
-                    var accountsStatusModel = new AccountsStatusSignalRModel();
-                    accountsStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name);
-
                     //Inform our app to update the account status.
+                    var accountsStatusModel = new List<AccountStatusSignalRModel>();
+                    accountsStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus =AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
+
                     await _hubContext.Clients.Group($"App_{request.UserId}")
                       .SendAsync("HandleAccountStatus", accountsStatusModel, cancellationToken);
                 }
-
 
                 if (accountLocalServer is not null)
                 {
@@ -261,7 +259,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                         IsCookieChanged = newCookie != previousCookie,
                     };
 
-                    //TODO
                     await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
                    .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
                 }

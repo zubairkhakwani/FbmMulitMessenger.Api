@@ -6,7 +6,14 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class UpdateAccountStatusModelRequest : IRequest<BaseResponse<UpdateAccountStatusModelResponse>>
     {
-        public Dictionary<int, AccountStatus> AccountStatus { get; set; } = new Dictionary<int, AccountStatus>();
+        public List<AccountUpdateModelOperation> Accounts { get; set; } = new();
+    }
+
+    public class AccountUpdateModelOperation
+    {
+        public int AccountId { get; set; }
+        public AccountStatus Status { get; set; }
+        public bool FreeServer { get; set; }
     }
 
     public class UpdateAccountStatusModelResponse

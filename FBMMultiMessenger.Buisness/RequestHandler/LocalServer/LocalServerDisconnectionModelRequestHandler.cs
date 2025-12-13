@@ -48,7 +48,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             var userId = localServer.UserId;
 
-            var accountStatusModel = new AccountsStatusSignalRModel();
+            var accountStatusModel = new List<AccountStatusSignalRModel>();
 
             if (powerfulServer is null)
             {
@@ -61,7 +61,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     account.LocalServerId = null;
                     account.Status = AccountStatus.Inactive;
 
-                    accountStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name);
+                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name });
                 }
 
                 await _hubContext.Clients.Group($"App_{userId}")
@@ -84,7 +84,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.Status = AccountStatus.InProgress;
 
                 //Prepare SignalR model
-                accountStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name);
+                accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
             }
 
             foreach (var account in remainingAccounts)
@@ -93,9 +93,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.Status = AccountStatus.Inactive;
 
                 //Prepare SignalR model
-                accountStatusModel.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name);
+                accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name });
             }
-
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

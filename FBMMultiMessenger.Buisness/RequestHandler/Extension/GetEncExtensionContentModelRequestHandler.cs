@@ -23,6 +23,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             {
                 string baseDir = AppContext.BaseDirectory;
                 string extensionFolder = Path.Combine(baseDir, "BrowserExtension");
+                string proxyExtensionFolder = Path.Combine(baseDir, "ProxyExtension");
 
                 if (!Directory.Exists(extensionFolder))
                 {
@@ -30,12 +31,22 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                         $"BrowserExtension folder not found at: {extensionFolder}");
                 }
 
+                if (!Directory.Exists(proxyExtensionFolder))
+                {
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                        $"ProxyExtension folder not found at: {extensionFolder}");
+                }
+
+
+                //Browser extension files that will help fetching FBM messages.
                 string backgroundFilePath = Path.Combine(extensionFolder, "background.js");
                 string injectFilePath = Path.Combine(extensionFolder, "inject.js");
                 string contentFilePath = Path.Combine(extensionFolder, "content.js");
                 string manifestFilePath = Path.Combine(extensionFolder, "manifest.json");
                 string signalRFilePath = Path.Combine(extensionFolder, "signalR.min.js");
 
+                //Proxy extension files
+                string proxyBackgroundFilePath = Path.Combine(proxyExtensionFolder, "background.js");
 
                 if (!File.Exists(backgroundFilePath))
                 {
@@ -43,11 +54,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                              $"background.js not found at: {backgroundFilePath}");
                 }
 
+                if (!File.Exists(proxyBackgroundFilePath))
+                {
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                             $"background.js not found at: {proxyBackgroundFilePath}");
+                }
+
                 var BackgroundJs = await File.ReadAllTextAsync(backgroundFilePath, cancellationToken);
                 var InjectJs = await File.ReadAllTextAsync(injectFilePath, cancellationToken);
                 var ContentJs = await File.ReadAllTextAsync(contentFilePath, cancellationToken);
                 var ManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
                 var SignalRPackage = await File.ReadAllTextAsync(signalRFilePath, cancellationToken);
+
+                var ProxyBackgroundJs = await File.ReadAllTextAsync(proxyBackgroundFilePath, cancellationToken);
+                var PrxoyManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
 
                 var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
                 var extensionVersion = settings?.Extension_Version;
@@ -83,7 +103,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     ContentJs = ContentJs,
                     ManifestJson = ManifestJson,
                     SignalRPackage = SignalRPackage,
-                    ExtensionVersion = extensionVersion
+                    ExtensionVersion = extensionVersion,
+                    ProxyBackgroundJs = ProxyBackgroundJs,
+                    ProxyManifestJson = PrxoyManifestJson
                 };
 
                 string extensionFilesJson = JsonSerializer.Serialize(anonymousObj);

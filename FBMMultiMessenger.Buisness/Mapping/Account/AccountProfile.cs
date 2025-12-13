@@ -57,6 +57,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
 
             CreateMap<UpdateAccountStatusHttpRequest, UpdateAccountStatusModelRequest>();
+            CreateMap<AccountUpdateHttpOperation, AccountUpdateModelOperation>();
+
             CreateMap<UpdateAccountStatusModelResponse, UpdateAccountStatusHttpResponse>();
             CreateMap<BaseResponse<UpdateAccountStatusModelResponse>, BaseResponse<UpdateAccountStatusHttpResponse>>();
         }

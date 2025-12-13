@@ -75,7 +75,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                      .ToListAsync(cancellationToken);
             }
 
-            var accountStatusSignalR = new AccountsStatusSignalRModel();
+            var accountStatusSignalR = new List<AccountStatusSignalRModel>();
 
             foreach (var account in accountsToAllocate)
             {
@@ -83,7 +83,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.Status = AccountStatus.InProgress;
 
                 // Prepare SignalR data
-                accountStatusSignalR.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name);
+                accountStatusSignalR.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus =  AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
             }
 
             localServer.ActiveBrowserCount = accountsToAllocate.Count;

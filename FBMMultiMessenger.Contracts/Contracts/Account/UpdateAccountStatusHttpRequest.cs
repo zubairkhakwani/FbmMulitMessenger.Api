@@ -4,7 +4,14 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
     public class UpdateAccountStatusHttpRequest
     {
-        public Dictionary<int, AccountStatus> AccountStatus { get; set; } = new Dictionary<int, AccountStatus>();
+        public List<AccountUpdateHttpOperation> Accounts { get; set; } = new();
+    }
+
+    public class AccountUpdateHttpOperation
+    {
+        public int AccountId { get; set; }
+        public AccountStatus Status { get; set; }
+        public bool FreeServer { get; set; }
     }
 
     public class UpdateAccountStatusHttpResponse

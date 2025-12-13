@@ -49,13 +49,13 @@ namespace FBMMultiMessenger.Api
 
                 try
                 {
-//#if !DEBUG
-//                    using (var scope = app.Services.CreateScope())
-//                    {
-//                        //var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//                        //db.Database.Migrate();
-//                    }
-//#endif
+#if !DEBUG
+                    using (var scope = app.Services.CreateScope())
+                    {
+                        //var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        //db.Database.Migrate();
+                    }
+#endif
 
                 }
                 catch (Exception ex)

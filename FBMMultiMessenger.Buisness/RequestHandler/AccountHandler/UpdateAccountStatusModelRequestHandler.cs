@@ -1,6 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
-using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
@@ -14,57 +13,77 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     internal class UpdateAccountStatusModelRequestHandler : IRequestHandler<UpdateAccountStatusModelRequest, BaseResponse<UpdateAccountStatusModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public UpdateAccountStatusModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
+        public UpdateAccountStatusModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
         {
             this._dbContext=dbContext;
-            this._currentUserService=currentUserService;
             this._hubContext=hubContext;
         }
 
         public async Task<BaseResponse<UpdateAccountStatusModelResponse>> Handle(UpdateAccountStatusModelRequest request, CancellationToken cancellationToken)
         {
-            var currentUser = _currentUserService.GetCurrentUser();
-
-            //Extra safety check
-            if (currentUser is null)
+            if (request.Accounts is null || !request.Accounts.Any())
             {
-                return BaseResponse<UpdateAccountStatusModelResponse>.Error("Invalid Request, Please login again to continue");
+                return BaseResponse<UpdateAccountStatusModelResponse>.Error("No account operations provided");
             }
 
-            var accountIds = request.AccountStatus?.Keys.ToList() ?? new List<int>();
-
-            if (request.AccountStatus is null || !request.AccountStatus.Any())
-            {
-                return BaseResponse<UpdateAccountStatusModelResponse>.Error("No accounts provided to update");
-            }
+            var accountIds = request.Accounts.Select(o => o.AccountId).ToList();
 
             var accounts = await _dbContext.Accounts
+                                           .Include(u => u.User)
                                            .Where(a => accountIds.Contains(a.Id)).ToListAsync(cancellationToken);
 
-            if (accounts is null)
+            if (accounts.Count == 0)
             {
-                return BaseResponse<UpdateAccountStatusModelResponse>.Error("Account not found");
+                return BaseResponse<UpdateAccountStatusModelResponse>.Error("Accounts not found");
             }
 
-            var accountsStatusSignal = new AccountsStatusSignalRModel();
+            var accountLookup = accounts.ToDictionary(a => a.Id);
 
-            foreach (var account in accounts)
+            var userAccountSignals = new List<UserAccountSignalRModel>();
+
+            foreach (var operation in request.Accounts)
             {
-                if (request.AccountStatus.TryGetValue(account.Id, out var newStatus))
-                {
-                    account.Status = newStatus;
+                if (!accountLookup.TryGetValue(operation.AccountId, out var account))
+                    continue;
 
-                    accountsStatusSignal.AccountStatus.Add(account.Id, AccountStatusExtension.GetInfo(newStatus).Name);
+                account.Status = operation.Status;
+
+                if (operation.FreeServer)
+                {
+                    account.LocalServerId = null;
                 }
+
+                var userSignal = userAccountSignals.FirstOrDefault(u => u.UserId == account.UserId);
+
+                if (userSignal == null)
+                {
+                    userSignal = new UserAccountSignalRModel
+                    {
+                        UserId = account.UserId
+                    };
+
+                    userAccountSignals.Add(userSignal);
+                }
+
+                userSignal.AccountsStatus.Add(new AccountStatusSignalRModel
+                {
+                    AccountId = account.Id,
+                    AccountStatus = AccountStatusExtension.GetInfo(operation.Status).Name
+                });
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _hubContext.Clients.Group($"App_{currentUser.Id}")
-                             .SendAsync("HandleAccountStatus", accountsStatusSignal, cancellationToken);
+            //Inform the user's app to update the status accordingly
+            foreach (var userAccount in userAccountSignals)
+            {
+                var appId = $"App_{userAccount.UserId}";
+
+                await _hubContext.Clients.Group(appId)
+                    .SendAsync("HandleAccountStatus", userAccount.AccountsStatus, cancellationToken);
+            }
 
             return BaseResponse<UpdateAccountStatusModelResponse>.Success("Account status updated successfully", new UpdateAccountStatusModelResponse());
         }

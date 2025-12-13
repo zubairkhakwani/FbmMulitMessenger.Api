@@ -1,31 +1,31 @@
-﻿using Microsoft.Extensions.Hosting;
-using System.Threading;
+﻿using FBMMultiMessenger.Buisness.Service.IServices;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FBMMultiMessenger.Buisness.Service.Background
 {
     public class LocalServerHeartbeatMonitorService : BackgroundService
     {
+        private readonly IServiceProvider _serviceProvider;
+
+        public LocalServerHeartbeatMonitorService(IServiceProvider serviceProvider)
+        {
+            this._serviceProvider=serviceProvider;
+        }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
 
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    //using (var scope = _serviceProvider.CreateScope())
-                    //{
-                    //    // var myService = scope.ServiceProvider.GetRequiredService<IMyService>();
-
-                    //    // Your actual work here
-                    //    _logger.LogInformation("Performing the one-time background task...");
-
-                    //    // Simulate some work
-                    //    await Task.Delay(1000, cancellationToken);
-
-                    //    _logger.LogInformation("One-time background task completed successfully.");
-                    //}
-
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var localServerService = scope.ServiceProvider.GetRequiredService<ILocalServerService>();
+                        //TODO: UNCOMMENT
+                        //await localServerService.MonitorHeartBeatAsync();
+                    }
 
                 }
             }
@@ -35,7 +35,7 @@ namespace FBMMultiMessenger.Buisness.Service.Background
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occurred in OneTimeBackgroundService.", ex.Message);
+                Console.WriteLine("An error occurred in LocalServerHeartbeatMonitorService.", ex.Message);
             }
         }
     }

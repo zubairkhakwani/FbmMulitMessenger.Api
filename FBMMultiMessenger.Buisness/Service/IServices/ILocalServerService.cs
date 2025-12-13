@@ -1,5 +1,4 @@
 ﻿using FBMMultiMessenger.Data.Database.DbModels;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace FBMMultiMessenger.Buisness.Service.IServices
 {
@@ -11,7 +10,7 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
 
         Task HandleServerOnlineAsync(string uniqueId);
         Task HandleServerOfflineAsync(string uniqueId);
-        void MonitorHeartBeatAsync();
+        Task MonitorHeartBeatAsync();
 
         string GenereatetUniqueId(string systemUUID);
     }

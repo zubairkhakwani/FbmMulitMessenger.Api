@@ -2,6 +2,7 @@
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Data.Database.DbModels;
 using MediatR;
+using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Service
 {
@@ -50,9 +51,9 @@ namespace FBMMultiMessenger.Buisness.Service
             await _mediator.Send(new LocalServerDisconnectionModelRequest() { UniqueId = uniqueId });
         }
 
-        public void MonitorHeartBeatAsync()
+        public async Task MonitorHeartBeatAsync()
         {
-            throw new NotImplementedException();
+            await _mediator.Send(new MonitorLocalServerHearbeatModelRequest());
         }
     }
 }

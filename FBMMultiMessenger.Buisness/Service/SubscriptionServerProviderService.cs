@@ -24,7 +24,7 @@ namespace FBMMultiMessenger.Buisness.Service
 
             var user = await _dbContext.Users
                                        .Include(ls => ls.LocalServers)
-                                       .FirstOrDefaultAsync(x => x.Id == userSubscription.Id);
+                                       .FirstOrDefaultAsync(x => x.Id == userSubscription.UserId);
 
             var userLocalServers = user?.LocalServers;
 

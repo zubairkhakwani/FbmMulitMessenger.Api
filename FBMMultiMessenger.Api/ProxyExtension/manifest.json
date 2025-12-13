@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Proxy Switcher",
+  "version": "1.0",
+  "permissions": [
+    "proxy",
+    "storage",
+    "tabs",
+    "webRequest",
+    "webRequestAuthProvider"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+  

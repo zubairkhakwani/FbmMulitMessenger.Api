@@ -83,6 +83,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, user.Proxies, isProxyRequired: activeSubscription.CanRunOnOurServer, request);
 
+            if (sanitizedAccounts.Count == 0)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Accounts data is invalid. Please check cookies and proxies and try again.", result: response);
+
+            }
+
             sanitizedAccounts = sanitizedAccounts.Take(limitLeft).ToList();
 
             var newAccounts = sanitizedAccounts.Select(x => new Account()

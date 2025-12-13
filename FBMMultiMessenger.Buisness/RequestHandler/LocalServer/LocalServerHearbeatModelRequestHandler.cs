@@ -1,9 +1,7 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Models.SignalR.App;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.AccountServer;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
@@ -47,7 +45,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<LocalServerHeartbeatModelResponse>.Error("No accounts running on this server");
             }
 
-            var signalRNotification = new AccountsStatusSignalRModel();
+            var signalRNotification = new List<AccountStatusSignalRModel>();
 
             var activeAccountIdsFromHeartbeat = request.ActiveAccountIds;
 
@@ -65,7 +63,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 localServer.ActiveBrowserCount--;
 
                 //preparing model to inform our app about the accounts via signalr
-                signalRNotification.AccountStatus.Add(notActiveAccount.Id, AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name);
+                var signalRModel = new AccountStatusSignalRModel()
+                {
+                    AccountId = notActiveAccount.Id,
+                    AccountStatus= AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name
+                };
+
+                signalRNotification.Add(signalRModel);
             }
 
             //Case 3: local server is telling i have 10 accounts but in DB we have 5 accounts so update the status.
@@ -82,7 +86,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 localServer.ActiveBrowserCount++;
 
                 //preparing model to inform our app about the accounts via signalr
-                signalRNotification.AccountStatus.Add(accountToActivate.Id, AccountStatusExtension.GetInfo(AccountStatus.Active).Name);
+                var signalRModel = new AccountStatusSignalRModel()
+                {
+                    AccountId = accountToActivate.Id,
+                    AccountStatus= AccountStatusExtension.GetInfo(AccountStatus.Active).Name
+                };
+
+                signalRNotification.Add(signalRModel);
             }
 
             if (accountsNoLongerActive.Count > 0 || accountsToActivate.Count > 0)
@@ -90,8 +100,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            //Inform app about the accounts statuss
-            if (signalRNotification.AccountStatus.Count > 0)
+            //Inform app about the accounts status
+            if (signalRNotification.Count > 0)
             {
                 await _hubContext.Clients.Group($"App_{currentUser.Id}")
                             .SendAsync("HandleAccountStatus", signalRNotification, cancellationToken);
