@@ -10,7 +10,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
     public class AccountUpdateHttpOperation
     {
         public int AccountId { get; set; }
-        public AccountStatus Status { get; set; }
+        public AccountConnectionStatus ConnectionStatus { get; set; }
+        public AccountAuthStatus AuthStatus { get; set; }
         public bool FreeServer { get; set; }
     }
 

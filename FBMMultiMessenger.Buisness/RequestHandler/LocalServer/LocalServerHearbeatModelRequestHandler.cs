@@ -58,7 +58,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             foreach (var notActiveAccount in accountsNoLongerActive)
             {
-                notActiveAccount.Status = AccountStatus.Inactive;
+                notActiveAccount.ConnectionStatus = AccountConnectionStatus.Offline;
                 notActiveAccount.LocalServerId = null;
                 localServer.ActiveBrowserCount--;
 
@@ -66,7 +66,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 var signalRModel = new AccountStatusSignalRModel()
                 {
                     AccountId = notActiveAccount.Id,
-                    AccountStatus= AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name
+                    ConnectionStatus= AccountConnectionStatus.Offline.GetInfo().Name
                 };
 
                 signalRNotification.Add(signalRModel);
@@ -81,7 +81,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             foreach (var accountToActivate in accountsToActivate)
             {
-                accountToActivate.Status = AccountStatus.Active;
+                accountToActivate.ConnectionStatus = AccountConnectionStatus.Online;
                 accountToActivate.LocalServerId = localServer.Id;
                 localServer.ActiveBrowserCount++;
 
@@ -89,7 +89,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 var signalRModel = new AccountStatusSignalRModel()
                 {
                     AccountId = accountToActivate.Id,
-                    AccountStatus= AccountStatusExtension.GetInfo(AccountStatus.Active).Name
+                    ConnectionStatus= AccountConnectionStatus.Online.GetInfo().Name
                 };
 
                 signalRNotification.Add(signalRModel);

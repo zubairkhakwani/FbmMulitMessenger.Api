@@ -71,7 +71,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
                     // If we found a server, assign the account
                     if (assignedServer is not null)
                     {
-                        account.Status = AccountStatus.InProgress;
+                        account.ConnectionStatus = AccountConnectionStatus.Starting;
                         account.LocalServerId = assignedServer.Id;
                         assignedServer.ActiveBrowserCount++;
 

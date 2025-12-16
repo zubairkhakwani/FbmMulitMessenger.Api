@@ -80,10 +80,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             foreach (var account in accountsToAllocate)
             {
                 account.LocalServerId = localServer.Id;
-                account.Status = AccountStatus.InProgress;
+                account.ConnectionStatus = AccountConnectionStatus.Starting;
+                account.AuthStatus = AccountAuthStatus.Idle;
 
                 // Prepare SignalR data
-                accountStatusSignalR.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus =  AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
+                accountStatusSignalR.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus =  AccountConnectionStatus.Starting.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
             }
 
             localServer.ActiveBrowserCount = accountsToAllocate.Count;

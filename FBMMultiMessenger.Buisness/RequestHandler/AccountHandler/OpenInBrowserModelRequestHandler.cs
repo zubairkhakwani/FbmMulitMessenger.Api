@@ -33,9 +33,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var accountLocalServer = account.LocalServer;
 
-            if ((accountLocalServer is not null &&  account.Status == AccountStatus.Active) || account.Status == AccountStatus.InProgress)
+            if ((accountLocalServer is not null &&  account.ConnectionStatus == AccountConnectionStatus.Online) || account.ConnectionStatus == AccountConnectionStatus.Starting)
             {
-                var message = account.Status == AccountStatus.Active ? "Account is already active and running." : "Please wait account is in progress";
+                var message = account.ConnectionStatus == AccountConnectionStatus.Online ? "Account is already active and running." : "Please wait account is in progress";
                 return BaseResponse<object>.Error(message);
             }
 
@@ -66,7 +66,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 CreatedAt = account.CreatedAt
             };
 
-            account.Status = AccountStatus.InProgress;
+            account.ConnectionStatus = AccountConnectionStatus.Starting;
             account.LocalServerId = assignedServer.Id;
             assignedServer.ActiveBrowserCount++;
 

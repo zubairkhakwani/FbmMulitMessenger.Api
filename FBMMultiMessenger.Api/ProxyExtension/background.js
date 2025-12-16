@@ -1,6 +1,3 @@
-var userName = "";
-var password = "";
-
 console.log("Background script running");
 
 if (userName && password) {

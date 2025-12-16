@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Account;
-using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
@@ -112,7 +111,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPost("update-status")]
+        [HttpPut("update-status")]
         public async Task<BaseResponse<UpdateAccountStatusHttpResponse>> UpdateStatus([FromBody] UpdateAccountStatusHttpRequest httpRequest)
         {
             BaseResponse<UpdateAccountStatusModelResponse> response = await _mediator.Send(_mapper.Map<UpdateAccountStatusModelRequest>(httpRequest));

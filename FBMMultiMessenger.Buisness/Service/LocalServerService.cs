@@ -2,7 +2,6 @@
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Data.Database.DbModels;
 using MediatR;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Service
 {
@@ -22,7 +21,7 @@ namespace FBMMultiMessenger.Buisness.Service
         public LocalServer? GetLeastLoadedServer(List<LocalServer>? servers)
         {
             return servers?
-                       .Where(s => s.ActiveBrowserCount < s.MaxBrowserCapacity)
+                       .Where(s => s.ActiveBrowserCount < s.MaxBrowserCapacity && s.IsOnline && s.IsActive)
                        .OrderBy(s => s.ActiveBrowserCount)
                        .FirstOrDefault();
         }

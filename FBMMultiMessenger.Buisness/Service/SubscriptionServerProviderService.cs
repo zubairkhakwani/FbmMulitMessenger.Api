@@ -17,19 +17,25 @@ namespace FBMMultiMessenger.Buisness.Service
         {
             if (userSubscription.CanRunOnOurServer)
             {
-                var superServers = _dbContext.LocalServers.Where(ls => ls.IsActive && ls.IsSuperServer).ToList();
+                var superServers = _dbContext.LocalServers
+                                             .Where(ls => ls.IsActive
+                                                     &&
+                                                     ls.IsOnline
+                                                     &&
+                                                     ls.IsSuperServer)
+                                             .ToList();
 
                 return superServers;
             }
 
-            var user = await _dbContext.Users
-                                       .Include(ls => ls.LocalServers)
-                                       .FirstOrDefaultAsync(x => x.Id == userSubscription.UserId);
-
-            var userLocalServers = user?.LocalServers;
-
+            var userLocalServers = _dbContext.LocalServers
+                                             .Where(ls => ls.IsActive
+                                                    &&
+                                                    ls.IsOnline
+                                                    &&
+                                                    ls.UserId == userSubscription.UserId)
+                                             .ToList();
             return userLocalServers;
         }
-
     }
 }

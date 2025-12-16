@@ -896,6 +896,65 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+(function checkAccountAuth() {
+    let previousLoginState = null;
+
+    function checkAndNotify() {
+        var isLoggedIn = isAccountLoggedIn(getCookie('c_user'), getEmailInput());
+
+        // Notify if state changed OR first time check
+        if (previousLoginState !== isLoggedIn) {
+            NotifyAccountAuthStatus(isLoggedIn);
+            previousLoginState = isLoggedIn;
+        }
+    }
+
+    checkAndNotify();
+
+    // Check every 5 minutes
+    setInterval(checkAndNotify, 300000);
+})();
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+};
+function getEmailInput() {
+    return document.getElementById('email');
+}
+function isAccountLoggedIn(cUser, emailInput) {
+    var loggedIn = false;
+
+    console.log("CUser: ", cUser);
+    console.log("Email Input: ", emailInput);
+
+    if (cUser) {
+        loggedIn = true;
+    }
+
+    if (emailInput) {
+        loggedIn = false;
+    }
+
+    console.log("Account Logged In: ", loggedIn)
+    return loggedIn;
+}
+
+function NotifyAccountAuthStatus(isLoggedIn) {
+    var root = document.documentElement;
+    let detail = {
+        accountId,
+        isLoggedIn
+    }
+    root.dispatchEvent(
+        new CustomEvent("notifyAccountAuthState", {
+            detail,
+        })
+    );
+}
+
+
 (function CloseFbChatRecoverPopup() {
     const totalTriesToCloseFbChatRecoverPopup = 20;
     let attemptedTries = 0;
@@ -907,12 +966,10 @@ function delay(ms) {
         attemptedTries++;
 
         if (attemptedTries >= totalTriesToCloseFbChatRecoverPopup) {
-            //console.log("FORCE STOPPING - Max attempts reached!");
             clearInterval(intervalId);
             if (timeoutId) {
                 clearTimeout(timeoutId);
             }
-            //console.log("Interval cleared. If you see this message repeating, something is very wrong.");
             return;
         }
 
@@ -949,6 +1006,4 @@ function delay(ms) {
             }, 500);
         }
     }, 2000);
-
-    console.log("CloseFbChatRecoverPopup started with interval ID:", intervalId);
 })();

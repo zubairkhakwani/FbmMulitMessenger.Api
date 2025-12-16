@@ -16,7 +16,8 @@ public class GetMyAccountsModelResponse
     public required string Name { get; set; }
     public required string Cookie { get; set; }
     public string? DefaultMessage { get; set; }
-    public string Status { get; set; } = string.Empty;
+    public string AuthStatus { get; set; } = string.Empty;
+    public string ConnectionStatus { get; set; } = string.Empty;
     public AccountProxyModelResponse? Proxy { get; set; }
 
     public DateTime CreatedAt { get; set; }

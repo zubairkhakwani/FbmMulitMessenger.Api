@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
@@ -7,7 +8,7 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
+namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
     internal class GetMyAccountsModelRequestHandler : IRequestHandler<GetMyAccountsModelRequest, BaseResponse<PageableResponse<GetMyAccountsModelResponse>>>
     {
@@ -44,7 +45,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                     Name = x.Name,
                                     Cookie =  x.Cookie,
                                     DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
-                                    Status = AccountStatusExtension.GetInfo(x.Status).Name,
+                                    ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
+                                    AuthStatus = x.AuthStatus.GetInfo().Name,
                                     CreatedAt = x.CreatedAt,
                                     Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
                                     {

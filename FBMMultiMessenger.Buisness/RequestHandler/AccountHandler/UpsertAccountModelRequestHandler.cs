@@ -106,8 +106,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
             }
 
-
-
             if (!user.IsEmailVerified)
             {
                 var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
@@ -125,7 +123,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 Cookie = request.Cookie,
                 Name = request.Name,
                 FbAccountId = fbAccountId,
-                Status = AccountStatus.Inactive,
+                ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
+                AuthStatus = AccountAuthStatus.Idle,
                 LocalServerId = assignedServer?.Id,
                 ProxyId = proxyId,
                 CreatedAt = DateTime.UtcNow
@@ -241,7 +240,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     //Inform our app to update the account status.
                     var accountsStatusModel = new List<AccountStatusSignalRModel>();
-                    accountsStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus =AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
+                    accountsStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name });
 
                     await _hubContext.Clients.Group($"App_{request.UserId}")
                       .SendAsync("HandleAccountStatus", accountsStatusModel, cancellationToken);

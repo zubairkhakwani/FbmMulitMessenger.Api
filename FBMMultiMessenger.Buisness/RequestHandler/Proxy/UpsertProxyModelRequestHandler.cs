@@ -8,12 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Proxy
 {
-    internal class UpserProxyModelRequestHandler : IRequestHandler<UpsertProxyModelRequest, BaseResponse<UpsertProxyModelResponse>>
+    internal class UpsertProxyModelRequestHandler : IRequestHandler<UpsertProxyModelRequest, BaseResponse<UpsertProxyModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
 
-        public UpserProxyModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
+        public UpsertProxyModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
         {
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
@@ -34,7 +34,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Proxy
                 return BaseResponse<UpsertProxyModelResponse>.Error("Invalid Proxy");
             }
 
-
             request.CurrentUserId = currentUser.Id;
 
             if (request.ProxyId is null)
@@ -48,7 +47,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Proxy
 
         private async Task<BaseResponse<UpsertProxyModelResponse>> AddRequestAsync(UpsertProxyModelRequest request, CancellationToken cancellationToken)
         {
-            bool ipExists = await _dbContext.Proxies.AnyAsync(x => x.Ip_Port == request.Ip_Port, cancellationToken);
+            bool ipExists = await _dbContext.Proxies.AnyAsync(p => p.Ip_Port == request.Ip_Port && p.UserId == request.CurrentUserId, cancellationToken);
 
             if (ipExists)
             {

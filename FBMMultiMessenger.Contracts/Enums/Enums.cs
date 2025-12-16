@@ -96,15 +96,27 @@ namespace FBMMultiMessenger.Contracts.Enums
     }
 
 
-    public enum AccountStatus
+    public enum AccountConnectionStatus
     {
-        [AccountStatusAttribute("Active", "Account is currently running and actively being used on a server.")]
-        Active = 1,
+        [DisplayInfoAttribute("Online", "The account is running and actively in use.")]
+        Online = 1,
 
-        [AccountStatusAttribute("Inactive", "Account is idle and not currently assigned to any server.")]
-        Inactive = 2,
+        [DisplayInfoAttribute("Offline", "The account is idle and not currently assigned to any server.")]
+        Offline = 2,
 
-        [AccountStatusAttribute("In Progress", "Account is being launched on a server.")]
-        InProgress = 3,
+        [DisplayInfoAttribute("Starting", "The account is launching and preparing to run on a server.")]
+        Starting = 3,
+    }
+
+    public enum AccountAuthStatus
+    {
+        [DisplayInfoAttribute("Idle", "The login state has not been checked yet.")]
+        Idle = 0,        
+
+        [DisplayInfoAttribute("Logged In", "The account is authenticated and the user is logged in.")]
+        LoggedIn = 1,       
+
+        [DisplayInfoAttribute("Logged Out", "The account is not authenticated or the user has logged out.")]
+        LoggedOut = 2,        
     }
 }

@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 var updateAccountStatus = offlineServersAccounts.Select(a => new AccountUpdateModelOperation()
                 {
                     AccountId = a.Id,
-                    Status = AccountStatus.Inactive,
+                    ConnectionStatus = AccountConnectionStatus.Offline,
                     FreeServer = true
                 }).ToList();
 

@@ -1,6 +1,6 @@
-﻿using FBMMultiMessenger.Buisness.Helpers;
-using FBMMultiMessenger.Buisness.Models.SignalR.App;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
@@ -12,23 +12,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    //TOODO
-    internal class LocalServerDisconnectionModelRequestHandler : IRequestHandler<LocalServerDisconnectionModelRequest, BaseResponse<LocalServerDisconnectionModelResponse>>
+    internal class LocalServerDisconnectionModelRequestHandler(ApplicationDbContext _dbContext, IUserAccountService _userAccountService, ILocalServerService _localServerService, ISubscriptionServerProviderService _subscriptionServerProviderService, IHubContext<ChatHub> _hubContext) : IRequestHandler<LocalServerDisconnectionModelRequest, BaseResponse<LocalServerDisconnectionModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly IHubContext<ChatHub> _hubContext;
-
-        public LocalServerDisconnectionModelRequestHandler(ApplicationDbContext dbContext, IHubContext<ChatHub> hubContext)
-        {
-            this._dbContext=dbContext;
-            this._hubContext=hubContext;
-        }
         public async Task<BaseResponse<LocalServerDisconnectionModelResponse>> Handle(LocalServerDisconnectionModelRequest request, CancellationToken cancellationToken)
         {
             var localServer = await _dbContext.LocalServers
                                               .Include(a => a.Accounts)
                                               .Include(u => u.User)
-                                              .ThenInclude(s => s.LocalServers)
+                                              .ThenInclude(s => s.Subscriptions)
                                               .FirstOrDefaultAsync(ls => ls.UniqueId == request.UniqueId, cancellationToken);
 
             if (localServer is null)
@@ -39,29 +30,45 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             //Mark this server as offline
             localServer.IsOnline = false;
 
-            var accounts = localServer.Accounts;
+            var userSubscriptions = localServer.User.Subscriptions;
 
-            //Get other local servers of the user
-            var userLocalServers = localServer.User.LocalServers.Where(x => x.Id != localServer.Id).ToList();
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions)
+                                      ??
+                                     _userAccountService.GetLastActiveSubscription(userSubscriptions);
 
-            var powerfulServer = LocalServerHelper.GetAvailablePowerfulServer(userLocalServers);
+
+            // Defensive check — activeSubscription should never be null here (as for current buisness rule),
+            if (activeSubscription is null)
+            {
+                return BaseResponse<LocalServerDisconnectionModelResponse>.Error("User does not have any active subscription.");
+            }
+
+            //Get server based on user subscription
+            var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+
+            var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
 
             var userId = localServer.UserId;
 
             var accountStatusModel = new List<AccountStatusSignalRModel>();
 
-            if (powerfulServer is null)
-            {
-                var reason = userLocalServers is null || userLocalServers.Count == 0
-                    ? "All accounts set to inactive as there are no other local servers available."
-                    : "No available server found. All servers are either inactive or at full capacity.";
+            //Accounts that were running on this server
+            var localServerAccounts = localServer.Accounts;
 
-                foreach (var account in accounts)
+
+            //If there is no server that can launch the accounts that are being disconnected.
+            if (powerfullEligibleServers is null || powerfullEligibleServers.Count == 0)
+            {
+                foreach (var account in localServerAccounts)
                 {
                     account.LocalServerId = null;
-                    account.Status = AccountStatus.Inactive;
+                    account.ConnectionStatus = AccountConnectionStatus.Offline;
+                    account.AuthStatus = AccountAuthStatus.Idle;
 
-                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name });
+                    //Sync active browser count that were running on this server.
+                    localServer.ActiveBrowserCount--;
+
+                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
                 }
 
                 await _hubContext.Clients.Group($"App_{userId}")
@@ -69,31 +76,42 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
-                return BaseResponse<LocalServerDisconnectionModelResponse>.Success(reason, new LocalServerDisconnectionModelResponse());
+                return BaseResponse<LocalServerDisconnectionModelResponse>.Success("All accounts set to inactive as there are no other local servers available.", new LocalServerDisconnectionModelResponse());
             }
 
-            var remainingSlots = powerfulServer.MaxBrowserCapacity - powerfulServer.ActiveBrowserCount;
-
-            var accountsToMove = accounts.Take(remainingSlots).ToList();
-
-            var remainingAccounts = accounts.Skip(remainingSlots).ToList();
-
-            foreach (var account in accountsToMove)
+            //If we do have servers 
+            foreach (var account in localServerAccounts)
             {
-                account.LocalServerId = powerfulServer.Id;
-                account.Status = AccountStatus.InProgress;
+                var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
 
-                //Prepare SignalR model
-                accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.InProgress).Name });
-            }
+                var canAssignServer =
+                                    leastLoadedServer is not null &&
+                                    leastLoadedServer.IsOnline &&
+                                    leastLoadedServer.ActiveBrowserCount < leastLoadedServer.MaxBrowserCapacity;
 
-            foreach (var account in remainingAccounts)
-            {
-                account.LocalServerId = null;
-                account.Status = AccountStatus.Inactive;
+                if (canAssignServer)
+                {
+                    account.LocalServerId = leastLoadedServer!.Id;
+                    account.ConnectionStatus = AccountConnectionStatus.Starting;
+                    account.AuthStatus  = AccountAuthStatus.Idle;
 
-                //Prepare SignalR model
-                accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, AccountStatus = AccountStatusExtension.GetInfo(AccountStatus.Inactive).Name });
+                    leastLoadedServer.ActiveBrowserCount++;
+
+                    //Prepare SignalR model
+                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                }
+                else
+                {
+                    account.LocalServerId = null;
+                    account.ConnectionStatus = AccountConnectionStatus.Offline;
+                    account.AuthStatus = AccountAuthStatus.Idle;
+
+                    //Sync active browser count that were running on this server.
+                    localServer.ActiveBrowserCount--;
+
+                    //Prepare SignalR model
+                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                }
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);

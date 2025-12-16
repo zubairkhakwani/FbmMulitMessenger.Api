@@ -31,6 +31,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var accountIds = request.Accounts.Select(o => o.AccountId).ToList();
 
             var accounts = await _dbContext.Accounts
+                                           .Include(ls => ls.LocalServer)
                                            .Include(u => u.User)
                                            .Where(a => accountIds.Contains(a.Id)).ToListAsync(cancellationToken);
 
@@ -48,11 +49,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 if (!accountLookup.TryGetValue(operation.AccountId, out var account))
                     continue;
 
-                account.Status = operation.Status;
+                account.ConnectionStatus = operation.ConnectionStatus;
+                account.AuthStatus = operation.AuthStatus;
 
                 if (operation.FreeServer)
                 {
                     account.LocalServerId = null;
+
+                    var accountLocalServer = account.LocalServer;
+                    if (accountLocalServer is not null)
+                    {
+                        accountLocalServer.ActiveBrowserCount--;
+                    }
                 }
 
                 var userSignal = userAccountSignals.FirstOrDefault(u => u.UserId == account.UserId);
@@ -70,7 +78,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 userSignal.AccountsStatus.Add(new AccountStatusSignalRModel
                 {
                     AccountId = account.Id,
-                    AccountStatus = AccountStatusExtension.GetInfo(operation.Status).Name
+                    ConnectionStatus =  operation.ConnectionStatus.GetInfo().Name,
+                    AuthStatus = operation.AuthStatus.GetInfo().Name
                 });
             }
 

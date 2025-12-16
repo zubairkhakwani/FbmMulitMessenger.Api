@@ -97,7 +97,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 FbAccountId = x.FbAccountId,
                 Cookie = x.Cookie,
                 UserId  = currentUserId,
-                Status = AccountStatus.Inactive,
+                ConnectionStatus = AccountConnectionStatus.Offline,
                 CreatedAt = DateTime.UtcNow,
             }).ToList();
 
@@ -116,7 +116,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
                 {
                     newAccount.LocalServerId = leastLoadedServer.Id;
-                    newAccount.Status = AccountStatus.InProgress;
+                    newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
+                    newAccount.AuthStatus = AccountAuthStatus.Idle;
+
                     leastLoadedServer.ActiveBrowserCount++;
 
                     var accountDTO = new AccountDTO

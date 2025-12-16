@@ -26,7 +26,6 @@ namespace FBMMultiMessenger.Buisness.Service.Background
                         //TODO: UNCOMMENT
                         //await localServerService.MonitorHeartBeatAsync();
                     }
-
                 }
             }
             catch (TaskCanceledException)

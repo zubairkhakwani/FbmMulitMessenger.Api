@@ -1,7 +1,16 @@
 var root = document.documentElement;
+
+
 root.addEventListener("sendMessageToApi", function (e) {
     chrome.runtime.sendMessage({
         key: "sendMessageToApi",
+        detail: e.detail,
+    });
+});
+
+root.addEventListener("notifyAccountAuthState", function (e) {
+    chrome.runtime.sendMessage({
+        key: "notifyAccountAuthState",
         detail: e.detail,
     });
 });
