@@ -54,7 +54,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                         Name = x.Proxy.Name,
                                         Ip_Port = x.Proxy.Ip_Port,
                                     }
-                                }).ToListAsync(cancellationToken);
+                                })
+                                .OrderBy(x => x.Id)
+                                .ToListAsync(cancellationToken);
 
             //Apply filter
             if (!string.IsNullOrWhiteSpace(request.Keyword))
