@@ -1,6 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
