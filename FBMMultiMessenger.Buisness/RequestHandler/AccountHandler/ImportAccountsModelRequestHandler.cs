@@ -19,145 +19,159 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     {
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(ImportAccountsModelRequest request, CancellationToken cancellationToken)
         {
-            var currentUser = currentUserService.GetCurrentUser();
-
-            //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
-            if (currentUser == null)
+            try
             {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Invalid request, Please login again to continue.");
-            }
+                var currentUser = currentUserService.GetCurrentUser();
 
-            var currentUserId = currentUser.Id;
-
-            var user = await _dbContext.Users
-                                       .Include(p => p.Proxies)
-                                       .Include(ls => ls.LocalServers)
-                                       .Include(a => a.Accounts)
-                                       .Include(p => p.VerificationTokens)
-                                       .Include(s => s.Subscriptions)
-                                       .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
-            if (user is null)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
-            }
-
-            var userSubscriptions = user.Subscriptions;
-
-            if (!userSubscriptions.Any())
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.");
-            }
-
-            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
-
-            var response = new UpsertAccountModelResponse();
-
-            if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
-            {
-                response.IsSubscriptionExpired = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts in bulk.", redirectToPackages: true, response);
-            }
-
-            var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
-            var limitLeft = activeSubscription.MaxLimit - activeSubscription.LimitUsed;
-
-            if (isLimitReaced)
-            {
-                response.IsLimitExceeded = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
-            }
-
-            var isProxyNotProvided = request.Accounts.Any(x => x.ProxyId == null);
-
-            if (activeSubscription.CanRunOnOurServer && isProxyNotProvided)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy for all the accounts", result: response);
-            }
-
-            if (!user.IsEmailVerified)
-            {
-                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
-
-                return mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
-            }
-
-            var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, user.Proxies, isProxyRequired: activeSubscription.CanRunOnOurServer, request);
-
-            if (sanitizedAccounts.Count == 0)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Accounts data is invalid. Please check cookies and proxies and try again.", result: response);
-
-            }
-
-            sanitizedAccounts = sanitizedAccounts.Take(limitLeft).ToList();
-
-            var newAccounts = sanitizedAccounts.Select(x => new Account()
-            {
-                Name = x.Name,
-                FbAccountId = x.FbAccountId,
-                Cookie = x.Cookie,
-                UserId  = currentUserId,
-                ConnectionStatus = AccountConnectionStatus.Offline,
-                CreatedAt = DateTime.UtcNow,
-            }).ToList();
-
-            await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
-            var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
-
-            var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
-
-            foreach (var newAccount in newAccounts)
-            {
-                var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
-
-                if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
+                //Extra Safety Check, if user has came here he would be logged in hence the current user will never be null.
+                if (currentUser == null)
                 {
-                    newAccount.LocalServerId = leastLoadedServer.Id;
-                    newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
-                    newAccount.AuthStatus = AccountAuthStatus.Idle;
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Invalid request, Please login again to continue.");
+                }
 
-                    leastLoadedServer.ActiveBrowserCount++;
+                var currentUserId = currentUser.Id;
 
-                    var accountDTO = new AccountDTO
+                var user = await _dbContext.Users
+                                           .Include(p => p.Proxies)
+                                           .Include(ls => ls.LocalServers)
+                                           .Include(a => a.Accounts)
+                                           .Include(p => p.VerificationTokens)
+                                           .Include(s => s.Subscriptions)
+                                           .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
+                if (user is null)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
+                }
+
+                var userSubscriptions = user.Subscriptions;
+
+                if (!userSubscriptions.Any())
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.");
+                }
+
+                var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+                var response = new UpsertAccountModelResponse();
+
+                if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
+                {
+                    response.IsSubscriptionExpired = true;
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts in bulk.", redirectToPackages: true, response);
+                }
+
+                var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
+                var limitLeft = activeSubscription.MaxLimit - activeSubscription.LimitUsed;
+
+                if (isLimitReaced)
+                {
+                    response.IsLimitExceeded = true;
+                    return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
+                }
+
+                var isProxyNotProvided = request.Accounts.Any(x => x.ProxyId == null);
+
+                if (activeSubscription.CanRunOnOurServer && isProxyNotProvided)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy for all the accounts", result: response);
+                }
+
+                if (!user.IsEmailVerified)
+                {
+                    var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
+
+                    return mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
+                }
+
+                var sanitizedAccounts = GetSanitizedAccounts(user.Accounts, user.Proxies, isProxyRequired: activeSubscription.CanRunOnOurServer, request);
+
+                if (sanitizedAccounts.Count == 0)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Accounts data is invalid. Please check cookies and proxies and try again.", result: response);
+
+                }
+
+                sanitizedAccounts = sanitizedAccounts.Take(limitLeft).ToList();
+
+                var newAccounts = sanitizedAccounts.Select(x => new Account()
+                {
+                    Name = x.Name,
+                    FbAccountId = x.FbAccountId,
+                    Cookie = x.Cookie,
+                    UserId  = currentUserId,
+                    ConnectionStatus = AccountConnectionStatus.Offline,
+                    CreatedAt = DateTime.UtcNow,
+                }).ToList();
+
+                await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+                var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
+
+                var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
+
+                foreach (var newAccount in newAccounts)
+                {
+                    var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
+
+                    if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
                     {
-                        Id = newAccount.Id,
-                        Name = newAccount.Name,
-                        Cookie = newAccount.Cookie,
-                        CreatedAt = newAccount.CreatedAt,
-                    };
+                        newAccount.LocalServerId = leastLoadedServer.Id;
+                        newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
+                        newAccount.AuthStatus = AccountAuthStatus.Idle;
 
-                    if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
-                    {
-                        serverAccountAssignments[leastLoadedServer.UniqueId] = new List<AccountDTO>();
+                        leastLoadedServer.ActiveBrowserCount++;
+
+                        var accountDTO = new AccountDTO
+                        {
+                            Id = newAccount.Id,
+                            Name = newAccount.Name,
+                            Cookie = newAccount.Cookie,
+                            CreatedAt = newAccount.CreatedAt,
+                        };
+
+                        if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
+                        {
+                            serverAccountAssignments[leastLoadedServer.UniqueId] = new List<AccountDTO>();
+                        }
+
+                        serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
                     }
-
-                    serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
                 }
+
+                activeSubscription.LimitUsed+= sanitizedAccounts.Count;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // Send assignments to servers via SignalR
+                foreach (var (uniqueId, accounts) in serverAccountAssignments)
+                {
+                    try
+                    {
+                        //here unique id is the identifier that tells signalR Connection
+                        await _hubContext.Clients.Group($"{uniqueId}")
+                            .SendAsync("HandleImportAccounts", accounts, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to notify server {uniqueId}: {ex.Message}");
+                    }
+                }
+
+                return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
             }
-
-            activeSubscription.LimitUsed+= sanitizedAccounts.Count;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            // Send assignments to servers via SignalR
-            foreach (var (uniqueId, accounts) in serverAccountAssignments)
+            catch (Exception ex)
             {
-                try
+                if (!Directory.Exists("Logs"))
                 {
-                    //here unique id is the identifier that tells signalR Connection
-                    await _hubContext.Clients.Group($"{uniqueId}")
-                        .SendAsync("HandleImportAccounts", accounts, cancellationToken);
+                    Directory.CreateDirectory("Logs");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to notify server {uniqueId}: {ex.Message}");
-                }
-            }
 
-            return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
+                var fileName = $"Logs\\Import-Account-Error-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
+                File.WriteAllText(fileName, string.Join(Environment.NewLine, $"Exception Message: {ex.Message}\n Inner Exception: {ex.InnerException}"));
+                return BaseResponse<UpsertAccountModelResponse>.Error("Something went, wrong please try later");
+            }
         }
 
         public List<ImportAccounts> GetSanitizedAccounts(

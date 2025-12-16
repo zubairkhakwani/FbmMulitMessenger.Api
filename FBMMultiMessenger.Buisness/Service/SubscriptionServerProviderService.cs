@@ -1,7 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
-using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.Service
 {

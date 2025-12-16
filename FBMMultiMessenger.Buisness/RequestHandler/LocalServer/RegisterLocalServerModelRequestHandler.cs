@@ -21,6 +21,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
         public async Task<BaseResponse<RegisterLocalServerModelResponse>> Handle(RegisterLocalServerModelRequest request, CancellationToken cancellationToken)
         {
+            var logMessages = new List<string>();
+            logMessages.Add($"Register local server attempt");
+            logMessages.Add($"Incoming request System UUId: {request.SystemUUID}");
+            logMessages.Add($"Incoming request Motherboard: {request.MotherboardSerial}");
+            logMessages.Add($"Incoming request Processor Id: {request.ProcessorId}");
+
             var currentUser = _currentUserService.GetCurrentUser();
 
             //Extra validation to ensure user is valid
@@ -32,12 +38,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             var registeredLocalServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.SystemUUID == request.SystemUUID
                                                                     ||
-                                                                    ls.MotherboardSerial == request.MotherboardSerial
-                                                                    ||
-                                                                    ls.ProcessorId == request.ProcessorId, cancellationToken);
+                                                                    ls.MotherboardSerial == request.MotherboardSerial, cancellationToken);
 
+
+            logMessages.Add($"Local Server already exist: {registeredLocalServer is not null}");
             if (registeredLocalServer is not null)
             {
+                logMessages.Add($"Returning back the exisiting Unique id of this local server: {registeredLocalServer.UniqueId}");
+                WriteLog(logMessages, "Local Server Already Regisrered");
                 return BaseResponse<RegisterLocalServerModelResponse>.Success("Local Server is already registered.", new RegisterLocalServerModelResponse() { LocalServerId = registeredLocalServer.UniqueId });
 
             }
@@ -48,7 +56,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             {
                 return BaseResponse<RegisterLocalServerModelResponse>.Error("Your account permissions are not configured correctly. Please contact support.");
             }
-
 
             var newLocalServer = new Data.Database.DbModels.LocalServer
             {
@@ -79,9 +86,28 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             await _dbContext.LocalServers.AddAsync(newLocalServer, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-
+            logMessages.Add($"New local Server  registered with the unique id: {newLocalServer.UniqueId}");
+            WriteLog(logMessages, "New Local Server Regisrered");
             return BaseResponse<RegisterLocalServerModelResponse>.Success("Local Server registered successfully.", new RegisterLocalServerModelResponse() { LocalServerId = newLocalServer.UniqueId });
 
+        }
+
+        private void WriteLog(List<string> messages, string status)
+        {
+            try
+            {
+                if (!Directory.Exists("Logs"))
+                {
+                    Directory.CreateDirectory("Logs");
+                }
+
+                var fileName = $"Logs\\{status}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
+                File.WriteAllText(fileName, string.Join(Environment.NewLine, messages));
+            }
+            catch
+            {
+                // Ignore logging errors
+            }
         }
     }
 }

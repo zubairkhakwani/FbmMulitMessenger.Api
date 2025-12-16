@@ -47,7 +47,7 @@ namespace FBMMultiMessenger.Buisness.Service
 
         public async Task HandleServerOnlineAsync(string uniqueId)
         {
-            await _mediator.Send(new LocalServerDisconnectionModelRequest() { UniqueId = uniqueId });
+            await _mediator.Send(new LocalServerReconnectionModelRequest() { UniqueId = uniqueId });
         }
 
         public async Task MonitorHeartBeatAsync()

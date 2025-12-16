@@ -6,7 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
-	
+
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
@@ -22,7 +22,7 @@
 		<ProjectReference Include="..\FBMMultiMessenger.Buisness\FBMMultiMessenger.Buisness.csproj" />
 		<ProjectReference Include="..\FBMMultiMessenger.Contracts\FBMMultiMessenger.Contracts.csproj" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
 		<None Update="BrowserExtension\**\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -32,11 +32,9 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>
-		<None Update="Logs\**\*">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</None>
 	</ItemGroup>
-	
 
+	<ItemGroup>
+	  <Folder Include="Logs\" />
+	</ItemGroup>
 </Project>

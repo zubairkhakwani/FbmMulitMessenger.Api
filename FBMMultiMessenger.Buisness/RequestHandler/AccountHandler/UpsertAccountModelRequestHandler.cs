@@ -40,123 +40,145 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
         private async Task<BaseResponse<UpsertAccountModelResponse>> AddRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
         {
-            var user = await _dbContext.Users
+            try
+            {
+                var logMessages = new List<string>();
+                logMessages.Add($"Adding new account");
+
+                var user = await _dbContext.Users
                                        .Include(p => p.Proxies)
                                        .Include(a => a.Accounts)
                                        .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken: cancellationToken);
 
-            if (user is null)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
-            }
-
-            var userSubscriptions = user.Subscriptions;
-
-            if (!userSubscriptions.Any())
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
-            }
-
-            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
-
-            var response = new UpsertAccountModelResponse();
-
-            if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
-            {
-                response.IsSubscriptionExpired = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, response);
-            }
-
-            var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
-
-            if (isLimitReaced)
-            {
-                response.IsLimitExceeded = true;
-                return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
-            }
-
-            var userAccounts = user.Accounts;
-            var isFbAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId);
-
-            if (isFbAccountAlreadyExist)
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
-            }
-
-            if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
-            {
-                return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when adding account");
-            }
-
-            int? proxyId = null;
-
-            if (!string.IsNullOrWhiteSpace(request.ProxyId))
-            {
-                var userProxies = user.Proxies;
-
-                proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
-
-                var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
-
-                if (!isValidUserProxy)
+                if (user is null)
                 {
-                    return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
+                    return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
                 }
-            }
 
-            if (!user.IsEmailVerified)
-            {
-                var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
+                var userSubscriptions = user.Subscriptions;
 
-                return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
-            }
-
-            var elegibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
-            var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
-            var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
-
-            var newAccount = new Account()
-            {
-                UserId = request.UserId,
-                Cookie = request.Cookie,
-                Name = request.Name,
-                FbAccountId = fbAccountId,
-                ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
-                AuthStatus = AccountAuthStatus.Idle,
-                LocalServerId = assignedServer?.Id,
-                ProxyId = proxyId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            activeSubscription.LimitUsed++;
-
-            if (assignedServer is not null)
-            {
-                assignedServer.ActiveBrowserCount++;
-            }
-
-            await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-
-            if (assignedServer is not null)
-            {
-                // Inform our local server to open a new browser instance.
-                var newAccountHttpResponse = new AccountDTO()
+                if (!userSubscriptions.Any())
                 {
-                    Id =  newAccount.Id,
-                    Name = newAccount.Name,
-                    Cookie = newAccount.Cookie,
-                    CreatedAt = newAccount.CreatedAt
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
+                }
+
+                var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+                var response = new UpsertAccountModelResponse();
+
+                if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
+                {
+                    response.IsSubscriptionExpired = true;
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, response);
+                }
+
+                var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
+
+                if (isLimitReaced)
+                {
+                    response.IsLimitExceeded = true;
+                    return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
+                }
+
+                var userAccounts = user.Accounts;
+                var isFbAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId);
+
+                if (isFbAccountAlreadyExist)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
+                }
+
+                if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when adding account");
+                }
+
+                int? proxyId = null;
+
+                if (!string.IsNullOrWhiteSpace(request.ProxyId))
+                {
+                    var userProxies = user.Proxies;
+
+                    proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
+
+                    var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
+
+                    if (!isValidUserProxy)
+                    {
+                        return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
+                    }
+                }
+
+                if (!user.IsEmailVerified)
+                {
+                    var emailVerificationResponse = await _userAccountService.ProcessEmailVerificationAsync(user, cancellationToken);
+
+                    return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
+                }
+
+                var elegibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+                var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
+                var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
+
+                var newAccount = new Account()
+                {
+                    UserId = request.UserId,
+                    Cookie = request.Cookie,
+                    Name = request.Name,
+                    FbAccountId = fbAccountId,
+                    ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
+                    AuthStatus = AccountAuthStatus.Idle,
+                    LocalServerId = assignedServer?.Id,
+                    ProxyId = proxyId,
+                    CreatedAt = DateTime.UtcNow
                 };
 
-                await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
-                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
-            }
+                activeSubscription.LimitUsed++;
 
-            return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
+                if (assignedServer is not null)
+                {
+                    assignedServer.ActiveBrowserCount++;
+                }
+
+                await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+
+                if (assignedServer is not null)
+                {
+                    // Inform our local server to open a new browser instance.
+                    var newAccountHttpResponse = new AccountDTO()
+                    {
+                        Id =  newAccount.Id,
+                        Name = newAccount.Name,
+                        Cookie = newAccount.Cookie,
+                        CreatedAt = newAccount.CreatedAt
+                    };
+
+                    await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
+                       .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                }
+
+                logMessages.Add($"Assigned Server Found: {assignedServer is not null}");
+                logMessages.Add($"Assigned Server UniqueId : {assignedServer?.UniqueId}");
+                WriteLog(logMessages, "Adding acount");
+
+                return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
+            }
+            catch (Exception ex)
+            {
+                if (!Directory.Exists("Logs"))
+                {
+                    Directory.CreateDirectory("Logs");
+                }
+
+                var fileName = $"Logs\\Add-Account-Error-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
+                File.WriteAllText(fileName, string.Join(Environment.NewLine, $"Exception Message: {ex.Message}\n Inner Exception: {ex.InnerException}"));
+
+                return BaseResponse<UpsertAccountModelResponse>.Error("Something went wrong, pleas try later");
+            }
         }
 
         private async Task<BaseResponse<UpsertAccountModelResponse>> UpdateRequestAsync(UpsertAccountModelRequest request, string fbAccountId, CancellationToken cancellationToken)
@@ -287,6 +309,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             return (true, currentUser.Id, fbAccountId, "Validation Successful");
+        }
+
+        private void WriteLog(List<string> messages, string status)
+        {
+            try
+            {
+                if (!Directory.Exists("Logs"))
+                {
+                    Directory.CreateDirectory("Logs");
+                }
+
+                var fileName = $"Logs\\{status}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
+                File.WriteAllText(fileName, string.Join(Environment.NewLine, messages));
+            }
+            catch
+            {
+                // Ignore logging errors
+            }
         }
 
         #endregion
