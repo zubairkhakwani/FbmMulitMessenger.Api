@@ -48,6 +48,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             var chat = await _dbContext.Chats
                                            .Include(x => x.User)
                                            .ThenInclude(s => s.Subscriptions)
+                                           .Include(a => a.Account)
                                            .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
                                            &&
                                            c.UserId == currentUser.Id, cancellationToken);

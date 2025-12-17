@@ -74,6 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 var newChat = new Chat()
                 {
                     UserId = currentUser.Id,
+                    AccountId = request.AccountId,
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
                     FbListingId = request.FbListingId,
