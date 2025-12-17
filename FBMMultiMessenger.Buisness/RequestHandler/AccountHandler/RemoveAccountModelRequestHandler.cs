@@ -1,27 +1,21 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
+using FBMMultiMessenger.Buisness.Models.SignalR.Server;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Principal;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 {
-    internal class RemoveAccountModelRequestHandler : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
+    internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
-        private readonly IHubContext<ChatHub> _hubContext;
-
-        public RemoveAccountModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> _hubContext)
-        {
-            this._dbContext=dbContext;
-            this._currentUserService=currentUserService;
-            this._hubContext=_hubContext;
-        }
         public async Task<BaseResponse<ToggleAcountStatusModelResponse>> Handle(RemoveAcountModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
@@ -45,56 +39,56 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                                  request.AccountIds.Any(id => id == x.Id))
                                           .ToListAsync(cancellationToken);
 
-            var account = accounts?.FirstOrDefault();
 
+            var accountsUser = accounts.FirstOrDefault()?.User;
+            var userSubscriptions = accountsUser?.Subscriptions;
 
-            if (accounts == null || account?.User?.Subscriptions == null)
+            if (userSubscriptions is null || userSubscriptions.Count == 0)
             {
-                return BaseResponse<ToggleAcountStatusModelResponse>.Error("Account or subscriptions not found");
+                return BaseResponse<ToggleAcountStatusModelResponse>.Error("User has no active subscription.");
             }
 
-            var subscriptions = account.User.Subscriptions;
-            var assignedServer = account.LocalServer;
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions)
+                                     ?? _userAccountService.GetLastActiveSubscription(userSubscriptions);
 
-            var count = accounts.Count;
-
-            var today = DateTime.UtcNow;
-            var activeSubscription = subscriptions
-                                                .Where(x => x.StartedAt <= today
-                                                       &&
-                                                       x.ExpiredAt > today)
-                                                .OrderByDescending(x => x.StartedAt)
-                                                .FirstOrDefault();
-
-            if (activeSubscription?.LimitUsed > 0)
+            if (activeSubscription is null)
             {
-                activeSubscription.LimitUsed -= count;
+                return BaseResponse<ToggleAcountStatusModelResponse>.Error("User has no active subscription.");
             }
 
-            if (assignedServer is not null)
-            {
-                assignedServer.ActiveBrowserCount-= count;
-            }
+            activeSubscription.LimitUsed-= accounts.Count;
+
 
             _dbContext.RemoveRange(accounts);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var accountDTO = accounts.Select(x => new AccountDTO()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Cookie = x.Cookie,
-                CreatedAt = x.CreatedAt,
-            });
+            // Group accounts by their assigned server
+            var accountsByServer = accounts
+                                        .Where(a => a.LocalServer is not null)
+                                        .GroupBy(a => a.LocalServer!.UniqueId);
 
-            //We need to inform local server to close browser.
-            if (account.LocalServer is not null)
+            var serverAccountDeletion = accountsByServer.Select(group => new ServerCloseAccountRequest
             {
-                await _hubContext.Clients.Group($"{account.LocalServer.UniqueId}")
-                   .SendAsync("HandleAccountRemoval", accountDTO, cancellationToken);
+                ServerId = group.Key,
+                Accounts = group.Select(account => new AccountsCloseInfo
+                {
+                    Id = account.Id,
+                    Name = account.Name,
+                    Cookie = account.Cookie,
+                    CreatedAt = account.CreatedAt,
+                }).ToList(),
+            }).ToList();
+
+            if (serverAccountDeletion is not null && serverAccountDeletion.Count > 0)
+            {
+                foreach (var server in serverAccountDeletion)
+                {
+                    await _hubContext.Clients.Group($"{server.ServerId}")
+                                             .SendAsync("HandleAccountRemoval", server.Accounts, cancellationToken);
+                }
             }
 
-            var responseMessage = count > 1 ? "Selected accounts" : "Account";
+            var responseMessage = accounts.Count > 1 ? "Selected accounts" : "Account";
 
             return BaseResponse<ToggleAcountStatusModelResponse>.Success($"{responseMessage} has been deleted.", new ToggleAcountStatusModelResponse());
         }
