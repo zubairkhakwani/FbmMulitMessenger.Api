@@ -173,6 +173,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (request.IsReceived)
             {
+                //TODO
                 await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
             }
 
@@ -207,10 +208,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 message = "New messages waiting! Renew your subscription to view them.";
                 request.FbChatId = string.Empty;
             }
-
-            //var devices = ChatHub._devices;
-            //var device = devices.FirstOrDefault(x => x.Key == request.FbChatId);
-
 
             await _oneSignalNotificationService.SendMessageNotification(
                 userId: userId.ToString(),

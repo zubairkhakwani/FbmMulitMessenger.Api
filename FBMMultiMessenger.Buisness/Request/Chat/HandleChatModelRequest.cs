@@ -12,6 +12,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
     public class HandleChatModelRequest : IRequest<BaseResponse<HandleChatModelResponse>>
     {
         public required string FbChatId { get; set; }
+        public int AccountId { get; set; }
         public required string FbAccountId { get; set; }
         public string? FbListingId { get; set; }
         public string? FbListingTitle { get; set; }

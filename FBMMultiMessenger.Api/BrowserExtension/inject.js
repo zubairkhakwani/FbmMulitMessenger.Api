@@ -294,6 +294,7 @@ let globalDefaultTemplate = `{
             let userProfileImg = listingDetails.userProfileImg;
 
             MakeAjaxCall(
+                accountId,
                 fbAccountId,
                 fbChatId,
                 fbListingTitle,
@@ -315,6 +316,7 @@ let globalDefaultTemplate = `{
     }
 
     async function MakeAjaxCall(
+        accountId,
         fbAccountId,
         fbChatId,
         fbListingTitle,
@@ -332,6 +334,7 @@ let globalDefaultTemplate = `{
     ) {
         var root = document.documentElement;
         var data = {
+            accountId,
             fbAccountId,
             fbChatId,
             fbListingImg,
@@ -348,7 +351,7 @@ let globalDefaultTemplate = `{
             fbOTID,
         };
 
-        //console.log("sending data to content.js", data);
+        console.log("sending data to content.js", data);
 
         root.dispatchEvent(
             new CustomEvent("sendMessageToApi", {
@@ -880,7 +883,7 @@ const waitForElement = (selector, timeout = 5000) => {
 };
 
 function GetTrimmedFbListingTitle(fbListingTitle) {
-    let trimmedTitle;
+    let trimmedTitle = "";
     if (fbListingTitle?.length > 30) {
         for (let i = 0; i < 30; i++) {
             trimmedTitle += fbListingTitle[i];

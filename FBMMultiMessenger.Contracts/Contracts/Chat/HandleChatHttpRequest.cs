@@ -9,6 +9,9 @@
         //[Required]
         public string? FbAccountId { get; set; }
 
+        public int AccountId { get; set; }
+
+
         //[Required]
         public string? FbListingId { get; set; }
 

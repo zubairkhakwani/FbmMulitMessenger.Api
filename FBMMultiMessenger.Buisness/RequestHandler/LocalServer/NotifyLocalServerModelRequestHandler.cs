@@ -49,6 +49,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                            .Include(x => x.User)
                                            .ThenInclude(s => s.Subscriptions)
                                            .Include(a => a.Account)
+                                           .ThenInclude(ls => ls.LocalServer)
                                            .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
                                            &&
                                            c.UserId == currentUser.Id, cancellationToken);
@@ -106,7 +107,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 MediaPaths = mediaPaths
             };
 
-            await _hubContext.Clients.Group($"LocalServer_{chat.UserId}")
+
+            var hubId = chat.Account.LocalServer.UniqueId;
+
+            await _hubContext.Clients.Group($"{hubId}")
                 .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
 
 
