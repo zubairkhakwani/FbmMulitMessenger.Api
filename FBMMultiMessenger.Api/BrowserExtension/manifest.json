@@ -11,7 +11,8 @@
   "host_permissions": [
     "https://localhost:7095/*",
     "https://*.facebook.com/*",
-    "https://unpkg.com/*"
+    "https://unpkg.com/*",
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
@@ -23,7 +24,7 @@
       "match_about_blank": true,
       "match_origin_as_fallback": true,
       "matches": [ "https://*.facebook.com/*" ],
-      "run_at": "document_idle",
+      "run_at": "document_start",
       "world": "ISOLATED"
     },
     {
@@ -32,7 +33,7 @@
       "match_about_blank": true,
       "match_origin_as_fallback": true,
       "matches": [ "https://*.facebook.com/*" ],
-      "run_at": "document_idle",
+      "run_at": "document_start",
       "world": "MAIN"
     }
   ],
