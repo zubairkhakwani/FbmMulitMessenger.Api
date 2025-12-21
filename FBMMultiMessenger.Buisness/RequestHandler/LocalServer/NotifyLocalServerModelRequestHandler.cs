@@ -108,11 +108,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             };
 
 
-            var hubId = chat.Account.LocalServer.UniqueId;
+            var hubId = chat.Account.LocalServer?.UniqueId;
 
-            await _hubContext.Clients.Group($"{hubId}")
+            if(!string.IsNullOrWhiteSpace(hubId))
+            {
+                await _hubContext.Clients.Group($"{hubId}")
                 .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
-
+            }
 
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }

@@ -182,7 +182,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await SendMessageToAppAsync(request, chatReference!, newChatMessage.CreatedAt, dbMessage, cancellationToken);
             }
 
-
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
