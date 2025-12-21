@@ -30,6 +30,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
             logMessages.Add($"Login attempt for Email: {request.Email}");
             logMessages.Add($"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 
+            request.Email = request.Email.ToLowerInvariant();
+
             // Fetch user from database
             var user = await _dbContext.Users
                                        .Include(r => r.Role)

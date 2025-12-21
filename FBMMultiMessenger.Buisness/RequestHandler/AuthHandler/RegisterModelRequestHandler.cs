@@ -27,8 +27,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
         }
         public async Task<BaseResponse<RegisterModelResponse>> Handle(RegisterModelRequest request, CancellationToken cancellationToken)
         {
+            request.Email = request.Email.ToLowerInvariant();
+
             var user = await _dbContext.Users
-                                       .FirstOrDefaultAsync(x => x.Email.ToLower() == request.Email.ToLower(), cancellationToken);
+                                       .FirstOrDefaultAsync(x => x.Email == request.Email, cancellationToken);
 
             if (user is not null)
             {
