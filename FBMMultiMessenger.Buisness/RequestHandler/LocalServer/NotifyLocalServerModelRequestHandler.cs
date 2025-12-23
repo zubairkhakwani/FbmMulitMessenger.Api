@@ -108,11 +108,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             };
 
 
-            var hubId = chat.Account.LocalServer.UniqueId;
+            var hubId = chat.Account.LocalServer?.UniqueId;
 
-            await _hubContext.Clients.Group($"{hubId}")
+            //TODO: if hubId is null means local server is offline or not connected.
+            //so either show user an error or store it and send it later.
+            //or show user an option to cancel or send automatically when server connected
+            if(!string.IsNullOrWhiteSpace(hubId))
+            {
+                await _hubContext.Clients.Group($"{hubId}")
                 .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
-
+            }
 
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
         }

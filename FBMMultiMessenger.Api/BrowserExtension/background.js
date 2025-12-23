@@ -125,13 +125,16 @@ async function registerExtensionUser() {
 
 // Handle incoming messages from app
 async function handleIncomingMessage(sendChatMessageRequest) {
+
+    console.log("Message received from app :", sendChatMessageRequest);
+
     sendChatMessageRequest.mediaBase64 = [];
     var mediaPaths = sendChatMessageRequest.mediaPaths;
     for (const path of mediaPaths) {
         const base64 = await getBase64FromUrl(path);
         sendChatMessageRequest.mediaBase64.push(base64);
     }
-    console.log("Message received from app :", sendChatMessageRequest);
+    console.log("processed media done.");
 
     // Try active tab first
     const activeTabs = await chrome.tabs.query({

@@ -899,7 +899,7 @@ function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-(function checkAccountAuth() {
+function checkAccountAuth() {
     let previousLoginState = null;
 
     function checkAndNotify() {
@@ -912,11 +912,11 @@ function delay(ms) {
         }
     }
 
-    checkAndNotify();
-
-    // Check every 5 minutes
+    // first run
+    setTimeout(checkAndNotify, 1000);
+    // then every 5 minutes
     setInterval(checkAndNotify, 300000);
-})();
+}
 
 function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -958,7 +958,7 @@ function NotifyAccountAuthStatus(isLoggedIn) {
 }
 
 
-(function CloseFbChatRecoverPopup() {
+function CloseFbChatRecoverPopup() {
     const totalTriesToCloseFbChatRecoverPopup = 20;
     let attemptedTries = 0;
     let closeBtn;
@@ -967,7 +967,6 @@ function NotifyAccountAuthStatus(isLoggedIn) {
 
     const intervalId = setInterval(() => {
         attemptedTries++;
-
         if (attemptedTries >= totalTriesToCloseFbChatRecoverPopup) {
             clearInterval(intervalId);
             if (timeoutId) {
@@ -1009,4 +1008,12 @@ function NotifyAccountAuthStatus(isLoggedIn) {
             }, 500);
         }
     }, 2000);
-})();
+}
+
+
+setTimeout(() => {
+    console.log('setTimeout ');
+
+    CloseFbChatRecoverPopup();
+    checkAccountAuth();
+}, 1100);
