@@ -173,7 +173,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (request.IsReceived)
             {
-                //TODO
                 await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
             }
 
