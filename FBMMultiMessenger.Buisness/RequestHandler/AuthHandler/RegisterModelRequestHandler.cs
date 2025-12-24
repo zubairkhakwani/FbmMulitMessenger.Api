@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
             var newUser = new User()
             {
                 Name = request.Name,
-                Email = request.Email,
+                Email = request.Email.Trim().ToLower(),
                 ContactNumber = request.ContactNumber,
                 Password = request.Password,
                 CreatedAt = DateTime.UtcNow,

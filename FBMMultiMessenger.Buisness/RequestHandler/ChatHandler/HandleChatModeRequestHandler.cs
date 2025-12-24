@@ -173,7 +173,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (request.IsReceived)
             {
-                await SendMobileNotificationAsync(request, chatReference!.UserId, isSubscriptionExpired);
+                var messageFrom = chatReference.FbListingTitle;
+                await SendMobileNotificationAsync(request, chatReference!.UserId, messageFrom, isSubscriptionExpired);
             }
 
             if (!isSubscriptionExpired)
@@ -184,7 +185,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
-        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int userId, bool isSubscriptionExpired = false)
+        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int userId, string? messageFrom, bool isSubscriptionExpired = false)
         {
             string message = string.Empty;
 
@@ -210,7 +211,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _oneSignalNotificationService.SendMessageNotification(
                 userId: userId.ToString(),
                 message: message,
-                senderName: "Fbm Multi Messenger",
+                senderName: messageFrom ?? "FBM Multi Messenger",
                 chatId: request.FbChatId,
                 isSubscriptionExpired: isSubscriptionExpired
             );

@@ -36,7 +36,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
             var user = await _dbContext.Users
                                        .Include(r => r.Role)
                                        .Include(s => s.Subscriptions)
-                                       .FirstOrDefaultAsync(x => x.Email == request.Email && x.Password == request.Password, cancellationToken);
+                                       .FirstOrDefaultAsync(x => x.Email == request.Email.Trim().ToLower() && x.Password == request.Password, cancellationToken);
 
             // Check if user exists
             if (user is null)
