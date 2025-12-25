@@ -49,10 +49,10 @@ namespace FBMMultiMessenger.Api.Controllers
 
         [Authorize]
         [HttpGet("me")]
-        public async Task<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>> GetAll([FromQuery] GetMyAccountsHttpRequest httpRequest)
+        public async Task<BaseResponse<UserAccountsOverviewHttpResponse>> GetAll([FromQuery] GetMyAccountsHttpRequest httpRequest)
         {
-            BaseResponse<PageableResponse<GetMyAccountsModelResponse>> response = await _mediator.Send(_mapper.Map<GetMyAccountsModelRequest>(httpRequest));
-            BaseResponse<PageableResponse<GetMyAccountsHttpResponse>> httpResponse = _mapper.Map<BaseResponse<PageableResponse<GetMyAccountsHttpResponse>>>(response);
+            BaseResponse<UserAccountsOverviewModelResponse> response = await _mediator.Send(_mapper.Map<GetMyAccountsModelRequest>(httpRequest));
+            BaseResponse<UserAccountsOverviewHttpResponse> httpResponse = _mapper.Map<BaseResponse<UserAccountsOverviewHttpResponse>>(response);
 
             return httpResponse;
         }

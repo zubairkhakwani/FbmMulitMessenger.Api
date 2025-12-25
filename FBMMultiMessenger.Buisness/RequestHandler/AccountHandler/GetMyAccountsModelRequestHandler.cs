@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class GetMyAccountsModelRequestHandler : IRequestHandler<GetMyAccountsModelRequest, BaseResponse<PageableResponse<GetMyAccountsModelResponse>>>
+    internal class GetMyAccountsModelRequestHandler : IRequestHandler<GetMyAccountsModelRequest, BaseResponse<UserAccountsOverviewModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
@@ -19,57 +19,66 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
         }
-        public async Task<BaseResponse<PageableResponse<GetMyAccountsModelResponse>>> Handle(GetMyAccountsModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<UserAccountsOverviewModelResponse>> Handle(GetMyAccountsModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
             //Extra safety check: If the user has came to this point he will be logged in hence currenuser will never be null.
             if (currentUser is null)
             {
-                return BaseResponse<PageableResponse<GetMyAccountsModelResponse>>.Error("Invlaid Request, Please login again to continue.");
+                return BaseResponse<UserAccountsOverviewModelResponse>.Error("Invlaid Request, Please login again to continue.");
             }
 
             var accounts = _dbContext.Accounts
                                      .Include(p => p.Proxy)
                                      .Include(dm => dm.DefaultMessage)
-                                     .Where(x => x.UserId == currentUser.Id);
+                                     .AsNoTracking()
+                                     .Where(x => x.UserId == currentUser.Id && x.IsActive);
 
-            var response = await accounts
-                                .Skip((request.PageNo - 1) * request.PageSize)
-                                .Take(request.PageSize)
-                                .AsNoTracking()
-                                .Select(x => new GetMyAccountsModelResponse()
-                                {
-                                    Id = x.Id,
-                                    Name = x.Name,
-                                    Cookie =  x.Cookie,
-                                    DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
-                                    ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
-                                    AuthStatus = x.AuthStatus.GetInfo().Name,
-                                    CreatedAt = x.CreatedAt,
-                                    Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
-                                    {
-                                        Id = x.Proxy.Id,
-                                        Name = x.Proxy.Name,
-                                        Ip_Port = x.Proxy.Ip_Port,
-                                    }
-                                })
-                                .OrderBy(x => x.Id)
-                                .ToListAsync(cancellationToken);
+            var userAccounts = await accounts
+                                     .Skip((request.PageNo - 1) * request.PageSize)
+                                     .Take(request.PageSize)
+                                        .Select(x => new UserAccountsModelResponse()
+                                        {
+                                            Id = x.Id,
+                                            Name = x.Name,
+                                            Cookie =  x.Cookie,
+                                            DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
+                                            ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
+                                            AuthStatus = x.AuthStatus.GetInfo().Name,
+                                            CreatedAt = x.CreatedAt,
+                                            Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
+                                            {
+                                                Id = x.Proxy.Id,
+                                                Name = x.Proxy.Name,
+                                                Ip_Port = x.Proxy.Ip_Port,
+                                            }
+                                        })
+                                        .OrderBy(x => x.Id)
+                                        .ToListAsync(cancellationToken);
 
             //Apply filter
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {
                 var keyword = request.Keyword.ToLower().Trim();
 
-                response = response.Where(x => x.Name.Trim().ToLower().Contains(keyword)).ToList();
+                userAccounts = userAccounts.Where(x => x.Name.Trim().ToLower().Contains(keyword)).ToList();
             }
 
             var totalCount = accounts.Count();
+            var connectedAccounts = accounts.Count(x => x.AuthStatus == Contracts.Enums.AccountAuthStatus.LoggedIn);
+            var notConnectedAccounts = accounts.Count(x => x.AuthStatus != Contracts.Enums.AccountAuthStatus.LoggedIn);
 
-            var newPageableResponse = new PageableResponse<GetMyAccountsModelResponse>(response, request.PageNo, request.PageSize, totalCount, totalCount/request.PageSize);
+            var pageableUserAccounts = new PageableResponse<UserAccountsModelResponse>(userAccounts, request.PageNo, request.PageSize, totalCount, totalCount/request.PageSize);
+            var response = new UserAccountsOverviewModelResponse()
+            {
+                UserAccounts = pageableUserAccounts,
+                ConnectedAccounts = connectedAccounts,
+                NotConnectedAccounts = notConnectedAccounts,
 
-            return BaseResponse<PageableResponse<GetMyAccountsModelResponse>>.Success("Operation performed successfully", newPageableResponse);
+            };
+
+            return BaseResponse<UserAccountsOverviewModelResponse>.Success("Operation performed successfully", response);
         }
     }
 }

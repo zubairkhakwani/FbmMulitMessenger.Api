@@ -5,7 +5,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.DefaultMessage
     public class GetMyDefaultMessagesHttpResponse
     {
         public List<DefaultMessagesHttpResponse> DefaultMessages { get; set; } = new List<DefaultMessagesHttpResponse>();
-        public List<GetMyAccountsHttpResponse> AllAccounts { get; set; } = new List<GetMyAccountsHttpResponse>();
+        public List<UserAccountsHttpResponse> AllAccounts { get; set; } = new List<UserAccountsHttpResponse>();
     }
 
     public class DefaultMessagesHttpResponse
@@ -13,6 +13,6 @@ namespace FBMMultiMessenger.Contracts.Contracts.DefaultMessage
         public int Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public List<GetMyAccountsHttpResponse> Accounts { get; set; } = new List<GetMyAccountsHttpResponse>();
+        public List<UserAccountsHttpResponse> Accounts { get; set; } = new List<UserAccountsHttpResponse>();
     }
 }

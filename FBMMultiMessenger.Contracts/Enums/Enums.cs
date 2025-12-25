@@ -111,12 +111,12 @@ namespace FBMMultiMessenger.Contracts.Enums
     public enum AccountAuthStatus
     {
         [DisplayInfoAttribute("Idle", "The login state has not been checked yet.")]
-        Idle = 0,        
+        Idle = 1,        
 
         [DisplayInfoAttribute("Logged In", "The account is authenticated and the user is logged in.")]
-        LoggedIn = 1,       
+        LoggedIn = 2,       
 
         [DisplayInfoAttribute("Logged Out", "The account is not authenticated or the user has logged out.")]
-        LoggedOut = 2,        
+        LoggedOut = 3,        
     }
 }

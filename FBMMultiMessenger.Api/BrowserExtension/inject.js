@@ -1,3 +1,15 @@
+const accountConnectionStatus = {
+    Online: 1,
+    Offline: 2,
+    Starting: 3,
+}
+
+const accountAuthStatus = {
+    Idle: 1,
+    LoggedIn: 2,
+    LoggedOut: 3,
+}
+
 // Global FIFO queue - array of objects
 let pendingMessages = [];
 
@@ -22,6 +34,8 @@ let globalDefaultTemplate = `{
         "version": 1
     }
 }`;
+
+
 
 (function () {
     // Save the original WebSocket constructor
@@ -946,9 +960,13 @@ function isAccountLoggedIn(cUser, emailInput) {
 
 function NotifyAccountAuthStatus(isLoggedIn) {
     var root = document.documentElement;
+    let authStatus = isLoggedIn ? accountAuthStatus.LoggedIn : accountAuthStatus.LoggedOut;
+    let connectionStatus = isLoggedIn ? accountConnectionStatus.Online : accountConnectionStatus.Offline;
     let detail = {
         accountId,
-        isLoggedIn
+        accountAuthStatus: authStatus,
+        accountConnectionStatus: connectionStatus,
+        isLoggedIn,
     }
     root.dispatchEvent(
         new CustomEvent("notifyAccountAuthState", {
@@ -1012,8 +1030,6 @@ function CloseFbChatRecoverPopup() {
 
 
 setTimeout(() => {
-    console.log('setTimeout ');
-
     CloseFbChatRecoverPopup();
     checkAccountAuth();
 }, 1100);

@@ -56,11 +56,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     })
                     .Where(x => x.ActiveSubscription != null && x.ActiveSubscription.CanRunOnOurServer)
                     .SelectMany(x => x.User.Accounts ?? Enumerable.Empty<Account>())
-                    .Where(a => a.LocalServerId == null || a.LocalServerId == localServer.Id)
+                    .Where(a => a.IsActive && (a.LocalServerId == null || a.LocalServerId == localServer.Id))
                     .OrderByDescending(a => a.LocalServerId == localServer.Id)
                     .Take(request.Limit)
                     .ToList();
             }
+
             else
             {
                 // For other roles: Get accounts of the current user only
@@ -69,7 +70,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                      .Include(u => u.Accounts)
                                                      .ThenInclude(p => p.Proxy)
                                                      .SelectMany(u => u.Accounts)
-                                                     .Where(a => a.LocalServerId == null || a.LocalServerId == localServer.Id)
+                                                     .Where(a => a.IsActive && (a.LocalServerId == null || a.LocalServerId == localServer.Id))
                                                      .OrderByDescending(a => a.LocalServerId == localServer.Id)
                                                      .Take(request.Limit)
                                                      .ToListAsync(cancellationToken);

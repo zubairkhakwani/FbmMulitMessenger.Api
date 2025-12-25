@@ -2,7 +2,7 @@
 {
     public class ServerCloseAccountRequest
     {
-        public string ServerId { get; set; } = string.Empty; // Unique of the server 
+        public string ServerId { get; set; } = string.Empty; // Unique Id of the server 
         public List<AccountsCloseInfo> Accounts { get; set; } = new List<AccountsCloseInfo>();
 
 

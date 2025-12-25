@@ -1,18 +1,15 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Models.SignalR.Server;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.Server;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
-using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Principal;
 
-namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
+namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
     internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
     {
@@ -37,8 +34,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                                            .Where(x => x.UserId == currentUser.Id
                                                   &&
                                                  request.AccountIds.Any(id => id == x.Id))
-                                          .ToListAsync(cancellationToken);
-
+                                           .ToListAsync(cancellationToken);
 
             var accountsUser = accounts.FirstOrDefault()?.User;
             var userSubscriptions = accountsUser?.Subscriptions;
@@ -58,8 +54,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
 
             activeSubscription.LimitUsed-= accounts.Count;
 
+            //Mark accounts as soft delete and decrease active browser count on assigned local servers
+            foreach (var account in accounts)
+            {
+                account.IsActive = false;
 
-            _dbContext.RemoveRange(accounts);
+                var accountLocalServer = account.LocalServer;
+
+                if (accountLocalServer is not null && accountLocalServer.ActiveBrowserCount > 0)
+                {
+                    accountLocalServer.ActiveBrowserCount--;
+                }
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             // Group accounts by their assigned server
@@ -79,6 +86,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AccountHandler
                 }).ToList(),
             }).ToList();
 
+
+            //Inform each server about the account deletion via SignalR
             if (serverAccountDeletion is not null && serverAccountDeletion.Count > 0)
             {
                 foreach (var server in serverAccountDeletion)

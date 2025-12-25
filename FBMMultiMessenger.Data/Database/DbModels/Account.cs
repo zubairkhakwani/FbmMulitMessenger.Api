@@ -24,6 +24,8 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public required string Cookie { get; set; }
         public AccountConnectionStatus ConnectionStatus { get; set; }
         public AccountAuthStatus AuthStatus { get; set; }
+
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 

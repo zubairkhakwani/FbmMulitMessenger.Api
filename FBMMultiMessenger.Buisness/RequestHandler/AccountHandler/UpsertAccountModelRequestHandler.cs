@@ -83,9 +83,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
 
                 var userAccounts = user.Accounts;
-                var isFbAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId);
+                var isAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId && x.IsActive);
 
-                if (isFbAccountAlreadyExist)
+                if (isAccountAlreadyExist)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
                 }
@@ -101,7 +101,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     var userProxies = user.Proxies;
 
-                    proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
+                    proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId);
 
                     var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
 
@@ -132,6 +132,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     AuthStatus = AccountAuthStatus.Idle,
                     LocalServerId = assignedServer?.Id,
                     ProxyId = proxyId,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
