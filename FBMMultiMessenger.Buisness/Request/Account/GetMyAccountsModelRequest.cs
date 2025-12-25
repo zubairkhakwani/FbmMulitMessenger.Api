@@ -1,16 +1,24 @@
-﻿using FBMMultiMessenger.Contracts.Enums;
-using FBMMultiMessenger.Contracts.Response;
+﻿using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
-    public class GetMyAccountsModelRequest : PageableRequest, IRequest<BaseResponse<PageableResponse<GetMyAccountsModelResponse>>>
+    public class GetMyAccountsModelRequest : PageableRequest, IRequest<BaseResponse<UserAccountsOverviewModelResponse>>
     {
     }
 }
 
-public class GetMyAccountsModelResponse
+public class UserAccountsOverviewModelResponse
+{
+    public PageableResponse<UserAccountsModelResponse> UserAccounts { get; set; } = null!;
+    public int ConnectedAccounts { get; set; }
+    public int NotConnectedAccounts { get; set; }
+}
+
+
+
+public class UserAccountsModelResponse
 {
     public int Id { get; set; }
     public required string Name { get; set; }

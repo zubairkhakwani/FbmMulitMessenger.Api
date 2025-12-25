@@ -18,7 +18,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.DefualtMessage
         {
             CreateMap<GetMyDefaultMessagesModelResponse, GetMyDefaultMessagesHttpResponse>();
             CreateMap<DefaultMessagesModelResponse, DefaultMessagesHttpResponse>();
-            CreateMap<GetMyAccountsModelResponse, GetMyAccountsHttpResponse>();
+            CreateMap<UserAccountsModelResponse, UserAccountsHttpResponse>();
             CreateMap<BaseResponse<GetMyDefaultMessagesModelResponse>, BaseResponse<GetMyDefaultMessagesHttpResponse>>();
 
 

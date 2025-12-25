@@ -40,20 +40,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
                                   .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
 
 
-            var allAccounts = user?.Accounts.Select(x => new GetMyAccountsModelResponse()
+            var allAccounts = user?.Accounts.Select(x => new UserAccountsModelResponse()
             {
                 Id = x.Id,
                 Name = x.Name,
                 Cookie = x.Cookie,
                 CreatedAt = x.CreatedAt
-            }).ToList() ?? new List<GetMyAccountsModelResponse>();
+            }).ToList() ?? new List<UserAccountsModelResponse>();
 
             var defaultMessages = user?.DefaultMessages.Select(x => new DefaultMessagesModelResponse()
             {
                 Id = x.Id,
                 Message = x.Message,
                 CreatedAt = x.CreatedAt,
-                Accounts = x.Accounts.Select(x => new GetMyAccountsModelResponse()
+                Accounts = x.Accounts.Select(x => new UserAccountsModelResponse()
                 {
                     Id = x.Id,
                     Name = x.Name,

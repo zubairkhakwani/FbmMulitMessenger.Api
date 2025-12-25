@@ -13,7 +13,7 @@ namespace FBMMultiMessenger.Buisness.Request.DefaultMessage
     public class GetMyDefaultMessagesModelResponse
     {
         public List<DefaultMessagesModelResponse> DefaultMessages = new List<DefaultMessagesModelResponse>();
-        public List<GetMyAccountsModelResponse> AllAccounts { get; set; } = new List<GetMyAccountsModelResponse>();
+        public List<UserAccountsModelResponse> AllAccounts { get; set; } = new List<UserAccountsModelResponse>();
     }
 
     public class DefaultMessagesModelResponse
@@ -21,6 +21,6 @@ namespace FBMMultiMessenger.Buisness.Request.DefaultMessage
         public int Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public List<GetMyAccountsModelResponse> Accounts { get; set; } = new List<GetMyAccountsModelResponse>();
+        public List<UserAccountsModelResponse> Accounts { get; set; } = new List<UserAccountsModelResponse>();
     }
 }
