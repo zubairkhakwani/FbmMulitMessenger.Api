@@ -2,6 +2,7 @@
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -31,12 +32,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             var chats = await _dbContext.Chats
+                                        .Include(a => a.Account)
                                         .Include(cm => cm.ChatMessages)
                                         .AsNoTracking()
                                         .Where(u => u.UserId == currentUser.Id)
                                         .OrderByDescending(x => x.UpdatedAt)
                                         .ToListAsync(cancellationToken);
-                                       
+
 
             var formattedChats = chats.Select(x =>
             {
@@ -45,6 +47,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                    .FirstOrDefault()
                                     ??
                                     new ChatMessages() { Message= string.Empty };
+
+                var account = x.Account;
+                var chatAccount = account is null ? null : new GetMyChatAccountModelResponse()
+                {
+                    Id = account.Id,
+                    Name = account.Name,
+                    CreatedAt = account.CreatedAt
+                };
+
+                var isAccountConnected = x.Account is not null && x.Account.AuthStatus == AccountAuthStatus.LoggedIn;
 
                 var messagePreview = ChatMessagesHelper.GetMessagePreview(lastMessage.ToMessagePreviewRequest(x.FbListingTitle ?? ""));
 
@@ -61,7 +73,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     SenderName = messagePreview.SenderName,
                     IsRead = x.IsRead,
                     UnReadCount = x.ChatMessages.Count(m => !m.IsRead),
-                    StartedAt = x.StartedAt
+                    StartedAt = x.StartedAt,
+                    IsAccountConnected = isAccountConnected,
+                    Account = chatAccount
                 };
 
             }).ToList();

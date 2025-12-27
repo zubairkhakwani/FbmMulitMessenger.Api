@@ -1,12 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Request.Account
 {
@@ -32,7 +25,24 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public string? SenderName { get; set; } // You or Hadia.
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
-
+        public bool IsAccountConnected { get; set; }
         public DateTime StartedAt { get; set; }
+
+        public GetMyChatAccountModelResponse? Account { get; set; } = new GetMyChatAccountModelResponse();
+
+        public List<GetMyChatMessagesModelResonse> ChatMessages { get; set; } = new List<GetMyChatMessagesModelResonse>();
+
+    }
+
+    public class GetMyChatAccountModelResponse
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class GetMyChatMessagesModelResonse
+    {
+
     }
 }

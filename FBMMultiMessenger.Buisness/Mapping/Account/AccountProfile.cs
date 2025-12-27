@@ -33,11 +33,13 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
             CreateMap<ToggleAcountStatusModelResponse, RemoveAccountHttpResponse>();
             CreateMap<BaseResponse<ToggleAcountStatusModelResponse>, BaseResponse<RemoveAccountHttpResponse>>();
 
-
+            //Get All My Accounts Chats Mappings Start
             CreateMap<GetAllMyAccountsChatsModelResponse, GetAllMyAccountsChatsHttpResponse>();
             CreateMap<GetMyChatsModelResponse, GetMyChatsHttpResponse>();
-
+            CreateMap<GetMyChatAccountModelResponse, GetMyChatAccountHttpResponse>();
+            CreateMap<GetMyChatMessagesModelResonse, GetMyChatMessagesHttpResonse>();
             CreateMap<BaseResponse<GetAllMyAccountsChatsModelResponse>, BaseResponse<GetAllMyAccountsChatsHttpResponse>>();
+            //Get All My Accounts Chats Mappings End
 
             CreateMap<GetChatMessagesModelResponse, GetAllMyAccountsChatsHttpResponse>();
             CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GetAllMyAccountsChatsHttpResponse>>>();

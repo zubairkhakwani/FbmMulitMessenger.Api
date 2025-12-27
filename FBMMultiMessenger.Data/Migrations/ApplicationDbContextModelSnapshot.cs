@@ -79,7 +79,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Accounts");
+                    b.ToTable("Accounts", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
@@ -141,7 +141,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("FBChatId", "UserId");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ChatMessages", b =>
@@ -187,7 +187,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("ChatId");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ContactUs", b =>
@@ -231,7 +231,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContactUs");
+                    b.ToTable("ContactUs", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", b =>
@@ -259,7 +259,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DefaultMessages");
+                    b.ToTable("DefaultMessages", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.LocalServer", b =>
@@ -354,7 +354,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LocalServers");
+                    b.ToTable("LocalServers", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", b =>
@@ -412,7 +412,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PaymentVerifications");
+                    b.ToTable("PaymentVerifications", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerificationImage", b =>
@@ -441,7 +441,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("PaymentVerificationId");
 
-                    b.ToTable("PaymentVerificationImages");
+                    b.ToTable("PaymentVerificationImages", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTier", b =>
@@ -463,7 +463,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PricingTiers");
+                    b.ToTable("PricingTiers", (string)null);
 
                     b.HasData(
                         new
@@ -532,7 +532,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Proxies");
+                    b.ToTable("Proxies", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Role", b =>
@@ -552,7 +552,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new
@@ -601,7 +601,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Settings");
+                    b.ToTable("Settings", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
@@ -637,7 +637,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
 
                     b.HasData(
                         new
@@ -737,7 +737,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
@@ -842,7 +842,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("VerificationTokens");
+                    b.ToTable("VerificationTokens", (string)null);
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>

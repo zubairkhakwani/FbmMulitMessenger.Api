@@ -42,9 +42,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             try
             {
-                var logMessages = new List<string>();
-                logMessages.Add($"Adding new account");
-
                 var user = await _dbContext.Users
                                        .Include(p => p.Proxies)
                                        .Include(a => a.Accounts)
@@ -159,25 +156,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     };
 
                     await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
-                       .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                       .SendAsync("HandleAccountAdd", newAccountHttpResponse, cancellationToken);
                 }
-
-                logMessages.Add($"Assigned Server Found: {assignedServer is not null}");
-                logMessages.Add($"Assigned Server UniqueId : {assignedServer?.UniqueId}");
-                WriteLog(logMessages, "Adding acount");
 
                 return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                if (!Directory.Exists("Logs"))
-                {
-                    Directory.CreateDirectory("Logs");
-                }
-
-                var fileName = $"Logs\\Add-Account-Error-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
-                File.WriteAllText(fileName, string.Join(Environment.NewLine, $"Exception Message: {ex.Message}\n Inner Exception: {ex.InnerException}"));
-
                 return BaseResponse<UpsertAccountModelResponse>.Error("Something went wrong, pleas try later");
             }
         }
@@ -282,7 +267,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     };
 
                     await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
-                   .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                   .SendAsync("HandleAccountUpdate", newAccountHttpResponse, cancellationToken);
                 }
             }
 
@@ -310,24 +295,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             return (true, currentUser.Id, fbAccountId, "Validation Successful");
-        }
-
-        private void WriteLog(List<string> messages, string status)
-        {
-            try
-            {
-                if (!Directory.Exists("Logs"))
-                {
-                    Directory.CreateDirectory("Logs");
-                }
-
-                var fileName = $"Logs\\{status}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
-                File.WriteAllText(fileName, string.Join(Environment.NewLine, messages));
-            }
-            catch
-            {
-                // Ignore logging errors
-            }
         }
 
         #endregion
