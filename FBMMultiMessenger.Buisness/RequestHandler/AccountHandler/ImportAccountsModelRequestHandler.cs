@@ -100,6 +100,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     Cookie = x.Cookie,
                     UserId  = currentUserId,
                     ConnectionStatus = AccountConnectionStatus.Offline,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                 }).ToList();
 
@@ -161,15 +162,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 return BaseResponse<UpsertAccountModelResponse>.Success("Accounts added successfully", new UpsertAccountModelResponse() { IsEmailVerified = true });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                if (!Directory.Exists("Logs"))
-                {
-                    Directory.CreateDirectory("Logs");
-                }
-
-                var fileName = $"Logs\\Import-Account-Error-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.txt";
-                File.WriteAllText(fileName, string.Join(Environment.NewLine, $"Exception Message: {ex.Message}\n Inner Exception: {ex.InnerException}"));
                 return BaseResponse<UpsertAccountModelResponse>.Error("Something went, wrong please try later");
             }
         }
@@ -180,9 +174,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                                            bool isProxyRequired,
                                                            ImportAccountsModelRequest request)
         {
-            var uniqueAccounts = request.Accounts
-                .DistinctBy(a => a.Cookie)
-                .ToList();
+            var uniqueAccounts = request.Accounts.DistinctBy(a => a.Cookie).ToList();
 
             var validatedAccounts = new List<ImportAccounts>();
 
@@ -216,7 +208,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 account.FbAccountId = fbAccountId;
 
-                bool accountAlreadyExists = existingUserAccounts.Any(existing => existing.FbAccountId == fbAccountId);
+                bool accountAlreadyExists = existingUserAccounts.Any(existing => existing.FbAccountId == fbAccountId && existing.IsActive);
 
                 if (!accountAlreadyExists)
                 {

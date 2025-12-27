@@ -115,6 +115,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             //or show user an option to cancel or send automatically when server connected
             if(!string.IsNullOrWhiteSpace(hubId))
             {
+                 
                 await _hubContext.Clients.Group($"{hubId}")
                 .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
             }

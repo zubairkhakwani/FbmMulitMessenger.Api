@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
@@ -66,8 +67,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             var totalCount = accounts.Count();
-            var connectedAccounts = accounts.Count(x => x.AuthStatus == Contracts.Enums.AccountAuthStatus.LoggedIn);
-            var notConnectedAccounts = accounts.Count(x => x.AuthStatus != Contracts.Enums.AccountAuthStatus.LoggedIn);
+            var connectedAccounts = accounts.Count(x => x.AuthStatus == AccountAuthStatus.LoggedIn);
+            var notConnectedAccounts = accounts.Count(x => x.AuthStatus != AccountAuthStatus.LoggedIn);
 
             var pageableUserAccounts = new PageableResponse<UserAccountsModelResponse>(userAccounts, request.PageNo, request.PageSize, totalCount, totalCount/request.PageSize);
             var response = new UserAccountsOverviewModelResponse()
