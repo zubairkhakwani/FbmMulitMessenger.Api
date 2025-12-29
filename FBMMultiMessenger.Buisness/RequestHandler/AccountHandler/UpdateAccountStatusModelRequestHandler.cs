@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -79,7 +80,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     AccountId = account.Id,
                     ConnectionStatus =  operation.ConnectionStatus.GetInfo().Name,
-                    AuthStatus = operation.AuthStatus.GetInfo().Name
+                    AuthStatus = operation.AuthStatus.GetInfo().Name,
+                    IsConnected = operation.AuthStatus == AccountAuthStatus.LoggedIn
                 });
             }
 

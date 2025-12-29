@@ -18,6 +18,6 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
     public class NotifyLocalServerHttpResponse
     {
         public bool IsSubscriptionExpired { get; set; }
-
+        public string? OfflineUniqueId { get; set; }
     }
 }

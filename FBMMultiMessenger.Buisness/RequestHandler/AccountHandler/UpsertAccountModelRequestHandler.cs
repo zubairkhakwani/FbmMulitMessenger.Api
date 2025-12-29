@@ -248,7 +248,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     //Inform our app to update the account status.
                     var accountsStatusModel = new List<AccountStatusSignalRModel>();
-                    accountsStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name });
+                    accountsStatusModel.Add
+                    (
+                        new AccountStatusSignalRModel()
+                        {
+                            AccountId = account.Id,
+                            ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name,
+                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            IsConnected = false
+                        })
+                    ;
 
                     await _hubContext.Clients.Group($"App_{request.UserId}")
                       .SendAsync("HandleAccountStatus", accountsStatusModel, cancellationToken);

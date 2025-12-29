@@ -68,7 +68,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     //Sync active browser count that were running on this server.
                     localServer.ActiveBrowserCount--;
 
-                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                    accountStatusModel.Add(
+                        new AccountStatusSignalRModel()
+                        {
+                            AccountId = account.Id,
+                            ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name,
+                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            IsConnected = false
+                        });
                 }
 
                 await _hubContext.Clients.Group($"App_{userId}")
@@ -98,7 +105,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     leastLoadedServer.ActiveBrowserCount++;
 
                     //Prepare SignalR model
-                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                    accountStatusModel.Add(
+                        new AccountStatusSignalRModel()
+                        {
+                            AccountId = account.Id,
+                            ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name,
+                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            IsConnected = false
+                        });
                 }
                 else
                 {
@@ -110,9 +124,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     localServer.ActiveBrowserCount--;
 
                     //Prepare SignalR model
-                    accountStatusModel.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                    accountStatusModel.Add(
+                        new AccountStatusSignalRModel()
+                        {
+                            AccountId = account.Id,
+                            ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name,
+                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            IsConnected = false
+                        });
                 }
             }
+
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

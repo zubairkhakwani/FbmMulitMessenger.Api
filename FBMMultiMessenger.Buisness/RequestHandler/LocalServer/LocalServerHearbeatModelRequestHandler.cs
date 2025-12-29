@@ -66,7 +66,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 var signalRModel = new AccountStatusSignalRModel()
                 {
                     AccountId = notActiveAccount.Id,
-                    ConnectionStatus= AccountConnectionStatus.Offline.GetInfo().Name
+                    ConnectionStatus= AccountConnectionStatus.Offline.GetInfo().Name,
+                    AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                    IsConnected = false
                 };
 
                 signalRNotification.Add(signalRModel);
@@ -89,7 +91,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 var signalRModel = new AccountStatusSignalRModel()
                 {
                     AccountId = accountToActivate.Id,
-                    ConnectionStatus= AccountConnectionStatus.Online.GetInfo().Name
+                    ConnectionStatus= AccountConnectionStatus.Online.GetInfo().Name,
+                    AuthStatus = AccountAuthStatus.LoggedIn.GetInfo().Name,
+                    IsConnected = true
                 };
 
                 signalRNotification.Add(signalRModel);

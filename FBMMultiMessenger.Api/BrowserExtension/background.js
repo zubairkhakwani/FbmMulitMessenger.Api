@@ -317,7 +317,7 @@ async function getBase64FromUrl(path) {
     path = `${remoteApiUrl}/${path}`;
     const response = await fetch(path);
     const blob = await response.blob();
-
+    //await PrintLogs(path);
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
@@ -325,6 +325,21 @@ async function getBase64FromUrl(path) {
         reader.readAsDataURL(blob);
     });
 }
+//async function PrintLogs(data) {
+    
+
+//    try {
+//        const allTabs = await chrome.tabs;
+
+//        await chrome.tabs.sendMessage(allTabs[0].id, {
+//            action: "Print_Logs",
+//            data: data,
+//        });
+//        return;
+//    } catch (error) {
+//        console.log("Could not send to active tab:", allTabs[0].id);
+//    }
+//}
 
 chrome.runtime.onInstalled.addListener(() => {
     initializeSignalR();

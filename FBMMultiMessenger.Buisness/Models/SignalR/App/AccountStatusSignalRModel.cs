@@ -13,6 +13,7 @@
 
         public string ConnectionStatus { get; set; } = string.Empty;
         public string AuthStatus { get; set; } = string.Empty;
+        public bool IsConnected { get; set; }
 
     }
 }

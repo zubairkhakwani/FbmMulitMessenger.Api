@@ -16,5 +16,6 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
     public class NotifyLocalServerModelResponse
     {
         public bool IsSubscriptionExpired { get; set; }
+        public string OfflineUniqueId { get; set; } = string.Empty;
     }
 }

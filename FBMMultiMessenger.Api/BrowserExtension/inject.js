@@ -568,7 +568,8 @@ window.addEventListener("message", (event) => {
     // Make sure it’s from our own extension, not other scripts
     if (event.source !== window) return;
 
-    if (event.data.type === "Persist_Message_From_App") {
+    if (event.data.type === "Print_Logs") {
+        PringLogs(event.data.data);
     }
 
     if (event.data.type === "SET_FACEBOOK_MESSAGE") {
@@ -1026,6 +1027,11 @@ function CloseFbChatRecoverPopup() {
             }, 500);
         }
     }, 2000);
+}
+
+
+function PringLogs(logs) {
+    console.log(logs);
 }
 
 

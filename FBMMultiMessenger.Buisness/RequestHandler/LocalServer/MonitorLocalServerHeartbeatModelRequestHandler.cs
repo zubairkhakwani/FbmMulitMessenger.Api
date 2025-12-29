@@ -41,6 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 {
                     AccountId = a.Id,
                     ConnectionStatus = AccountConnectionStatus.Offline,
+                    AuthStatus = AccountAuthStatus.Idle,
                     FreeServer = true
                 }).ToList();
 

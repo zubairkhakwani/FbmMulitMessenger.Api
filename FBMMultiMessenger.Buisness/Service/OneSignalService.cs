@@ -2,7 +2,7 @@
 using OneSignal.RestAPIv3.Client;
 using OneSignal.RestAPIv3.Client.Resources.Notifications;
 
-namespace FBMMultiMessenger.Buisness.Notifaciton
+namespace FBMMultiMessenger.Buisness.Service
 {
     public class OneSignalService
     {

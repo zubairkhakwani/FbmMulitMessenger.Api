@@ -17,13 +17,18 @@ root.addEventListener("notifyAccountAuthState", function (e) {
 
 // Listen for messages from background script (SignalR messages)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+    if (request.action === "Print_Logs") {
+        PrintLogs(request.data);
+    }
+
     if (request.action === "sendMessageToFacebook") {
         try {
             let data = request.data;
             let fbChatId = data.fbChatId;
 
             if (fbChatId) {
-                //PersistMessageFromApp();
+
 
                 setMessage(data);
             }
@@ -75,12 +80,13 @@ function setDefaultMessage(defaultMessage) {
     );
 }
 
-
-function PersistMessageFromApp() {
+function PrintLogs(logs) {
     window.postMessage(
         {
-            type: "Persist_Message_From_App",
+            type: "Print_Logs",
+            data: logs,
         },
+
         "*"
     );
 }

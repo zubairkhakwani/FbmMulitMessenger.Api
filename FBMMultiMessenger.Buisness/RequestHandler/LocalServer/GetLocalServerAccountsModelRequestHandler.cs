@@ -85,7 +85,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.AuthStatus = AccountAuthStatus.Idle;
 
                 // Prepare SignalR data
-                accountStatusSignalR.Add(new AccountStatusSignalRModel() { AccountId = account.Id, ConnectionStatus =  AccountConnectionStatus.Starting.GetInfo().Name, AuthStatus = AccountAuthStatus.Idle.GetInfo().Name });
+                accountStatusSignalR.Add(
+                    new AccountStatusSignalRModel()
+                    {
+                        AccountId = account.Id,
+                        ConnectionStatus =  AccountConnectionStatus.Starting.GetInfo().Name,
+                        AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                        IsConnected = false
+                    }
+                    );
             }
 
             localServer.ActiveBrowserCount = accountsToAllocate.Count;

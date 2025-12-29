@@ -31,9 +31,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
         }
         public async Task<BaseResponse<NotifyLocalServerModelResponse>> Handle(NotifyLocalServerModelRequest request, CancellationToken cancellationToken)
         {
+            var errorResponse = new NotifyLocalServerModelResponse()
+            {
+                OfflineUniqueId = request.OfflineUniqueId
+            };
+
             if (string.IsNullOrWhiteSpace(request.Message) && request.Files is null && request?.Files?.Count == 0)
             {
-                return BaseResponse<NotifyLocalServerModelResponse>.Error("Please enter a message or attach a file to send.");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Please enter a message or attach a file to send.", result: errorResponse);
             }
 
             var currentUser = _currentUserService.GetCurrentUser();
@@ -41,7 +46,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
             if (currentUser is null)
             {
-                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid Request, Please login again to continue");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid Request, Please login again to continue", result: errorResponse);
             }
 
 
@@ -56,7 +61,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             if (chat is null)
             {
-                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid request, Chat does not exist");
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid request, Chat does not exist", result: errorResponse);
             }
 
             var today = DateTime.UtcNow;
@@ -67,12 +72,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                             .OrderByDescending(x => x.StartedAt)
                                                             .FirstOrDefault();
 
-            var response = new NotifyLocalServerModelResponse();
-
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
             if (activeSubscription is null)
             {
-                return BaseResponse<NotifyLocalServerModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, response);
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, result: errorResponse);
             }
 
 
@@ -80,8 +83,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             if (today >= endDate)
             {
-                response.IsSubscriptionExpired = true;
-                return BaseResponse<NotifyLocalServerModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true);
+                errorResponse.IsSubscriptionExpired = true;
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, result: errorResponse);
             }
 
 
@@ -107,20 +110,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 MediaPaths = mediaPaths
             };
 
+            var accountLocalServer = chat?.Account?.LocalServer;
 
-            var hubId = chat.Account.LocalServer?.UniqueId;
-
-            //TODO: if hubId is null means local server is offline or not connected.
-            //so either show user an error or store it and send it later.
-            //or show user an option to cancel or send automatically when server connected
-            if(!string.IsNullOrWhiteSpace(hubId))
+            //if local server is null or offline return error
+            if (accountLocalServer is null || !accountLocalServer.IsOnline)
             {
-                 
-                await _hubContext.Clients.Group($"{hubId}")
-                .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
+                return BaseResponse<NotifyLocalServerModelResponse>.Error("Failed to send message", result: errorResponse);
             }
 
-            return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", response);
+            await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
+            .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
+
+
+            return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyLocalServerModelResponse());
         }
 
         public List<string> HandleMediaFiles(List<IFormFile> files, string wwwRootPath)
