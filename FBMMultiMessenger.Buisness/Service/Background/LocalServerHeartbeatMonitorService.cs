@@ -23,8 +23,7 @@ namespace FBMMultiMessenger.Buisness.Service.Background
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var localServerService = scope.ServiceProvider.GetRequiredService<ILocalServerService>();
-                        //TODO: UNCOMMENT
-                        //await localServerService.MonitorHeartBeatAsync();
+                        await localServerService.MonitorHeartBeatAsync();
                     }
                 }
             }

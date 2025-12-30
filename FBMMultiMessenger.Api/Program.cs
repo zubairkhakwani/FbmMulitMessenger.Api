@@ -92,8 +92,8 @@ namespace FBMMultiMessenger.Api
 #if !DEBUG
                     using (var scope = app.Services.CreateScope())
                     {
-                        //var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                        //db.Database.Migrate();
+                        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        db.Database.Migrate();
                     }
 #endif
 

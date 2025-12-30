@@ -110,6 +110,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<ILocalServerService, LocalServerService>();
             services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
             services.AddHostedService<LocalServerHeartbeatMonitorService>();
+            services.AddHostedService<ChatMediaCleanupService>();
             return services;
         }
 

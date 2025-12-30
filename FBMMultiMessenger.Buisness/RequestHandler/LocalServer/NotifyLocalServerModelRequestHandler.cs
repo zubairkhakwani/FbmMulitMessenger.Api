@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -12,23 +13,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class NotifyLocalServerModelRequestHandler : IRequestHandler<NotifyLocalServerModelRequest, BaseResponse<NotifyLocalServerModelResponse>>
+    internal class NotifyLocalServerModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext, IWebHostEnvironment _webHostEnvironment) : IRequestHandler<NotifyLocalServerModelRequest, BaseResponse<NotifyLocalServerModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
-        private readonly IHubContext<ChatHub> _hubContext;
-        private readonly ChatHub _chatHub;
-
-        private readonly IWebHostEnvironment _webHostEnvironment;
-
-        public NotifyLocalServerModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, IWebHostEnvironment webHostEnvironment)
-        {
-            _dbContext=dbContext;
-            _currentUserService=currentUserService;
-            _hubContext = hubContext;
-            _chatHub = chatHub;
-            _webHostEnvironment=webHostEnvironment;
-        }
         public async Task<BaseResponse<NotifyLocalServerModelResponse>> Handle(NotifyLocalServerModelRequest request, CancellationToken cancellationToken)
         {
             var errorResponse = new NotifyLocalServerModelResponse()
@@ -49,7 +35,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid Request, Please login again to continue", result: errorResponse);
             }
 
-
             var chat = await _dbContext.Chats
                                            .Include(x => x.User)
                                            .ThenInclude(s => s.Subscriptions)
@@ -64,13 +49,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Invalid request, Chat does not exist", result: errorResponse);
             }
 
-            var today = DateTime.UtcNow;
-            var activeSubscription = chat.User.Subscriptions
-                                                            .Where(x => x.StartedAt <= today
-                                                                   &&
-                                                                   x.ExpiredAt > today)
-                                                            .OrderByDescending(x => x.StartedAt)
-                                                            .FirstOrDefault();
+            var userSubscriptions = chat.User.Subscriptions;
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions) ?? _userAccountService.GetLastActiveSubscription(userSubscriptions);
 
             //Extra safety check, a user will have a subscription if he is trying to notifies the extension.
             if (activeSubscription is null)
@@ -78,25 +58,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Oh Snap, Looks like you dont have any subscription yet", redirectToPackages: true, result: errorResponse);
             }
 
+            var isSubscriptionExpired = _userAccountService.IsSubscriptionExpired(activeSubscription);
 
-            var endDate = activeSubscription?.ExpiredAt;
-
-            if (today >= endDate)
+            if (isSubscriptionExpired)
             {
                 errorResponse.IsSubscriptionExpired = true;
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Your subscription has expired. Please renew to continue.", redirectToPackages: true, result: errorResponse);
             }
-
 
             List<string> mediaPaths = new List<string>();
 
             //Handle Media
             if (request!.Files is not null && request.Files.Count != 0)
             {
-                string wwwRootPath = _webHostEnvironment.WebRootPath;
-                mediaPaths = HandleMediaFiles(request.Files, wwwRootPath);
+                mediaPaths = HandleMediaFiles(request.Files);
             }
-
 
             //Notify localserver that user is trying to send message from our app. 
             var sendChatMessage = new NotifyLocalServerDTO()
@@ -125,14 +101,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyLocalServerModelResponse());
         }
 
-        public List<string> HandleMediaFiles(List<IFormFile> files, string wwwRootPath)
+        public List<string> HandleMediaFiles(List<IFormFile> files)
         {
+            string wwwRootPath = _webHostEnvironment.WebRootPath;
             List<string> mediaPaths = new List<string>();
 
             foreach (var file in files)
             {
                 string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                string filePath = @"ChatMessages\Media";
+                string filePath = @"Images\ChatMessages";
                 string finalPath = Path.Combine(wwwRootPath, filePath);
 
                 if (!Directory.Exists(finalPath))
@@ -145,7 +122,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     file.CopyTo(fileStream);
                 }
 
-                string relativeUrl = $"ChatMessages/Media/{fileName}";
+                string relativeUrl = $"Images/ChatMessages/{fileName}";
                 mediaPaths.Add(relativeUrl);
             }
             return mediaPaths;
