@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /FBMMultiMessenger.Api/appsettings.Development.json
+/FBMMultiMessenger.Api/appsettings.Production.json
