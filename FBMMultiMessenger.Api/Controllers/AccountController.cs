@@ -100,10 +100,10 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPost("{accountId}/open-in-browser")]
+        [HttpPost("{accountId}/connect")]
         public async Task<BaseResponse<object>> OpenInBrwoser([FromRoute] int accountId)
         {
-            OpenInBrowserModelRequest request = new OpenInBrowserModelRequest() { AccountId = accountId };
+            ConnectAccountModelRequest request = new ConnectAccountModelRequest() { AccountId = accountId };
 
             BaseResponse<object> httpResponse = await _mediator.Send(request);
 
