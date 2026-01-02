@@ -30,7 +30,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             }
 
-            var registeredLocalServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.SystemUUID == request.SystemUUID
+            var registeredLocalServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.UserId == currentUser.Id && ls.SystemUUID == request.SystemUUID
                                                                     ||
                                                                     ls.MotherboardSerial == request.MotherboardSerial, cancellationToken);
 
