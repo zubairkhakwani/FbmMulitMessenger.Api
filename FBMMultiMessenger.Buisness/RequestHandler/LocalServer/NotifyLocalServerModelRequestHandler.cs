@@ -74,19 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 mediaPaths = HandleMediaFiles(request.Files);
             }
 
-            //Notify localserver that user is trying to send message from our app. 
-            var sendChatMessage = new NotifyLocalServerDTO()
-            {
-                IsMessageFromApp = true,
-                ChatId = chat.Id,
-                FbChatId = request.FbChatId,
-                FbAccountId = chat.FbAccountId ?? string.Empty,
-                Message = request.Message,
-                OfflineUniqueId = request.OfflineUniqueId,
-                MediaPaths = mediaPaths
-            };
-
-            var accountLocalServer = chat?.Account?.LocalServer;
+            var accountLocalServer = chat.Account?.LocalServer;
 
             //if local server is null or offline return error
             if (accountLocalServer is null || !accountLocalServer.IsOnline)
@@ -94,9 +82,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Failed to send message", result: errorResponse);
             }
 
+            //Notify localserver that user is trying to send message from our app. 
+            var sendChatMessage = new NotifyLocalServerDTO()
+            {
+                IsMessageFromApp = true,
+                ChatId = chat.Id,
+                FbChatId = request.FbChatId,
+                FbAccountId = chat.FbAccountId ?? string.Empty,
+                AccountId = chat.AccountId,
+                Message = request.Message,
+                OfflineUniqueId = request.OfflineUniqueId,
+                MediaPaths = mediaPaths
+            };
+
             await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
             .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
-
 
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyLocalServerModelResponse());
         }

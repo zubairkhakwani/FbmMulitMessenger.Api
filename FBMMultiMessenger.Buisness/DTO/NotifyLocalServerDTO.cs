@@ -6,6 +6,7 @@
         public int ChatId { get; set; }
         public string FbChatId { get; set; } = string.Empty;
         public string FbAccountId { get; set; } = string.Empty;
+        public int? AccountId { get; set; }
         public string Message { get; set; } = null!;
         public string OfflineUniqueId { get; set; } = string.Empty;
 

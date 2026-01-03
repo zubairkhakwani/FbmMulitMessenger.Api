@@ -55,17 +55,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
 
                 var userSubscriptions = user.Subscriptions;
+                var response = new UpsertAccountModelResponse();
 
-                if (!userSubscriptions.Any())
+                var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+                if (activeSubscription is null)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
                 }
 
-                var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
-
-                var response = new UpsertAccountModelResponse();
-
-                if (activeSubscription is null || _userAccountService.IsSubscriptionExpired(activeSubscription))
+                if (_userAccountService.IsSubscriptionExpired(activeSubscription))
                 {
                     response.IsSubscriptionExpired = true;
                     return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, response);
@@ -187,9 +186,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var user = account.User;
 
-            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions) ?? _userAccountService.GetLastActiveSubscription(user.Subscriptions);
+            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions)
+                                     ?? _userAccountService.GetLastActiveSubscription(user.Subscriptions);
 
-            if (activeSubscription is not null && activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+
+            //Extra Safety Check as this point user must have an active subscription.
+            if (activeSubscription is null)
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
+            }
+
+            if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when editing account");
             }
@@ -217,67 +224,62 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
-            var newCookie = request.Cookie.Trim();
-            var previousCookie = account.Cookie.Trim();
+            var isCookieChanged = account.Cookie != request.Cookie;
 
-            var newAccountName = request.Name.Trim();
-            var previousAccountName = account.Name.Trim();
+            //on which localserver this account is currently running 
+            var accountLocalServer = account.LocalServer;
 
-            var newProxyId = proxyId;
-            var previousProxyId = account.ProxyId;
-
-            var shouldUpdate = newCookie != previousCookie || newAccountName != previousAccountName ||  newProxyId != previousProxyId;
-
-            if (shouldUpdate)
+            //If account is not assigned to any local server
+            if (accountLocalServer is null)
             {
-                var isCookieChanged = newCookie != previousCookie;
+                var elegibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
+                var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
+                var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
-                //on which the account is running
-                var accountLocalServer = account.LocalServer;
-
-                account.Name = newAccountName;
-                account.Cookie = newCookie;
-                account.FbAccountId = fbAccountId;
-                account.ProxyId = proxyId;
-                account.UpdatedAt = DateTime.UtcNow;
-
-                _dbContext.Accounts.Update(account);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                if (isCookieChanged && accountLocalServer is not null)
+                if (assignedServer is not null)
                 {
-                    //Inform our app to update the account status.
-                    var accountsStatusModel = new List<AccountStatusSignalRModel>();
-                    accountsStatusModel.Add
-                    (
-                        new AccountStatusSignalRModel()
-                        {
-                            AccountId = account.Id,
-                            ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name,
-                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
-                            IsConnected = false
-                        })
-                    ;
+                    account.LocalServerId = assignedServer.Id;
+                    assignedServer.ActiveBrowserCount++;
 
-                    await _hubContext.Clients.Group($"App_{request.UserId}")
-                      .SendAsync("HandleAccountStatus", accountsStatusModel, cancellationToken);
+                    accountLocalServer = assignedServer;
                 }
+            }
 
-                if (accountLocalServer is not null)
+            // Update account details
+            account.Name = request.Name;
+            account.Cookie = request.Cookie;
+            account.FbAccountId = fbAccountId;
+            account.ProxyId = proxyId;
+            account.UpdatedAt = DateTime.UtcNow;
+
+            if (isCookieChanged)
+            {
+                account.ConnectionStatus = AccountConnectionStatus.Starting;
+                account.AuthStatus = AccountAuthStatus.Idle;
+            }
+            if (accountLocalServer is null)
+            {
+                account.ConnectionStatus = AccountConnectionStatus.Offline;
+                account.AuthStatus = AccountAuthStatus.Idle;
+            }
+
+            _dbContext.Accounts.Update(account);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (accountLocalServer is not null)
+            {
+                //Inform user's local server.
+                var newAccountHttpResponse = new AccountDTO()
                 {
-                    //Inform our local server to close/re-open browser accordingly.
-                    var newAccountHttpResponse = new AccountDTO()
-                    {
-                        Id =  account.Id,
-                        Name = account.Name,
-                        Cookie = account.Cookie,
-                        CreatedAt = account.CreatedAt,
-                        IsCookieChanged = newCookie != previousCookie,
-                    };
+                    Id =  account.Id,
+                    Name = account.Name,
+                    Cookie = account.Cookie,
+                    CreatedAt = account.CreatedAt,
+                    IsCookieChanged = isCookieChanged,
+                };
 
-                    await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
-                   .SendAsync("HandleAccountUpdate", newAccountHttpResponse, cancellationToken);
-                }
+                await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
+               .SendAsync("HandleAccountUpdate", newAccountHttpResponse, cancellationToken);
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", new UpsertAccountModelResponse());
