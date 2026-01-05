@@ -5,6 +5,7 @@ using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
@@ -33,10 +34,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var accountLocalServer = account.LocalServer;
 
-            if ((accountLocalServer is not null &&  account.ConnectionStatus == AccountConnectionStatus.Online) || account.ConnectionStatus == AccountConnectionStatus.Starting)
+            if ((accountLocalServer is not null &&  account.AuthStatus == AccountAuthStatus.LoggedIn))
             {
-                var message = account.ConnectionStatus == AccountConnectionStatus.Online ? "Account is already active and running." : "Please wait account is in progress";
-                return BaseResponse<object>.Error(message);
+                return BaseResponse<object>.Error("Account is already connected and running");
             }
 
             var userSubscriptions = account.User.Subscriptions;
@@ -67,16 +67,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             };
 
             account.ConnectionStatus = AccountConnectionStatus.Starting;
+            account.AuthStatus = AccountAuthStatus.Idle;
             account.LocalServerId = assignedServer.Id;
             assignedServer.ActiveBrowserCount++;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            //Inform our console app to open browser if not opened.
+            //Inform local server to open browser if not opened.
             await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
-                    .SendAsync("HandleUpsertAccount", newAccountHttpResponse, cancellationToken);
+                    .SendAsync("HandleAccountConnect", newAccountHttpResponse, cancellationToken);
 
-            return BaseResponse<object>.Success("Account is being opened in the browser", new object());
+            return BaseResponse<object>.Success("Please wait, account is being connected.", new object());
         }
     }
 }
