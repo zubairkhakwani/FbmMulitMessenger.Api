@@ -54,7 +54,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             if (assignedServer is null)
             {
-                return BaseResponse<object>.Error("Unable to launch account.");
+                return BaseResponse<object>.Error("Unable to launch account. Please ensure your local server is running and has available capacity.");
             }
 
             var newAccountHttpResponse = new AccountDTO()
