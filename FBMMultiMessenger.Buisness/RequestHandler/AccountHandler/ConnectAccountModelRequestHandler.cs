@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.DTO;
+using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -45,7 +46,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                      ??
                                      _accountService.GetLastActiveSubscription(userSubscriptions);
 
-
             var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription!);
 
             var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
@@ -72,6 +72,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             assignedServer.ActiveBrowserCount++;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+
+            //Inform appp to update account status
+            var userAccountSignalR = new UserAccountSignalRModel()
+            {
+                UserId = account.UserId,
+                AccountsStatus = new List<AccountStatusSignalRModel>()
+                {
+                    new AccountStatusSignalRModel()
+                    {
+                        AccountId = account.Id,
+                        ConnectionStatus = account.ConnectionStatus.ToString(),
+                        AuthStatus = account.AuthStatus.ToString(),
+                    }
+                }
+            };
+
+            var appId = $"App_{account.UserId}";
+            //Send account status update to app
+            await _hubContext.Clients.Group(appId)
+                   .SendAsync("HandleAccountStatus", userAccountSignalR.AccountsStatus, cancellationToken);
 
             //Inform local server to open browser if not opened.
             await _hubContext.Clients.Group($"{assignedServer.UniqueId}")

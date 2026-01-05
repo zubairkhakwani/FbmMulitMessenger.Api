@@ -36,7 +36,6 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
         public string ProcessorId { get; set; } = string.Empty;      // CPU chip ID
 
         public int MaxBrowserCapacity { get; set; } // Maximum browsers this system can handle
-
     }
 
 

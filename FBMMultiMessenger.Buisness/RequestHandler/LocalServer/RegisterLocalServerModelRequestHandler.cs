@@ -3,9 +3,11 @@ using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
@@ -31,12 +33,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             }
 
             var registeredLocalServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.UserId == currentUser.Id && ls.SystemUUID == request.SystemUUID
-                                                                    ||
+                                                                    &&
                                                                     ls.MotherboardSerial == request.MotherboardSerial, cancellationToken);
-
 
             if (registeredLocalServer is not null)
             {
+                await OnLocalServerUpdated(registeredLocalServer, request);
                 return BaseResponse<RegisterLocalServerModelResponse>.Success("Local Server is already registered.", new RegisterLocalServerModelResponse() { LocalServerId = registeredLocalServer.UniqueId });
 
             }
@@ -78,6 +80,45 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<RegisterLocalServerModelResponse>.Success("Local Server registered successfully.", new RegisterLocalServerModelResponse() { LocalServerId = newLocalServer.UniqueId });
+        }
+
+
+
+        private async Task OnLocalServerUpdated(Data.Database.DbModels.LocalServer registeredLocalServer, RegisterLocalServerModelRequest request)
+        {
+            if (registeredLocalServer.MaxBrowserCapacity != request.MaxBrowserCapacity ||
+                registeredLocalServer.TotalMemoryGB != request.TotalMemoryGB ||
+                registeredLocalServer.TotalStorageGB != request.TotalStorageGB ||
+                registeredLocalServer.GraphicsCards != request.GraphicsCards ||
+                registeredLocalServer.LogicalProcessors != request.LogicalProcessors ||
+                registeredLocalServer.HasSSD != request.HasSSD ||
+                registeredLocalServer.OperatingSystem != request.OperatingSystem ||
+                registeredLocalServer.ProcessorName != request.ProcessorName ||
+                registeredLocalServer.CoreCount != request.CoreCount ||
+                registeredLocalServer.MaxClockSpeedMHz != request.MaxClockSpeedMHz ||
+                registeredLocalServer.CurrentClockSpeedMHz != request.CurrentClockSpeedMHz ||
+                registeredLocalServer.CpuArchitecture != request.CpuArchitecture ||
+                registeredLocalServer.CpuThreadCount != request.CpuThreadCount ||
+                registeredLocalServer.Is64BitOS != request.Is64BitOS)
+            {
+
+                registeredLocalServer.MaxBrowserCapacity = request.MaxBrowserCapacity;
+                registeredLocalServer.TotalMemoryGB = request.TotalMemoryGB;
+                registeredLocalServer.TotalStorageGB = request.TotalStorageGB;
+                registeredLocalServer.GraphicsCards = request.GraphicsCards;
+                registeredLocalServer.LogicalProcessors = request.LogicalProcessors;
+                registeredLocalServer.HasSSD = request.HasSSD;
+                registeredLocalServer.OperatingSystem = request.OperatingSystem;
+                registeredLocalServer.ProcessorName = request.ProcessorName;
+                registeredLocalServer.CoreCount = request.CoreCount;
+                registeredLocalServer.MaxClockSpeedMHz = request.MaxClockSpeedMHz;
+                registeredLocalServer.CurrentClockSpeedMHz = request.CurrentClockSpeedMHz;
+                registeredLocalServer.CpuArchitecture = request.CpuArchitecture;
+                registeredLocalServer.CpuThreadCount = request.CpuThreadCount;
+                registeredLocalServer.Is64BitOS = request.Is64BitOS;
+
+                await _dbContext.SaveChangesAsync();
+            }
         }
     }
 }
