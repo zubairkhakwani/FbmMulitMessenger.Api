@@ -22,6 +22,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var currentUserId = currentUser!.Id;
 
             var account = await _dbContext.Accounts
+                                          .Include(dm => dm.DefaultMessage)
                                           .Include(u => u.User)
                                           .ThenInclude(s => s.Subscriptions)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
@@ -62,7 +63,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 Id =  account.Id,
                 Name = account.Name,
                 Cookie = account.Cookie,
-                IsBrowserOpenRequest = true,
+                DefaultMessage = account.DefaultMessage?.Message,
                 CreatedAt = account.CreatedAt
             };
 

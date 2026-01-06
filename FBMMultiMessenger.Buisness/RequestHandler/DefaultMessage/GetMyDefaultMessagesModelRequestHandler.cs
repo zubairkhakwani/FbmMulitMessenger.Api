@@ -33,9 +33,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
 
             var currentUserId = currentUser.Id;
 
-
             var user = await _dbContext.Users
                                   .Include(a => a.Accounts)
+                                  .Where(a => a.IsActive)
                                   .Include(x => x.DefaultMessages)
                                   .FirstOrDefaultAsync(x => x.Id == currentUserId, cancellationToken);
 

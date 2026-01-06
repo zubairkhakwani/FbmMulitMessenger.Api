@@ -45,6 +45,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     .Include(u => u.Accounts)
                     .ThenInclude(p => p.Proxy)
                     .Include(u => u.Subscriptions)
+                    .Include(a => a.Accounts)
+                    .ThenInclude(dm => dm.DefaultMessage)
                     .ToListAsync(cancellationToken);
 
                 accountsToAllocate = eligibleUsers
@@ -69,6 +71,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                      .Where(u => u.Id == currentUserId)
                                                      .Include(u => u.Accounts)
                                                      .ThenInclude(p => p.Proxy)
+                                                     .Include(u => u.Accounts)
+                                                     .ThenInclude(dm => dm.DefaultMessage)
                                                      .SelectMany(u => u.Accounts)
                                                      .Where(a => a.IsActive && (a.LocalServerId == null || a.LocalServerId == localServer.Id))
                                                      .OrderByDescending(a => a.LocalServerId == localServer.Id)

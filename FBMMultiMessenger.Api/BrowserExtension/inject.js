@@ -263,6 +263,9 @@ let globalDefaultTemplate = `{
                 await NavigateToRequestedChat(fbChatId);
             }
 
+            console.log("New Chat started: ", isNewChatStarted);
+            console.log("Default Message:", defaultMessage);
+
             if (isNewChatStarted && defaultMessage) {
                 let input = document.querySelector(".notranslate");
                 HandleTextMessage(input, defaultMessage);
@@ -588,7 +591,9 @@ window.addEventListener("message", (event) => {
     if (event.source !== window) return;
 
     if (event.data.type === "SET_DEFAULT_MESSAGE") {
+        console.log("Previous default message:", defaultMessage);
         defaultMessage = event.data.data;
+        console.log("New default message:", defaultMessage);
     }
 });
 
@@ -828,8 +833,9 @@ async function NavigateToRequestedChat(fbChatId) {
         'div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]'
     );
 
-    if (marketPlaceElement) {
+    if (marketPlaceElement && !marketPlaceElement.getAttribute('do-not-click')) {
         TriggerClickEvent(marketPlaceElement);
+        marketPlaceElement.setAttribute('do-not-click', 'true');
     }
 
     if (currentUrl.includes(expectedUrl)) {

@@ -7,7 +7,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using static FBMMultiMessenger.Buisness.Service.CurrentUserService;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
 {
@@ -47,60 +46,76 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
         {
             var defaultMessage = await _dbContext.DefaultMessages
                                                  .Include(x => x.Accounts)
-                                                 .FirstOrDefaultAsync(x => x.Id == request.Id
-                                                                      &&
-                                                                      x.UserId == request.CurrentUserId, cancellationToken
-                                                 );
+                                                 .ThenInclude(a => a.LocalServer)
+                                                 .FirstOrDefaultAsync(x => x.Id == request.Id && x.UserId == request.CurrentUserId, cancellationToken);
 
-            if (defaultMessage is not null)
+            if (defaultMessage is null)
+                return BaseResponse<UpsertDefaultMessageModelResponse>.Error("Default message does not exist");
+
+            // Update the message text
+            defaultMessage.Message = request.Message;
+
+            var currentAccounts = defaultMessage.Accounts.ToList();
+            var serverMessagesDTO = new ServerAccountDefaultMessageDTO();
+
+            // Remove default message from unselected accounts
+            var unselectedAccounts = currentAccounts
+                                             .Where(account => !request.SelectedAccounts.Contains(account.Id))
+                                             .Where(account => account.LocalServer is not null)
+                                             .ToList();
+
+            foreach (var account in unselectedAccounts)
             {
-                var accounts = defaultMessage.Accounts;
+                account.DefaultMessageId = null;
 
-                // Updating the default message
-                defaultMessage.Message = request.Message;
-
-                // Preparing DTO to inform local server about the default message updation
-                var defaultMessageDTO = new UpsertDefaultMessageDTO();
-
-                var unSelectedAccounts = accounts.Where(x => !request.SelectedAccounts.Any(y => x.Id == y)).ToList();
-
-                foreach (var account in unSelectedAccounts)
+                var serverUniqueId = account.LocalServer!.UniqueId;
+                serverMessagesDTO.AccountDefaultMessages.TryAdd(serverUniqueId, new());
+                serverMessagesDTO.AccountDefaultMessages[serverUniqueId].Add(new()
                 {
-                    if (account.DefaultMessageId is not null)
-                    {
-                        account.DefaultMessageId = null;
-                        // Preparing DTO to inform local server about the default message updation
-                        defaultMessageDTO.AccountDefaultMessages.Add(account.FbAccountId,null);
-                    }
-                }
+                    FbAccountId = account.FbAccountId,
+                    DefaultMessage = null
+                });
+            }
 
-                var newSelectedAccountsIds = request.SelectedAccounts
-                                                    .Where(x => !accounts.Any(y => y.Id == x))
-                                                    .ToList();
+            // Add default message to newly selected accounts
+            var newlySelectedAccountIds = request.SelectedAccounts
+                                                 .Where(id => !currentAccounts.Any(account => account.Id == id))
+                                                 .ToList();
 
+            if (newlySelectedAccountIds.Any())
+            {
+                var newlySelectedAccounts = await _dbContext.Accounts
+                                                            .Include(x => x.LocalServer)
+                                                            .Where(x => newlySelectedAccountIds.Contains(x.Id)
+                                                                && x.UserId == request.CurrentUserId
+                                                                && x.DefaultMessageId == null)
+                                                            .ToListAsync(cancellationToken);
 
-                foreach (var accountId in newSelectedAccountsIds)
+                foreach (var account in newlySelectedAccounts)
                 {
-                    var userAccount = await _dbContext.Accounts
-                                                      .FirstOrDefaultAsync(x => x.Id == accountId
-                                                                           &&
-                                                                           x.UserId == request.CurrentUserId, cancellationToken
-                                                      );
+                    account.DefaultMessageId = request.Id;
 
-                    if (userAccount is not null && userAccount.DefaultMessageId is null)
+                    if (account.LocalServer is null) continue;
+
+                    var serverUniqueId = account.LocalServer.UniqueId;
+                    serverMessagesDTO.AccountDefaultMessages.TryAdd(serverUniqueId, new());
+                    serverMessagesDTO.AccountDefaultMessages[serverUniqueId].Add(new()
                     {
-                        userAccount.DefaultMessageId = request.Id;
-                        // Preparing DTO to inform local server about the default message updation
-                        defaultMessageDTO.AccountDefaultMessages.Add(userAccount.FbAccountId, request.Message);
-                    }
+                        FbAccountId = account.FbAccountId,
+                        DefaultMessage = request.Message
+                    });
                 }
-
-                // Notify the local server about the updation of default message
-                await _hubContext.Clients.Group($"LocalServer_{request.CurrentUserId}")
-               .SendAsync("HandleUpsertDefaultMessage", defaultMessageDTO, cancellationToken);
+            }
 
 
-                await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            foreach (var serverAccount in serverMessagesDTO.AccountDefaultMessages)
+            {
+                var serverUniqueId = serverAccount.Key;
+                var accountDefaultMessages = serverAccount.Value;
+                await _hubContext.Clients.Group($"{serverUniqueId}")
+                                 .SendAsync("HandleUpsertDefaultMessage", accountDefaultMessages, cancellationToken);
             }
 
             return BaseResponse<UpsertDefaultMessageModelResponse>.Success("Successfully updated default message", new UpsertDefaultMessageModelResponse());
@@ -116,33 +131,52 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
                 CreatedAt = DateTime.UtcNow,
             };
 
-            await _dbContext.DefaultMessages.AddAsync(newDefaultMessage);
+            await _dbContext.DefaultMessages.AddAsync(newDefaultMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
+            var userAccounts = await _dbContext.Accounts
+                                               .Include(ls => ls.LocalServer)
+                                               .Where(x => x.UserId == currentUserId && x.IsActive)
+                                               .ToListAsync(cancellationToken);
 
-            var allAccountsOfCurrentUser = await _dbContext.Accounts
-                                                           .Where(x => x.UserId == currentUserId)
-                                                           .ToListAsync(cancellationToken);
-
-            // Preparing DTO to inform local server about the default message addition
-            var defaultMessageDTO = new UpsertDefaultMessageDTO();
+            // Prepare DTO to inform local servers about the default message addition
+            var serverMessagesDTO = new ServerAccountDefaultMessageDTO();
 
             foreach (var accountId in request.SelectedAccounts)
             {
-                var selectedAccount = allAccountsOfCurrentUser.FirstOrDefault(x => x.Id == accountId);
+                var selectedAccount = userAccounts.FirstOrDefault(x => x.Id == accountId);
+                if (selectedAccount is null) continue;
 
-                if (selectedAccount is not null)
+                // Assign the newly created default message to the selected account
+                selectedAccount.DefaultMessageId = newDefaultMessage.Id;
+
+                if (selectedAccount.LocalServer is null) continue;
+
+                // Group accounts by server unique ID
+                var serverUniqueId = selectedAccount.LocalServer.UniqueId;
+
+                if (!serverMessagesDTO.AccountDefaultMessages.ContainsKey(serverUniqueId))
                 {
-                    selectedAccount.DefaultMessageId = newDefaultMessage.Id;
-                    defaultMessageDTO.AccountDefaultMessages.Add(selectedAccount.FbAccountId,request.Message);
+                    serverMessagesDTO.AccountDefaultMessages[serverUniqueId] = new();
                 }
+
+                serverMessagesDTO.AccountDefaultMessages[serverUniqueId].Add(new()
+                {
+                    FbAccountId = selectedAccount.FbAccountId,
+                    DefaultMessage = request.Message
+                });
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             // Notify the local server about the new default message
-            await _hubContext.Clients.Group($"LocalServer_{currentUserId}")
-           .SendAsync("HandleUpsertDefaultMessage", defaultMessageDTO, cancellationToken);
+            foreach (var serverAccount in serverMessagesDTO.AccountDefaultMessages)
+            {
+                var serverUniqueId = serverAccount.Key;
+                var accountDefaultMessages = serverAccount.Value;
+                await _hubContext.Clients.Group($"{serverUniqueId}")
+                                 .SendAsync("HandleUpsertDefaultMessage", accountDefaultMessages, cancellationToken);
+            }
 
             return BaseResponse<UpsertDefaultMessageModelResponse>.Success("Successfully added default message to your selected accounts", new UpsertDefaultMessageModelResponse());
         }
