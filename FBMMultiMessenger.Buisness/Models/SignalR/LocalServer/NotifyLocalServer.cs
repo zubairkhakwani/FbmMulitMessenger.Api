@@ -1,7 +1,7 @@
-﻿namespace FBMMultiMessenger.Buisness.DTO
+﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
 {
     //This class is responsible for notifying our local server that user has send a message from our app.
-    public class NotifyLocalServerDTO
+    public class NotifyLocalServer
     {
         public int ChatId { get; set; }
         public string FbChatId { get; set; } = string.Empty;

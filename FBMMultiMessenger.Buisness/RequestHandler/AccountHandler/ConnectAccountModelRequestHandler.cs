@@ -1,12 +1,11 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
-using FBMMultiMessenger.Buisness.Models.SignalR.App;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
+using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
-using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
@@ -14,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class ConnectAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IUserAccountService _accountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<ConnectAccountModelRequest, BaseResponse<object>>
+    internal class ConnectAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IUserAccountService _accountService, ISignalRService _signalRService) : IRequestHandler<ConnectAccountModelRequest, BaseResponse<object>>
     {
         public async Task<BaseResponse<object>> Handle(ConnectAccountModelRequest request, CancellationToken cancellationToken)
         {
@@ -58,7 +57,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<object>.Error("Unable to launch account. Please ensure your local server is running and has available capacity.");
             }
 
-            var newAccountHttpResponse = new AccountDTO()
+            var newAccountHttpResponse = new LocalServerAccountDTO()
             {
                 Id =  account.Id,
                 Name = account.Name,
@@ -74,11 +73,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-
-            //Inform appp to update account status
+            //Inform app to update account status
             var userAccountSignalR = new UserAccountSignalRModel()
             {
-                UserId = account.UserId,
+                AppId = account.UserId,
                 AccountsStatus = new List<AccountStatusSignalRModel>()
                 {
                     new AccountStatusSignalRModel()
@@ -92,12 +90,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var appId = $"App_{account.UserId}";
             //Send account status update to app
-            await _hubContext.Clients.Group(appId)
-                   .SendAsync("HandleAccountStatus", userAccountSignalR.AccountsStatus, cancellationToken);
+            await _signalRService.NotifyAppAccountStatus([userAccountSignalR], cancellationToken);
 
             //Inform local server to open browser if not opened.
-            await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
-                    .SendAsync("HandleAccountConnect", newAccountHttpResponse, cancellationToken);
+            await _signalRService.NotifyLocalServerAccountConnect(newAccountHttpResponse, assignedServer.UniqueId, cancellationToken);
 
             return BaseResponse<object>.Success("Please wait, account is being connected.", new object());
         }

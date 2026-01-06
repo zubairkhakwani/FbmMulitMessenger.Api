@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.Server;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
+    internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
     {
         public async Task<BaseResponse<ToggleAcountStatusModelResponse>> Handle(RemoveAcountModelRequest request, CancellationToken cancellationToken)
         {
@@ -74,7 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                         .Where(a => a.LocalServer is not null)
                                         .GroupBy(a => a.LocalServer!.UniqueId);
 
-            var serverAccountDeletion = accountsByServer.Select(group => new ServerCloseAccountRequest
+            var serverAccountDeletion = accountsByServer.Select(group => new LocalServerCloseAccountRequest
             {
                 ServerId = group.Key,
                 Accounts = group.Select(account => new AccountsCloseInfo
@@ -90,11 +90,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             //Inform each server about the account deletion via SignalR
             if (serverAccountDeletion is not null && serverAccountDeletion.Count > 0)
             {
-                foreach (var server in serverAccountDeletion)
-                {
-                    await _hubContext.Clients.Group($"{server.ServerId}")
-                                             .SendAsync("HandleAccountRemoval", server.Accounts, cancellationToken);
-                }
+                await _signalRService.NotifyLocalServerAccountDeleted(serverAccountDeletion, cancellationToken);
             }
 
             var responseMessage = accounts.Count > 1 ? "Selected accounts" : "Account";

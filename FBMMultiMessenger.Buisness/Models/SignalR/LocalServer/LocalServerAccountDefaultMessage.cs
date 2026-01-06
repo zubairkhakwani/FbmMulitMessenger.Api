@@ -1,6 +1,6 @@
-﻿namespace FBMMultiMessenger.Buisness.DTO
+﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
 {
-    public class ServerAccountDefaultMessageDTO
+    public class LocalServerAccountDefaultMessage
     {
         // Key: Local server unique ID, Value: List of account messages for that server
         public Dictionary<string, List<DefaultMessageDTO>> AccountDefaultMessages { get; set; } = new Dictionary<string, List<DefaultMessageDTO>>();

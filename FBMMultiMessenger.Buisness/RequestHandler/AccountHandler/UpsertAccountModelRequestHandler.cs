@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    public class UpsertAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, IHubContext<ChatHub> _hubContext, IMapper _mapper) : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
+    public class UpsertAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISubscriptionServerProviderService _subscriptionServerProviderService, ILocalServerService _localServerService, ISignalRService _signalRService, IMapper _mapper) : IRequestHandler<UpsertAccountModelRequest, BaseResponse<UpsertAccountModelResponse>>
     {
         public async Task<BaseResponse<UpsertAccountModelResponse>> Handle(UpsertAccountModelRequest request, CancellationToken cancellationToken)
         {
@@ -115,7 +115,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
                 var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
-                AccountDTO newAccountHttpResponse = null;
+                LocalServerAccountDTO newAccountHttpResponse = null;
                 if (alreadyExistedAccount == null)
                 {
                     var newAccount = new Account()
@@ -135,7 +135,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
                     await _dbContext.SaveChangesAsync(cancellationToken);
 
-                    newAccountHttpResponse = new AccountDTO()
+                    newAccountHttpResponse = new LocalServerAccountDTO()
                     {
                         Id = newAccount.Id,
                         Name = newAccount.Name,
@@ -156,7 +156,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     _dbContext.Accounts.Update(alreadyExistedAccount);
                     await _dbContext.SaveChangesAsync();
 
-                    newAccountHttpResponse = new AccountDTO()
+                    newAccountHttpResponse = new LocalServerAccountDTO()
                     {
                         Id = alreadyExistedAccount.Id,
                         Name = alreadyExistedAccount.Name,
@@ -176,8 +176,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 if (assignedServer is not null)
                 {
                     // Inform our local server to open a new browser instance.
-                    await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
-                       .SendAsync("HandleAccountAdd", newAccountHttpResponse, cancellationToken);
+                    await _signalRService.NotifyLocalServerAccountAdded(newAccountHttpResponse, assignedServer.UniqueId, cancellationToken);
                 }
 
                 return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
@@ -291,7 +290,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             if (accountLocalServer is not null)
             {
                 //Inform user's local server.
-                var newAccountHttpResponse = new AccountDTO()
+                var newAccountHttpResponse = new LocalServerAccountDTO()
                 {
                     Id = account.Id,
                     Name = account.Name,
@@ -300,8 +299,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     IsCookieChanged = isCookieChanged,
                 };
 
-                await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
-               .SendAsync("HandleAccountUpdate", newAccountHttpResponse, cancellationToken);
+                await _signalRService.NotifyLocalServerAccountUpdated(newAccountHttpResponse, accountLocalServer.UniqueId, cancellationToken);
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", new UpsertAccountModelResponse());

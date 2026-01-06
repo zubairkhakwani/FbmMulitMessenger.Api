@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.AccountServer;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
@@ -21,7 +21,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
                 return BaseResponse<LaunchAccountsOnValidServerModelResponse>.Error("No accounts to launch");
             }
 
-            var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
+            var serverAccountAssignments = new Dictionary<string, List<LocalServerAccountDTO>>();
             var successfulAccounts = new List<int>();
             var failedAccounts = new List<(int AccountId, string Reason)>();
 
@@ -75,7 +75,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
                         account.LocalServerId = assignedServer.Id;
                         assignedServer.ActiveBrowserCount++;
 
-                        var accountDTO = new AccountDTO
+                        var accountDTO = new LocalServerAccountDTO
                         {
                             Id = account.Id,
                             Name = account.Name,
@@ -85,7 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountServer
 
                         if (!serverAccountAssignments.ContainsKey(assignedServer.UniqueId))
                         {
-                            serverAccountAssignments[assignedServer.UniqueId] = new List<AccountDTO>();
+                            serverAccountAssignments[assignedServer.UniqueId] = new List<LocalServerAccountDTO>();
                         }
 
                         serverAccountAssignments[assignedServer.UniqueId].Add(accountDTO);

@@ -109,6 +109,9 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<IUserAccountService, UserAccountService>();
             services.AddScoped<ILocalServerService, LocalServerService>();
             services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
+            services.AddScoped<ISignalRService, SignalRService>();
+
+            //Background Services
             services.AddHostedService<LocalServerHeartbeatMonitorService>();
             services.AddHostedService<ChatMediaCleanupService>();
             return services;

@@ -1,7 +1,7 @@
-﻿namespace FBMMultiMessenger.Buisness.DTO
+﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
 {
     //This class is responsible for sending account details to user's local server.
-    public class AccountDTO
+    public class LocalServerAccountDTO
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;

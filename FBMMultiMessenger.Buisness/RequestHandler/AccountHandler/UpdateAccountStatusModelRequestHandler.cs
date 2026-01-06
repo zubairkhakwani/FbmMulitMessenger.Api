@@ -64,13 +64,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     }
                 }
 
-                var userSignal = userAccountSignals.FirstOrDefault(u => u.UserId == account.UserId);
+                var userSignal = userAccountSignals.FirstOrDefault(u => u.AppId == account.UserId);
 
                 if (userSignal == null)
                 {
                     userSignal = new UserAccountSignalRModel
                     {
-                        UserId = account.UserId
+                        AppId = account.UserId
                     };
 
                     userAccountSignals.Add(userSignal);
@@ -90,7 +90,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             //Inform the user's app to update the status accordingly
             foreach (var userAccount in userAccountSignals)
             {
-                var appId = $"App_{userAccount.UserId}";
+                var appId = $"App_{userAccount.AppId}";
 
                 await _hubContext.Clients.Group(appId)
                     .SendAsync("HandleAccountStatus", userAccount.AccountsStatus, cancellationToken);

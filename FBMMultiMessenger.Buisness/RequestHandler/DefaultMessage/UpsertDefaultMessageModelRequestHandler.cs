@@ -1,6 +1,7 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.DefaultMessage;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -10,18 +11,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
 {
-    internal class UpsertDefaultMessageModelRequestHandler : IRequestHandler<UpsertDefaultMessageModelRequest, BaseResponse<UpsertDefaultMessageModelResponse>>
+    internal class UpsertDefaultMessageModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, ISignalRService _signalRService) : IRequestHandler<UpsertDefaultMessageModelRequest, BaseResponse<UpsertDefaultMessageModelResponse>>
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly CurrentUserService _currentUserService;
-        private readonly IHubContext<ChatHub> _hubContext;
-
-        public UpsertDefaultMessageModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext)
-        {
-            this._dbContext=dbContext;
-            this._currentUserService=currentUserService;
-            this._hubContext=hubContext;
-        }
         public async Task<BaseResponse<UpsertDefaultMessageModelResponse>> Handle(UpsertDefaultMessageModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
@@ -56,7 +47,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
             defaultMessage.Message = request.Message;
 
             var currentAccounts = defaultMessage.Accounts.ToList();
-            var serverMessagesDTO = new ServerAccountDefaultMessageDTO();
+            var serverMessagesDTO = new LocalServerAccountDefaultMessage();
 
             // Remove default message from unselected accounts
             var unselectedAccounts = currentAccounts
@@ -114,8 +105,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
             {
                 var serverUniqueId = serverAccount.Key;
                 var accountDefaultMessages = serverAccount.Value;
-                await _hubContext.Clients.Group($"{serverUniqueId}")
-                                 .SendAsync("HandleUpsertDefaultMessage", accountDefaultMessages, cancellationToken);
+
+                await _signalRService.NotifyLocalServerUpsertDefaultMessage(accountDefaultMessages, serverUniqueId, cancellationToken);
             }
 
             return BaseResponse<UpsertDefaultMessageModelResponse>.Success("Successfully updated default message", new UpsertDefaultMessageModelResponse());
@@ -140,7 +131,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
                                                .ToListAsync(cancellationToken);
 
             // Prepare DTO to inform local servers about the default message addition
-            var serverMessagesDTO = new ServerAccountDefaultMessageDTO();
+            var serverMessagesDTO = new LocalServerAccountDefaultMessage();
 
             foreach (var accountId in request.SelectedAccounts)
             {
@@ -174,8 +165,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
             {
                 var serverUniqueId = serverAccount.Key;
                 var accountDefaultMessages = serverAccount.Value;
-                await _hubContext.Clients.Group($"{serverUniqueId}")
-                                 .SendAsync("HandleUpsertDefaultMessage", accountDefaultMessages, cancellationToken);
+                await _signalRService.NotifyLocalServerUpsertDefaultMessage(accountDefaultMessages, serverUniqueId, cancellationToken);
             }
 
             return BaseResponse<UpsertDefaultMessageModelResponse>.Success("Successfully added default message to your selected accounts", new UpsertDefaultMessageModelResponse());

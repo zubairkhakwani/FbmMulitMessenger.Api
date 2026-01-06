@@ -1,8 +1,7 @@
-﻿using FBMMultiMessenger.Buisness.DTO;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -13,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class NotifyLocalServerModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext, IWebHostEnvironment _webHostEnvironment) : IRequestHandler<NotifyLocalServerModelRequest, BaseResponse<NotifyLocalServerModelResponse>>
+    internal class NotifyLocalServerModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService, IWebHostEnvironment _webHostEnvironment) : IRequestHandler<NotifyLocalServerModelRequest, BaseResponse<NotifyLocalServerModelResponse>>
     {
         public async Task<BaseResponse<NotifyLocalServerModelResponse>> Handle(NotifyLocalServerModelRequest request, CancellationToken cancellationToken)
         {
@@ -83,7 +82,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             }
 
             //Notify localserver that user is trying to send message from our app. 
-            var sendChatMessage = new NotifyLocalServerDTO()
+            var sendChatMessage = new NotifyLocalServer()
             {
                 IsMessageFromApp = true,
                 ChatId = chat.Id,
@@ -95,8 +94,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 MediaPaths = mediaPaths
             };
 
-            await _hubContext.Clients.Group($"{accountLocalServer.UniqueId}")
-            .SendAsync("HandleChatMessage", sendChatMessage, cancellationToken);
+            await _signalRService.NotifyLocalServerMessageSent(sendChatMessage, accountLocalServer.UniqueId, cancellationToken);
 
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyLocalServerModelResponse());
         }

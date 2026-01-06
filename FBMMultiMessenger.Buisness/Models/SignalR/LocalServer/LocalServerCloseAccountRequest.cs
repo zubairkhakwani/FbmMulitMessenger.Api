@@ -1,11 +1,9 @@
-﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.Server
+﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
 {
-    public class ServerCloseAccountRequest
+    public class LocalServerCloseAccountRequest
     {
         public string ServerId { get; set; } = string.Empty; // Unique Id of the server 
         public List<AccountsCloseInfo> Accounts { get; set; } = new List<AccountsCloseInfo>();
-
-
     }
 
     public class AccountsCloseInfo

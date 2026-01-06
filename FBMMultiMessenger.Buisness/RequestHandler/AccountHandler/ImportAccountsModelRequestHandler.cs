@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -110,7 +110,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
                 var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
 
-                var serverAccountAssignments = new Dictionary<string, List<AccountDTO>>();
+                var serverAccountAssignments = new Dictionary<string, List<LocalServerAccountDTO>>();
 
                 foreach (var newAccount in newAccounts)
                 {
@@ -124,7 +124,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                         leastLoadedServer.ActiveBrowserCount++;
 
-                        var accountDTO = new AccountDTO
+                        var accountDTO = new LocalServerAccountDTO
                         {
                             Id = newAccount.Id,
                             Name = newAccount.Name,
@@ -134,7 +134,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                         if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
                         {
-                            serverAccountAssignments[leastLoadedServer.UniqueId] = new List<AccountDTO>();
+                            serverAccountAssignments[leastLoadedServer.UniqueId] = new List<LocalServerAccountDTO>();
                         }
 
                         serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
