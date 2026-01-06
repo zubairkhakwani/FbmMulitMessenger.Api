@@ -344,5 +344,13 @@ async function getBase64FromUrl(path) {
 chrome.runtime.onInstalled.addListener(() => {
     initializeSignalR();
 
+    chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });
+});
 
+
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'keepAlive') {
+        console.log('Service worker kept alive');
+    }
 });

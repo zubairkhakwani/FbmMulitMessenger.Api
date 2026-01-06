@@ -627,10 +627,22 @@ async function processMessage(messageData, fbChatId) {
                 const mediaBase64s = messageData.mediaBase64;
                 mediaBase64s.forEach((mediaBase64) => {
                     const blob = Base64T0Blob(mediaBase64);
-                    const imageFile = new File([blob], "image.jpg", {
-                        type: "image/jpeg",
-                    });
-                    uploadImage(imageFile);
+                    const isVideo = mediaBase64.startsWith('data:video');
+
+                    let mediaFile;
+                    if (isVideo) {
+                        // Create video file with appropriate extension and MIME type
+                        mediaFile = new File([blob], "video.mp4", {
+                            type: "video/mp4", // or "video/webm", "video/quicktime" for MOV
+                        });
+                    } else {
+                        // Create image file
+                        mediaFile = new File([blob], "image.jpg", {
+                            type: "image/jpeg",
+                        });
+                    }
+
+                    uploadMedia(mediaFile);
                 });
 
                 setTimeout(() => {
@@ -660,7 +672,12 @@ async function processMessageQueue() {
 
     while (messageQueue.length > 0) {
         const { messageData } = messageQueue.shift();
-        await processMessage(messageData);
+        try {
+            await processMessage(messageData);
+        }
+        catch (err) {
+            console.error("Error while sending message inside while loop processMessageQueue:", err);
+        }
     }
 
     isProcessingMessage = false;
@@ -746,6 +763,35 @@ function uploadImage(imageFile) {
         console.error(
             "Input field not found where images/videos will be insereted."
         );
+    }
+}
+
+function uploadMedia(mediaFile) {
+    // Locate the file input on the chat page
+    var fileInput = document.querySelector('input[type="file"]');
+
+    // Ensure the file input is present
+    if (fileInput) {
+        // Check if the file input accepts this file type
+        const acceptedTypes = fileInput.accept;
+        console.log('Accepted file types:', acceptedTypes);
+
+        // Create a DataTransfer object (more reliable than Object.defineProperty)
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(mediaFile);
+
+        // Assign the files to the input
+        fileInput.files = dataTransfer.files;
+
+        // Dispatch change event
+        const changeEvent = new Event("change", { bubbles: true });
+        fileInput.dispatchEvent(changeEvent);
+
+        // Also try dispatching input event (some sites listen to this instead)
+        const inputEvent = new Event("input", { bubbles: true });
+        fileInput.dispatchEvent(inputEvent);
+    } else {
+        console.error("Input field not found where media will be inserted.");
     }
 }
 

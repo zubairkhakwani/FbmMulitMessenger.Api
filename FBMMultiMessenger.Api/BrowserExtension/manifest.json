@@ -6,7 +6,8 @@
     "tabs",
     "webRequest",
     "webRequestAuthProvider",
-    "notifications"
+    "notifications",
+    "alarms"
   ],
   "host_permissions": [
     "https://localhost:7095/*",

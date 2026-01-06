@@ -1,13 +1,11 @@
 ﻿using AutoMapper;
 using FBMMultiMessenger.Buisness.DTO;
 using FBMMultiMessenger.Buisness.Helpers;
-using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
-using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -54,6 +52,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
                 }
 
+                var alreadyExistedAccount = user.Accounts.FirstOrDefault(x => x.FbAccountId == fbAccountId);
+
+                if (alreadyExistedAccount != null && alreadyExistedAccount.IsActive)
+                {
+                    return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
+                }
+
                 var userSubscriptions = user.Subscriptions;
                 var response = new UpsertAccountModelResponse();
 
@@ -76,14 +81,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     response.IsLimitExceeded = true;
                     return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
-                }
-
-                var userAccounts = user.Accounts;
-                var isAccountAlreadyExist = userAccounts.Any(x => x.FbAccountId == fbAccountId && x.IsActive);
-
-                if (isAccountAlreadyExist)
-                {
-                    return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
                 }
 
                 if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
@@ -118,19 +115,55 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
                 var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
-                var newAccount = new Account()
+                AccountDTO newAccountHttpResponse = null;
+                if (alreadyExistedAccount == null)
                 {
-                    UserId = request.UserId,
-                    Cookie = request.Cookie,
-                    Name = request.Name,
-                    FbAccountId = fbAccountId,
-                    ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
-                    AuthStatus = AccountAuthStatus.Idle,
-                    LocalServerId = assignedServer?.Id,
-                    ProxyId = proxyId,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                };
+                    var newAccount = new Account()
+                    {
+                        UserId = request.UserId,
+                        Cookie = request.Cookie,
+                        Name = request.Name,
+                        FbAccountId = fbAccountId,
+                        ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
+                        AuthStatus = AccountAuthStatus.Idle,
+                        LocalServerId = assignedServer?.Id,
+                        ProxyId = proxyId,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+
+                    newAccountHttpResponse = new AccountDTO()
+                    {
+                        Id = newAccount.Id,
+                        Name = newAccount.Name,
+                        Cookie = newAccount.Cookie,
+                        CreatedAt = newAccount.CreatedAt
+                    };
+                }
+                else
+                {
+                    alreadyExistedAccount.IsActive = true;
+                    alreadyExistedAccount.Cookie = request.Cookie;
+                    alreadyExistedAccount.Name = request.Name;
+                    alreadyExistedAccount.ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting;
+                    alreadyExistedAccount.AuthStatus = AccountAuthStatus.Idle;
+                    alreadyExistedAccount.LocalServerId = assignedServer?.Id;
+                    alreadyExistedAccount.ProxyId = proxyId;
+
+                    _dbContext.Accounts.Update(alreadyExistedAccount);
+                    await _dbContext.SaveChangesAsync();
+
+                    newAccountHttpResponse = new AccountDTO()
+                    {
+                        Id = alreadyExistedAccount.Id,
+                        Name = alreadyExistedAccount.Name,
+                        Cookie = alreadyExistedAccount.Cookie,
+                        CreatedAt = alreadyExistedAccount.CreatedAt
+                    };
+                }
 
                 activeSubscription.LimitUsed++;
 
@@ -139,21 +172,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     assignedServer.ActiveBrowserCount++;
                 }
 
-                await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
 
                 if (assignedServer is not null)
                 {
                     // Inform our local server to open a new browser instance.
-                    var newAccountHttpResponse = new AccountDTO()
-                    {
-                        Id =  newAccount.Id,
-                        Name = newAccount.Name,
-                        Cookie = newAccount.Cookie,
-                        CreatedAt = newAccount.CreatedAt
-                    };
-
                     await _hubContext.Clients.Group($"{assignedServer.UniqueId}")
                        .SendAsync("HandleAccountAdd", newAccountHttpResponse, cancellationToken);
                 }
@@ -271,7 +293,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 //Inform user's local server.
                 var newAccountHttpResponse = new AccountDTO()
                 {
-                    Id =  account.Id,
+                    Id = account.Id,
                     Name = account.Name,
                     Cookie = account.Cookie,
                     CreatedAt = account.CreatedAt,
