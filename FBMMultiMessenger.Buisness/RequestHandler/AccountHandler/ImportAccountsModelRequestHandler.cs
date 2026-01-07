@@ -100,6 +100,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     Cookie = x.Cookie,
                     UserId  = currentUserId,
                     ConnectionStatus = AccountConnectionStatus.Offline,
+                    AuthStatus = AccountAuthStatus.Idle,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                 }).ToList();
@@ -112,34 +113,38 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 var serverAccountAssignments = new Dictionary<string, List<LocalServerAccountDTO>>();
 
-                foreach (var newAccount in newAccounts)
+                if (powerfullEligibleServers is not null && powerfullEligibleServers.Count!=0)
                 {
-                    var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
-
-                    if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
+                    foreach (var newAccount in newAccounts)
                     {
-                        newAccount.LocalServerId = leastLoadedServer.Id;
-                        newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
-                        newAccount.AuthStatus = AccountAuthStatus.Idle;
+                        var leastLoadedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServers);
 
-                        leastLoadedServer.ActiveBrowserCount++;
-
-                        var accountDTO = new LocalServerAccountDTO
+                        if (leastLoadedServer?.ActiveBrowserCount < leastLoadedServer?.MaxBrowserCapacity)
                         {
-                            Id = newAccount.Id,
-                            Name = newAccount.Name,
-                            Cookie = newAccount.Cookie,
-                            CreatedAt = newAccount.CreatedAt,
-                        };
+                            newAccount.LocalServerId = leastLoadedServer.Id;
+                            newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
+                            newAccount.AuthStatus = AccountAuthStatus.Idle;
 
-                        if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
-                        {
-                            serverAccountAssignments[leastLoadedServer.UniqueId] = new List<LocalServerAccountDTO>();
+                            leastLoadedServer.ActiveBrowserCount++;
+
+                            var accountDTO = new LocalServerAccountDTO
+                            {
+                                Id = newAccount.Id,
+                                Name = newAccount.Name,
+                                Cookie = newAccount.Cookie,
+                                CreatedAt = newAccount.CreatedAt,
+                            };
+
+                            if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))
+                            {
+                                serverAccountAssignments[leastLoadedServer.UniqueId] = new List<LocalServerAccountDTO>();
+                            }
+
+                            serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
                         }
-
-                        serverAccountAssignments[leastLoadedServer.UniqueId].Add(accountDTO);
                     }
                 }
+
 
                 activeSubscription.LimitUsed+= sanitizedAccounts.Count;
 

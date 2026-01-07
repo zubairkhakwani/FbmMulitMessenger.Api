@@ -1015,6 +1015,13 @@ function NotifyAccountAuthStatus(isLoggedIn) {
     var root = document.documentElement;
     let authStatus = isLoggedIn ? accountAuthStatus.LoggedIn : accountAuthStatus.LoggedOut;
     let connectionStatus = isLoggedIn ? accountConnectionStatus.Online : accountConnectionStatus.Offline;
+
+    console.log("Informing Account auth status to local server");
+    console.log(" Account id is :", accountId);
+    console.log("Account Auth status is  :", authStatus);
+    console.log("Account Conenction status is  :", connectionStatus);
+
+
     let detail = {
         accountId,
         accountAuthStatus: authStatus,

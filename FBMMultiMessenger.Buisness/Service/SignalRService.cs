@@ -63,16 +63,11 @@ namespace FBMMultiMessenger.Buisness.Service
         {
             foreach (var userAccountSignalR in accountSignalRModels)
             {
-                var appId = userAccountSignalR.AppId.ToString();
+                var appId = $"App_{userAccountSignalR.AppId}";
                 await _hubContext.Clients.Group(appId)
                 .SendAsync("HandleAccountStatus", userAccountSignalR.AccountsStatus, cancellationToken);
             }
         }
-
-
-
-
-
         #endregion
     }
 }
