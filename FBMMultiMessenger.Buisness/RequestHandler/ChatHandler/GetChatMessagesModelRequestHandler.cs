@@ -52,7 +52,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var chatMessages = await _dbContext.ChatMessages
                 .AsNoTracking()
                 .Where(cm => cm.ChatId == chatId)
-                .OrderBy(x => x.Id)
+                .OrderBy(x => x.FBTimestamp)
                 .Select(x => new GetChatMessagesModelResponse()
                 {
                     FbChatId = request.FbChatId,

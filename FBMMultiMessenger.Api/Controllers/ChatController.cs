@@ -35,6 +35,19 @@ namespace FBMMultiMessenger.Api.Controllers
             return httpResponse;
         }
 
+        [Authorize]
+        [HttpPost("sync-initial")]
+        public async Task<BaseResponse<SyncInitialMessagesHttpResponse>> SyncInitialMessages([FromBody] SyncInitialMessagesHttpRequest httpRequest)
+        {
+            var request = _mapper.Map<SyncInitialMessagesModelRequest>(httpRequest);
+
+            BaseResponse<SyncInitialMessagesModelResponse> response = await _mediator.Send(request);
+
+            BaseResponse<SyncInitialMessagesHttpResponse> httpResponse = _mapper.Map<BaseResponse<SyncInitialMessagesHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
 
         [Authorize]
         [HttpGet("{fbChatId}/chatmessages")]

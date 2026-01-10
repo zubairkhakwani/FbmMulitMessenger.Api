@@ -24,6 +24,8 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public required List<string> Messages { get; set; }
         public string? OfflineUniqueId { get; set; }
         public long? FbOTID { get; set; }
+        public string? FbMessageId { get; set; }
+        public long? Timestamp { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsImageMessage { get; set; }

@@ -8,6 +8,13 @@ root.addEventListener("sendMessageToApi", function (e) {
     });
 });
 
+root.addEventListener("syncMessagesToApi", function (e) {
+    chrome.runtime.sendMessage({
+        key: "syncMessagesToApi",
+        detail: e.detail,
+    });
+});
+
 root.addEventListener("notifyAccountAuthState", function (e) {
     chrome.runtime.sendMessage({
         key: "notifyAccountAuthState",

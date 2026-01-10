@@ -2,6 +2,8 @@
 
 importScripts("./signalr.min.js");
 
+console.log('background.js main body run.');
+
 let signalRConnection = null;
 let isConnected = false;
 let reconnectTimeout = null;
@@ -13,7 +15,7 @@ async function initializeSignalR() {
             .withUrl(`${localServerUrl}/extensionHub`, {
                 withCredentials: true,
             })
-            .withAutomaticReconnect([0, 2000, 10000, 30000])
+            .withAutomaticReconnect([0, 2000])
             .configureLogging(signalR.LogLevel.Information)
             .build();
 
@@ -288,6 +290,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
+    if (request.key === "syncMessagesToApi") {
+
+        fetch(`${localServerUrl}/api/chat/sync-message`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(request.detail),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                sendResponse(data); // Send back to content.js
+            })
+            .catch((err) => {
+                console.error("API error:", err);
+                sendResponse({ error: err.message });
+            });
+        return true;
+    }
+
 
     if (request.key === "notifyAccountAuthState") {
         let detail = request.detail;
@@ -352,5 +375,11 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'keepAlive') {
         console.log('Service worker kept alive');
+    }
+
+    if (!signalRConnection)
+    {
+        console.log('signalRConnection is null, starting signalR again.');
+        initializeSignalR();
     }
 });

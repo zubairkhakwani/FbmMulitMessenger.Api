@@ -1,19 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
+    [Index(nameof(FBTimestamp))]
     public class ChatMessages
     {
         public int Id { get; set; }
 
         [ForeignKey(nameof(Chat))]
         public int ChatId { get; set; }
+        public string? FbMessageId { get; set; }
+        public long? FBTimestamp { get; set; }
 
         public required string Message { get; set; }
 

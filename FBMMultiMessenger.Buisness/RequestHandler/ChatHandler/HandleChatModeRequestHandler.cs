@@ -36,9 +36,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         }
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
+            var currentUser = _currentUserService.GetCurrentUser();
+
+            //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
+            if (currentUser is null)
+            {
+                return BaseResponse<HandleChatModelResponse>.Error("Invalid Request, Please login again to continue");
+            }
+
             if (request.FbOTID != null)
             {
-                string compositeKey = $"{request.FbAccountId}_{request.FbChatId}_{request.FbOTID}";
+                string compositeKey = $"{request.FbAccountId}_{request.FbChatId}_{request.FbOTID}_{currentUser.Id}";
                 var now = DateTime.UtcNow;
 
                 // Try to add with timestamp
@@ -55,16 +63,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 }
             }
 
-            var currentUser = _currentUserService.GetCurrentUser();
-
-            //Extra safety check: If the user has came to this point he will be logged in hence currentuser will never be null.
-            if (currentUser is null)
-            {
-                return BaseResponse<HandleChatModelResponse>.Error("Invalid Request, Please login again to continue");
-            }
-
             var chat = await _dbContext.Chats
-                                       .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId, cancellationToken);
+                                       .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId && x.UserId == currentUser.Id, cancellationToken);
 
             var chatReference = chat;
             var today = DateTime.UtcNow;
@@ -125,7 +125,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
             else
             {
-
                 dbMessage = request.Messages.FirstOrDefault() ?? string.Empty;
             }
 
@@ -141,6 +140,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 CreatedAt = DateTime.UtcNow,
+                FbMessageId = request.FbMessageId,
+                FBTimestamp = request.Timestamp,
             };
 
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
@@ -186,34 +187,41 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         }
         private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int userId, string? messageFrom, bool isSubscriptionExpired = false)
         {
-            string message = string.Empty;
-
-            if (!isSubscriptionExpired)
+            try
             {
-                var count = request.Messages.Count;
+                string message = string.Empty;
 
-                string receivedMessage = request switch
+                if (!isSubscriptionExpired)
                 {
-                    { IsImageMessage: true } => $"You have received {count} images",
-                    { IsVideoMessage: true } => $"You have received {count} videos",
-                    { IsAudioMessage: true } => $"You have received {count} videos",
-                    _ => request.Messages.FirstOrDefault()!
-                };
-                message = receivedMessage;
-            }
-            else
-            {
-                message = "New messages waiting! Renew your subscription to view them.";
-                request.FbChatId = string.Empty;
-            }
+                    var count = request.Messages.Count;
 
-            await _oneSignalNotificationService.SendMessageNotification(
-                userId: userId.ToString(),
-                message: message,
-                senderName: messageFrom ?? "FBM Multi Messenger",
-                chatId: request.FbChatId,
-                isSubscriptionExpired: isSubscriptionExpired
-            );
+                    string receivedMessage = request switch
+                    {
+                        { IsImageMessage: true } => $"You have received {count} images",
+                        { IsVideoMessage: true } => $"You have received {count} videos",
+                        { IsAudioMessage: true } => $"You have received {count} videos",
+                        _ => request.Messages.FirstOrDefault()!
+                    };
+                    message = receivedMessage;
+                }
+                else
+                {
+                    message = "New messages waiting! Renew your subscription to view them.";
+                    request.FbChatId = string.Empty;
+                }
+
+                await _oneSignalNotificationService.SendMessageNotification(
+                    userId: userId.ToString(),
+                    message: message,
+                    senderName: messageFrom ?? "FBM Multi Messenger",
+                    chatId: request.FbChatId,
+                    isSubscriptionExpired: isSubscriptionExpired
+                );
+            }
+            catch(Exception ex)
+            {
+                
+            }
         }
 
         private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)

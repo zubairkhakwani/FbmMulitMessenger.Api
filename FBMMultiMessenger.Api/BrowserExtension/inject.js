@@ -80,7 +80,7 @@ let globalDefaultTemplate = `{
                         }
                     } catch (error) {
                         console.log(
-                            "WebSocket Received (Binary Blob):",
+                            "Received (Binary Blob):",
                             new Uint8Array(reader.result)
                         );
                     }
@@ -93,9 +93,12 @@ let globalDefaultTemplate = `{
                     if (text.includes("insertMessage")) {
                         handleInsertMessage(text);
                     }
+                    else if (text.includes("insertNewMessageRange")) {
+                        syncExistingMessages(text);
+                    }
                 } catch (error) {
                     console.log(
-                        "WebSocket Received (Binary ArrayBuffer):",
+                        "(Binary ArrayBuffer):",
                         new Uint8Array(receivedData)
                     );
                 }
@@ -167,11 +170,43 @@ let globalDefaultTemplate = `{
         }
     }
 
+    async function syncExistingMessages(messageData) {
+        try {
+            messageData = extractJsonPayload(messageData);
+
+            // Parse the JSON data
+            const data = JSON.parse(messageData);
+
+            var fbAccountId = extractUserId();
+
+            const parser = new MessengerPayloadParser();
+            // Extract the messages and chat ID
+            // Pass the payload STRING directly (not parsed JSON)
+            var chats = parser.parsePayload(data.payload, fbAccountId); // Pass the STRING
+
+            var apiRequest = {
+                fbAccountId,
+                accountId,
+                chats
+            };
+
+            var root = document.documentElement;
+
+            root.dispatchEvent(
+                new CustomEvent("syncMessagesToApi", {
+                    detail: apiRequest,
+                })
+            );
+        } catch (error) {
+            console.error("Error parsing message:", error);
+        }
+    }
+
     // Function to handle 'insertMessage' and show notifications
     async function handleInsertMessage(messageData) {
         try {
             messageData = extractJsonPayload(messageData);
-            console.log(`${messageData}`);
+            //console.log(`${messageData}`);
             // Parse the JSON data
             const data = JSON.parse(messageData);
             const sp = data.sp;
@@ -218,6 +253,8 @@ let globalDefaultTemplate = `{
             let messages = [];
             let offlineUniqueId;
             let fbOTID;
+            let fbMessageId;
+            let timeStamp;
             let messageText = findMessage(payload);
 
             if (IsSent) {
@@ -231,6 +268,10 @@ let globalDefaultTemplate = `{
                     fbOTID = removed.otid;
                 }
             }
+
+            var otherMessageData = extractAllMessageData(messageData);
+            fbMessageId = otherMessageData.messageId;
+            timeStamp = otherMessageData.timestamp;
 
             if (!fbOTID) {
                 //if customer sends message or we have two tabs opened and we send a message. this will help in both cases.
@@ -325,7 +366,9 @@ let globalDefaultTemplate = `{
                 IsVideoMessage,
                 IsAudioMessage,
                 !IsSent,
-                fbOTID
+                fbOTID,
+                fbMessageId,
+                timeStamp
             );
         } catch (error) {
             console.error("Error parsing message:", error);
@@ -347,7 +390,9 @@ let globalDefaultTemplate = `{
         IsVideoMessage,
         IsAudioMessage,
         IsReceived,
-        fbOTID
+        fbOTID,
+        fbMessageId,
+        timestamp
     ) {
         var root = document.documentElement;
         var data = {
@@ -366,6 +411,8 @@ let globalDefaultTemplate = `{
             IsAudioMessage,
             IsReceived,
             fbOTID,
+            fbMessageId,
+            timestamp
         };
 
         console.log("sending data to content.js", data);
@@ -375,6 +422,66 @@ let globalDefaultTemplate = `{
                 detail: data,
             })
         );
+    }
+
+    function extractAllMessageData(messageData) {
+        try {
+            const parsed = JSON.parse(messageData);
+            const payload = JSON.parse(parsed.payload);
+
+            let result = {
+                messageId: null,
+                timestamp: null,
+                threadId: null,
+                messageText: null
+            };
+
+            if (payload.step && Array.isArray(payload.step)) {
+                const extractData = (arr) => {
+                    for (const item of arr) {
+                        if (Array.isArray(item)) {
+                            // Check for OTID
+                            if (
+                                item[0] === 5 &&
+                                item[1] === "checkAuthoritativeMessageExists" &&
+                                item[3]
+                            ) {
+                                result.otid = item[3];
+                            }
+
+                            // Check for insertMessage data
+                            if (
+                                item[0] === 5 &&
+                                item[1] === "insertMessage"
+                            ) {
+                                if (typeof item[2] === 'string') {
+                                    result.messageText = item[2];
+                                }
+                                if (Array.isArray(item[5]) && item[5][0] === 19) {
+                                    result.threadId = item[5][1];
+                                }
+                                if (Array.isArray(item[7]) && item[7][0] === 19) {
+                                    result.timestamp = item[7][1];
+                                }
+                                if (typeof item[10] === 'string' && item[10].startsWith('mid.$')) {
+                                    result.messageId = item[10];
+                                }
+                            }
+
+                            // Recursively search nested arrays
+                            extractData(item);
+                        }
+                    }
+                };
+
+                extractData(payload.step);
+            }
+
+            return result;
+        } catch (err) {
+            console.error("Failed to extract message data:", err);
+            return null;
+        }
     }
 
     function extractOTIDFromReceivedMessage(messageData) {
@@ -828,6 +935,7 @@ function TriggerClickEvent(input) {
 async function NavigateToRequestedChat(fbChatId) {
     const expectedUrl = `messages/t/${fbChatId}`;
     const currentUrl = window.location.href;
+    var currentChatId = currentUrl.split('/').pop();
 
     const marketPlaceElement = document.querySelector(
         'div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]'
@@ -843,8 +951,6 @@ async function NavigateToRequestedChat(fbChatId) {
         return;
     }
 
-    await waitForElement(`a[href*="/messages/t/${fbChatId}/"]`, 10000);
-
     let chatElement = document.querySelector(
         `a[href*="/messages/t/${fbChatId}/"]`
     );
@@ -853,10 +959,52 @@ async function NavigateToRequestedChat(fbChatId) {
         //console.log("Clicking the right chat element");
         TriggerClickEvent(chatElement);
     }
+    else {
+        var inputField = document.querySelector(".notranslate");
+        HandleTextMessage(inputField, currentChatId);
+        navigateToChat(fbChatId);
+        var isReady = await waitForEmptyInput(fbChatId);
+    }
 
-    await waitForUrl(expectedUrl, 5000);
+    try {
+        await waitForUrl(expectedUrl, 5000);
+    }
+    catch (ex) {
+        debugger;
+    }
 
     return true;
+}
+
+async function waitForEmptyInput(chatId, timeout = 10000) {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+        const inputField = document.querySelector(".notranslate");
+
+        //if we are on chat id 1, and wanted to navigate to chat id 2, we are first setting text as 1 then navigating to 2
+        //in this case we are checking inputField.textContent === '' but in case later we need to navigate to chat id 1,
+        //its text would not be empty but set to 1, because we are setting the text beforing navigating to its id.
+        if (inputField && (inputField.textContent.trim() === '' || inputField.textContent.trim() === chatId.trim())) {
+            return true;
+        }
+
+        // Wait 100ms before checking again
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.error('Timeout: Input field not available or not empty');
+    return false;
+}
+
+function navigateToChat(chatId) {
+    const url = `/messages/t/${chatId}/`;
+
+    // Update the URL
+    window.history.pushState({}, '', url);
+
+    // Trigger popstate event so React Router detects the change
+    window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
 }
 
 async function waitForUrl(urlPattern, timeout = 30000) {
@@ -1091,3 +1239,375 @@ setTimeout(() => {
     CloseFbChatRecoverPopup();
     checkAccountAuth();
 }, 1100);
+
+
+class MessengerPayloadParser {
+    /**
+     * Parses the Facebook Messenger payload and returns structured chat data
+     * @param {string} payloadString - The raw payload string from payload.payload
+     * @returns {Array} Array of chat objects with messages and metadata
+     */
+    parsePayload(payloadString, currentUserId) {
+        try {
+            // First parse to get the outer structure
+            const outerData = typeof payloadString === 'string'
+                ? JSON.parse(payloadString)
+                : payloadString;
+
+            const chats = new Map();
+            const contacts = new Map();
+
+            // The actual data is in the step array
+            const steps = outerData?.step || [];
+
+            // Process each step
+            for (const step of steps) {
+                this.processStep(step, chats, contacts, currentUserId);
+            }
+
+            // Convert chats Map to array and format
+            return this.formatChats(chats, contacts, currentUserId);
+
+        } catch (error) {
+            console.error('Error parsing payload:', error);
+            return [];
+        }
+    }
+
+    processStep(data, chats, contacts, currentUserId) {
+        if (!Array.isArray(data)) return;
+
+        for (const item of data) {
+            if (Array.isArray(item)) {
+                // Look for operation arrays: [5, "operationName", ...params]
+                if (item.length >= 2 && item[0] === 5 && typeof item[1] === 'string') {
+                    const opName = item[1];
+                    const params = item.slice(2);
+
+                    switch (opName) {
+                        case 'deleteThenInsertThread':
+                            this.processThread(params, chats);
+                            break;
+                        case 'addParticipantIdToGroupThread':
+                            this.processParticipant(params, chats);
+                            break;
+                        case 'upsertMessage':
+                            this.processMessage(params, chats, currentUserId);
+                            break;
+                        case 'insertBlobAttachment':
+                            this.processAttachment(params, chats);
+                            break;
+                        case 'insertStickerAttachment':
+                            this.processStickerAttachment(params, chats);
+                            break;
+                        case 'insertXmaAttachment':
+                            this.processXmaAttachment(params, chats);
+                            break;
+                        case 'verifyContactRowExists':
+                            this.processContact(params, contacts);
+                            break;
+                    }
+                }
+
+                // Recursively process nested arrays
+                this.processStep(item, chats, contacts, currentUserId);
+            }
+        }
+    }
+
+    processThread(params, chats) {
+        // params structure from deleteThenInsertThread:
+        // [0] = timestamp, [1] = timestamp, [2] = snippet, [3] = title, [4] = image, ...
+        // [6] = ?, [7] = threadId, ...
+
+        const threadId = this.extractValue(params[7]);
+        if (!threadId) return;
+
+        if (!chats.has(threadId)) {
+            chats.set(threadId, {
+                fbChatId: threadId,
+                otherUserId: null,
+                otherUserName: null,
+                otherUserProfilePicture: null,
+                listingTitle: null,
+                listingImage: null,
+                messages: [],
+                participants: [],
+            });
+        }
+
+        const chat = chats.get(threadId);
+        chat.listingTitle = params[3]; // Thread name (e.g., "Depressed · bar stool for sale")
+        chat.listingImage = params[4]; // Thread image URL
+    }
+
+    processParticipant(params, chats) {
+        // params: [0] = threadId, [1] = participantId, ...
+        const threadId = this.extractValue(params[0]);
+        const participantId = this.extractValue(params[1]);
+
+        if (!threadId || !participantId) return;
+
+        if (!chats.has(threadId)) {
+            chats.set(threadId, {
+                fbChatId: threadId,
+                otherUserId: null,
+                otherUserName: null,
+                otherUserProfilePicture: null,
+                listingTitle: null,
+                listingImage: null,
+                messages: [],
+                participants: [],
+            });
+        }
+
+        const chat = chats.get(threadId);
+        if (!chat.participants.some(p => p.id === participantId)) {
+            chat.participants.push({
+                id: participantId,
+                addedBy: params[6] || 'Unknown',
+                isCreator: params[13] === true
+            });
+        }
+    }
+
+    processMessage(params, chats, currentUserId) {
+        // upsertMessage params:
+        // [0] = text, [1] = ?, [2] = ?, [3] = threadId, [4] = ?, [5] = timestamp, 
+        // [6] = timestamp, [7] = ?, [8] = messageId, [9] = ?, [10] = senderId, ...
+
+        const text = params[0];
+        const threadId = this.extractValue(params[3]);
+        const timestamp = this.extractValue(params[5]);
+        const messageId = params[8];
+        const senderId = this.extractValue(params[10]);
+
+        if (params[12] === true)
+        {
+            //means this is a system message. e.g you started this chat. you have not replied to this message. etc
+            return;
+        }
+
+        if (!threadId || !messageId) return;
+
+        // Initialize chat if it doesn't exist
+        if (!chats.has(threadId)) {
+            chats.set(threadId, {
+                fbChatId: threadId,
+                otherUserId: null,
+                otherUserName: null,
+                otherUserProfilePicture: null,
+                listingTitle: null,
+                listingImage: null,
+                messages: [],
+                participants: [],
+            });
+        }
+
+        const chat = chats.get(threadId);
+
+        // Check if message already exists
+        if (chat.messages.some(m => m.messageId === messageId)) {
+            return;
+        }
+
+        if (typeof text === "string")
+        {
+            const message = {
+                messageId,
+                text: text || '',
+                timestamp: parseInt(timestamp) || 0,
+                senderId,
+                IsReceived: senderId != currentUserId,
+                attachments: [],
+                type: text ? 'text' : 'attachment'
+            };
+
+            chat.messages.push(message);
+        }
+        else
+        {
+            //adding message here, but when processAttachment or processStickerAttachment or processXmaAttachment gonna run it will add the attachment to relevant message...
+            const message = {
+                messageId,
+                text: null,
+                timestamp: parseInt(timestamp) || 0,
+                senderId,
+                IsReceived: senderId != currentUserId,
+                attachments: [],
+                type: 'attachment'
+            };
+
+            chat.messages.push(message);
+        }
+    }
+
+    processXmaAttachment(params, chats) {
+        // insertXmaAttachment params for system messages:
+        // [24] = threadId, [28] = messageId, [93] = xma_type
+        
+        const threadId = this.extractValue(params[25]);
+        const messageId = this.extractValue(params[30]);
+
+        if (threadId && messageId) {
+            const chat = chats.get(threadId);
+            if (chat) {
+                chat.messages = chat.messages.filter(m => m.messageId !== messageId);
+            }
+        }
+    }
+
+    processStickerAttachment(params, chats) {
+        // insertStickerAttachment params:
+        // [0] = url, [1] = fallback, [2] = timestamp, [3] = mimeType,
+        // [4] = previewUrl, [5] = previewFallback, [6] = previewTimestamp,
+        // [7] = previewMimeType, [8] = timestamp, [9] = width, [10] = height,
+        // [11] = ?, [12] = ?, [13] = description (e.g., "Like, thumbs up"),
+        // [14] = threadId, [15] = ?, [16] = mimeType, [17] = timestamp,
+        // [18] = messageId, [19] = stickerId, ...
+
+        const url = params[0];
+        const description = params[13];
+        const threadId = this.extractValue(params[14]);
+        const messageId = params[18];
+        const stickerId = params[19];
+        const width = this.extractValue(params[9]);
+        const height = this.extractValue(params[10]);
+
+        if (!threadId || !messageId) return;
+
+        const chat = chats.get(threadId);
+        if (!chat) return;
+
+        // Find the message this sticker belongs to
+        const message = chat.messages.find(m => m.messageId === messageId);
+        if (message) {
+            message.attachments.push(url);
+
+            // Update message type if it has no text
+            if (!message.text && message.attachments.length > 0) {
+                message.type = 'sticker';
+            }
+        }
+    }
+
+    processAttachment(params, chats) {
+        // insertBlobAttachment params:
+        // [0] = attachmentId (e.g., "image-xxx"), [1] = size, [2] = ?, [3] = url,
+        // [4] = fallback, [5] = timestamp, [6] = mimeType, [7] = ?, [8] = previewUrl,
+        // [9] = previewFallback, [10] = previewTimestamp, [11] = previewMimeType,
+        // [12] = ?, [13] = ?, [14] = width, [15] = height, ...
+        // [19] = threadId, [20] = ?, [21] = ?, [22] = mimeType, [23] = timestamp, 
+        // [24] = messageId, ...
+
+        const attachmentId = params[0];
+        const url = params[3];
+        const previewUrl = params[8];
+        const width = this.extractValue(params[14]);
+        const height = this.extractValue(params[15]);
+        const threadId = this.extractValue(params[27]);
+        const messageId = params[32];
+
+        if (!threadId || !messageId) return;
+
+        const chat = chats.get(threadId);
+        if (!chat) return;
+
+        // Determine attachment type
+        let attachmentType = 'file';
+        if (attachmentId?.includes('image')) {
+            attachmentType = 'image';
+        } else if (attachmentId?.includes('video')) {
+            attachmentType = 'video';
+        }
+
+        // Find the message this attachment belongs to
+        const message = chat.messages.find(m => m.messageId === messageId);
+        if (message) {
+            message.attachments.push(url);
+
+            // Update message type if it has no text
+            if (!message.text && message.attachments.length > 0) {
+                message.type = attachmentType;
+            }
+        }
+        else {
+            console.error("attachment found but no message to link with");
+        }
+    }
+
+    processContact(params, contacts) {
+        // verifyContactRowExists params:
+        // [0] = contactId, [1] = ?, [2] = profileImage, [3] = name, ...
+
+        const contactId = this.extractValue(params[0]);
+        const profileImage = params[2];
+        const name = params[3];
+
+        if (!contactId) return;
+
+        contacts.set(contactId, {
+            id: contactId,
+            name: name,
+            profileImage: profileImage
+        });
+    }
+
+    formatChats(chats, contacts, currentUserId) {
+        const formattedChats = [];
+
+        for (const [, chat] of chats) {
+            // Sort messages by timestamp
+            chat.messages.sort((a, b) => a.timestamp - b.timestamp);
+
+            // Enrich participants with contact info
+            chat.participants = chat.participants.map(p => ({
+                ...p,
+                ...(contacts.get(p.id) || {})
+            }));
+
+            var otherParticipantId = chat.participants.find(p => p.id !== currentUserId)?.id;
+            //in case user is blocked by facebook or contact left the chat, it will not get added to participant, so we will get its id from messages.
+            if (!otherParticipantId) {
+                otherParticipantId = chat.messages.find(m => m.senderId != currentUserId)?.senderId;
+            }
+            const otherUserContact = otherParticipantId ? contacts.get(otherParticipantId) : null;
+
+            // Add other user info to chat object
+            chat.otherUserId = otherParticipantId;
+            chat.otherUserName = otherUserContact?.name || null;
+            chat.otherUserProfilePicture = otherUserContact?.profileImage || null;
+
+            // Add sender info to each message
+            chat.messages = chat.messages.map(msg => ({
+                ...msg,
+            }));
+
+            formattedChats.push(chat);
+        }
+
+        // Sort chats by most recent message
+        formattedChats.sort((a, b) => {
+            const aTime = a.messages.length > 0
+                ? a.messages[a.messages.length - 1].timestamp
+                : 0;
+            const bTime = b.messages.length > 0
+                ? b.messages[b.messages.length - 1].timestamp
+                : 0;
+            return bTime - aTime;
+        });
+
+        return formattedChats;
+    }
+
+    extractValue(param) {
+        if (!param) return null;
+
+        // Handle array format like [19, "value"]
+        if (Array.isArray(param) && param.length >= 2) {
+            return param[1];
+        }
+
+        return param;
+    }
+}

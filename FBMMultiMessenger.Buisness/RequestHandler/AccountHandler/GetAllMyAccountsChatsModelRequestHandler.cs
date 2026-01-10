@@ -38,12 +38,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                         .Where(u => u.UserId == currentUser.Id)
                                         .OrderByDescending(x => x.UpdatedAt)
                                         .ToListAsync(cancellationToken);
-
-
+            
+  
             var formattedChats = chats.Select(x =>
             {
                 var lastMessage = x.ChatMessages
-                                   .OrderByDescending(x => x.CreatedAt)
+                                   .OrderByDescending(x => x.FBTimestamp)
                                    .FirstOrDefault()
                                     ??
                                     new ChatMessages() { Message= string.Empty };
