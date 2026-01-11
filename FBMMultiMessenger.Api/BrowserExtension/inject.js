@@ -732,7 +732,11 @@ async function processMessage(messageData, fbChatId) {
                     });
                 } catch (err) { }
 
-                if (textMessage) {
+                //clearing any text that is set before..
+                HandleTextMessage(input, '');
+
+                if (textMessage)
+                {
                     HandleTextMessage(input, textMessage);
                 }
 
@@ -955,16 +959,19 @@ async function NavigateToRequestedChat(fbChatId) {
         `a[href*="/messages/t/${fbChatId}/"]`
     );
 
+    //setting the current input field text as current chat id. before navigation.
+    var inputField = document.querySelector(".notranslate");
+    HandleTextMessage(inputField, currentChatId);
+
     if (chatElement) {
-        //console.log("Clicking the right chat element");
         TriggerClickEvent(chatElement);
     }
-    else {
-        var inputField = document.querySelector(".notranslate");
-        HandleTextMessage(inputField, currentChatId);
+    else
+    {
         navigateToChat(fbChatId);
-        var isReady = await waitForEmptyInput(fbChatId);
     }
+
+    var isReady = await waitForCorrectChatInputField(fbChatId, 10000);
 
     try {
         await waitForUrl(expectedUrl, 5000);
@@ -976,7 +983,7 @@ async function NavigateToRequestedChat(fbChatId) {
     return true;
 }
 
-async function waitForEmptyInput(chatId, timeout = 10000) {
+async function waitForCorrectChatInputField(chatId, timeout = 10000) {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
