@@ -15,7 +15,7 @@ async function initializeSignalR() {
             .withUrl(`${localServerUrl}/extensionHub`, {
                 withCredentials: true,
             })
-            .withAutomaticReconnect([0, 2000])
+            .withAutomaticReconnect([0, 500])
             .configureLogging(signalR.LogLevel.Information)
             .build();
 
@@ -63,11 +63,11 @@ async function initializeSignalR() {
 function scheduleReconnection() {
     clearTimeout(reconnectTimeout);
 
-    console.log("Scheduling reconnection in 5 seconds...");
+    console.log("Scheduling reconnection in .5 seconds...");
 
     reconnectTimeout = setTimeout(() => {
         startSignalRConnection();
-    }, 5000);
+    }, 500);
 }
 
 async function startSignalRConnection() {
