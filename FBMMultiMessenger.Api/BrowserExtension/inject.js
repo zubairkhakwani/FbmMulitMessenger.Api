@@ -735,8 +735,7 @@ async function processMessage(messageData, fbChatId) {
                 //clearing any text that is set before..
                 HandleTextMessage(input, '');
 
-                if (textMessage)
-                {
+                if (textMessage) {
                     HandleTextMessage(input, textMessage);
                 }
 
@@ -966,8 +965,7 @@ async function NavigateToRequestedChat(fbChatId) {
     if (chatElement) {
         TriggerClickEvent(chatElement);
     }
-    else
-    {
+    else {
         navigateToChat(fbChatId);
     }
 
@@ -1248,10 +1246,47 @@ function PringLogs(logs) {
     console.log(logs);
 }
 
+async function ScrollSideBarToLoadChats() {
+
+    await waitForElement('div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]', 10000);
+
+    const marketPlaceElement = document.querySelector('div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]');
+
+    if (marketPlaceElement && !marketPlaceElement.getAttribute('do-not-click')) {
+        TriggerClickEvent(marketPlaceElement);
+        marketPlaceElement.setAttribute('do-not-click', 'true');
+    }
+
+    await waitForElement('div[aria-label="Marketplace"][role="grid"]', 10000);
+
+    const parent = document.querySelector('div[aria-label="Marketplace"][role="grid"]');
+    const scrollableDiv = parent?.querySelector('.__fb-light-mode');
+
+    if (!scrollableDiv) {
+        console.log('Scrollable div not found!');
+        return;
+    }
+
+    const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const startTime = Date.now();
+
+    // This runs every 50ms and scrolls DOWN
+    const interval = setInterval(() => {
+        // Check if 5 minutes passed
+        if (Date.now() - startTime >= fiveMinutes) {
+            clearInterval(interval);
+            console.log('5 minutes completed!');
+            return;
+        }
+        scrollableDiv.scrollTop += 100;  // This scrolls DOWN 100 pixels every 50ms
+
+    }, 50); // Runs every 50 milliseconds
+}
 
 setTimeout(() => {
     CloseFbChatRecoverPopup();
     checkAccountAuth();
+    ScrollSideBarToLoadChats();
 }, 1100);
 
 
@@ -1396,8 +1431,7 @@ class MessengerPayloadParser {
         const messageId = params[8];
         const senderId = this.extractValue(params[10]);
 
-        if (params[12] === true)
-        {
+        if (params[12] === true) {
             //means this is a system message. e.g you started this chat. you have not replied to this message. etc
             return;
         }
@@ -1425,8 +1459,7 @@ class MessengerPayloadParser {
             return;
         }
 
-        if (typeof text === "string")
-        {
+        if (typeof text === "string") {
             const message = {
                 messageId,
                 text: text || '',
@@ -1439,8 +1472,7 @@ class MessengerPayloadParser {
 
             chat.messages.push(message);
         }
-        else
-        {
+        else {
             //adding message here, but when processAttachment or processStickerAttachment or processXmaAttachment gonna run it will add the attachment to relevant message...
             const message = {
                 messageId,
@@ -1459,7 +1491,7 @@ class MessengerPayloadParser {
     processXmaAttachment(params, chats) {
         // insertXmaAttachment params for system messages:
         // [24] = threadId, [28] = messageId, [93] = xma_type
-        
+
         const threadId = this.extractValue(params[25]);
         const messageId = this.extractValue(params[30]);
 
