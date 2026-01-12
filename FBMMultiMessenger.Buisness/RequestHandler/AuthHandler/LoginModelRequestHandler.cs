@@ -59,7 +59,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 return BaseResponse<LoginModelResponse>.Error(
                     "Oh Snap, It looks like you don't have a subscription yet. Ready to unlock the full experience? Subscribe now to unlock powerful features and take your experience to the next level!",
                     redirectToPackages: true,
-                    response);
+                   result: response);
             }
 
             var isSubscriptionExpired = _userAccountService.IsSubscriptionExpired(activeSubscription);
@@ -70,7 +70,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.cs.AuthHandler
                 return BaseResponse<LoginModelResponse>.Error(
                     "Oops! Your subscription has expired. Renew today to pick up right where you left off!",
                     redirectToPackages: true,
-                    response);
+                    result: response);
             }
 
             return BaseResponse<LoginModelResponse>.Success("Logged in successfully", response);

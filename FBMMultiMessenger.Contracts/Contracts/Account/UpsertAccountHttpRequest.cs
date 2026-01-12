@@ -19,9 +19,19 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
 
     public class UpsertAccountHttpResponse
     {
-        public bool IsLimitExceeded { get; set; }
         public bool IsSubscriptionExpired { get; set; }
-        public bool IsEmailVerified { get; set; }
+        public bool IsEmailVerified { get; set; } = true;
         public string EmailSendTo { get; set; } = string.Empty;
+
+        public int TotalProcessed { get; set; }
+        public int SuccessfullyValidated { get; set; }
+        public List<SkippedAccountHttpResponse> SkippedAccounts { get; set; } = new();
+    }
+
+    public class SkippedAccountHttpResponse
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? ProxyId { get; set; }
+        public string Reason { get; set; } = string.Empty;
     }
 }

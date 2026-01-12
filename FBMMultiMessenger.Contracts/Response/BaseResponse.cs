@@ -13,12 +13,13 @@ namespace FBMMultiMessenger.Contracts.Shared
 
         public bool IsSuccess { get; set; } = true;
         public bool RedirectToPackages { get; set; }
+        public bool ShowSweetAlert { get; set; }
         public string Message { get; set; } = string.Empty;
 
         public T? Data { get; set; }
 
 
-        public static BaseResponse<T> Success(string message, T? result, bool redirectToPackages = false, HttpStatusCode statusCode = HttpStatusCode.OK)
+        public static BaseResponse<T> Success(string message, T? result, bool redirectToPackages = false, bool showSweetAlert = false, HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             var response = new BaseResponse<T>()
             {
@@ -26,13 +27,14 @@ namespace FBMMultiMessenger.Contracts.Shared
                 StatusCode = statusCode,
                 Message = message,
                 RedirectToPackages = redirectToPackages,
+                ShowSweetAlert = showSweetAlert,
             };
 
             return response;
         }
 
 
-        public static BaseResponse<T> Error(string message, bool redirectToPackages = false, T? result = null, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
+        public static BaseResponse<T> Error(string message, bool redirectToPackages = false, bool showSweetAlert = false, T? result = null, HttpStatusCode statusCode = HttpStatusCode.BadRequest)
         {
             var response = new BaseResponse<T>()
             {
@@ -41,6 +43,7 @@ namespace FBMMultiMessenger.Contracts.Shared
                 Data = result,
                 IsSuccess = false,
                 RedirectToPackages = redirectToPackages,
+                ShowSweetAlert = showSweetAlert
             };
 
             return response;

@@ -111,12 +111,34 @@ namespace FBMMultiMessenger.Contracts.Enums
     public enum AccountAuthStatus
     {
         [DisplayInfoAttribute("Idle", "The login state has not been checked yet.")]
-        Idle = 1,        
+        Idle = 1,
 
         [DisplayInfoAttribute("Logged In", "The account is authenticated and the user is logged in.")]
-        LoggedIn = 2,       
+        LoggedIn = 2,
 
         [DisplayInfoAttribute("Logged Out", "The account is not authenticated or the user has logged out.")]
-        LoggedOut = 3,        
+        LoggedOut = 3,
     }
+
+    public enum AccountSkipReason
+    {
+        [DisplayInfo("Duplicate Cookie", "Account has a cookie that already exists in the system.")]
+        DuplicateCookie,
+
+        [DisplayInfo("Invalid Proxy", "The assigned proxy ID does not exist or is not reachable.")]
+        InvalidProxyId,
+
+        [DisplayInfo("Unauthorized Proxy", "The proxy is blocked, banned, or not authorized for this account.")]
+        UnauthorizedProxy,
+
+        [DisplayInfo("Missing Proxy", "No proxy was assigned but one is required for this operation.")]
+        MissingRequiredProxy,
+
+        [DisplayInfo("Invalid Cookie", "The provided cookie is expired, malformed, or rejected.")]
+        InvalidCookie,
+
+        [DisplayInfo("Account Already Exists", "An account with the same unique identifiers already exists.")]
+        AccountAlreadyExists
+    }
+
 }

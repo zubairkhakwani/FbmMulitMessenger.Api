@@ -39,7 +39,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
                 noSubscriptionResponse.HasActiveSubscription = false;
                 noSubscriptionResponse.IsExpired = false;
 
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true, noSubscriptionResponse);
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true, result: noSubscriptionResponse);
             }
 
             var activeSubscription = userSubscriptions?
@@ -61,7 +61,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
             {
                 response.HasActiveSubscription = false;
                 response.IsExpired = true;
-                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oops! Your subscription has expired. Renew today to pick up right where you left off!", redirectToPackages: true, response);
+                return BaseResponse<GetMySubscriptionModelResponse>.Error("Oops! Your subscription has expired. Renew today to pick up right where you left off!", redirectToPackages: true, result: response);
             }
 
             response.IsExpired = false;

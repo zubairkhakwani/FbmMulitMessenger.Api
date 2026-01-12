@@ -1260,7 +1260,7 @@ async function ScrollSideBarToLoadChats() {
     await waitForElement('div[aria-label="Marketplace"][role="grid"]', 10000);
 
     const parent = document.querySelector('div[aria-label="Marketplace"][role="grid"]');
-    const scrollableDiv = parent?.querySelector('.__fb-light-mode');
+    const scrollableDiv = findFirstScrollableElement(parent);
 
     if (!scrollableDiv) {
         console.log('Scrollable div not found!');
@@ -1281,6 +1281,31 @@ async function ScrollSideBarToLoadChats() {
         scrollableDiv.scrollTop += 100;  // This scrolls DOWN 100 pixels every 50ms
 
     }, 50); // Runs every 50 milliseconds
+}
+
+function findFirstScrollableElement(parent) {
+    if (!parent) return null;
+
+    const elements = parent.querySelectorAll('div');
+
+    for (const el of elements) {
+        if (isElementScrollable(el)) {
+            return el;
+        }
+    }
+
+    return null;
+}
+function isElementScrollable(element) {
+    const style = window.getComputedStyle(element);
+
+    const hasOverflowProperty =
+        style.overflow === 'auto' ||
+        style.overflow === 'scroll' ||
+        style.overflowY === 'auto' ||
+        style.overflowY === 'scroll';
+
+    return hasOverflowProperty ;
 }
 
 setTimeout(() => {

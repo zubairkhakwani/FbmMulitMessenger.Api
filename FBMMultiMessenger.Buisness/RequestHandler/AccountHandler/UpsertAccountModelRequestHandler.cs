@@ -72,15 +72,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 if (_userAccountService.IsSubscriptionExpired(activeSubscription))
                 {
                     response.IsSubscriptionExpired = true;
-                    return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, response);
+                    return BaseResponse<UpsertAccountModelResponse>.Error("Oops! Your subscription has expired. Kindly renew your plan to continue adding accounts.", redirectToPackages: true, result: response);
                 }
 
                 var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
 
                 if (isLimitReaced)
                 {
-                    response.IsLimitExceeded = true;
-                    return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", result: response);
+                    return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", showSweetAlert: true, result: response);
                 }
 
                 if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))

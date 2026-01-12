@@ -17,6 +17,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Account
 
             CreateMap<UpsertAccountModelResponse, UpsertAccountHttpResponse>();
 
+            CreateMap<SkippedAccountModelResponse, SkippedAccountHttpResponse>();
             CreateMap<BaseResponse<UpsertAccountModelResponse>, BaseResponse<UpsertAccountHttpResponse>>();
 
             //Get My Accounts Mappings Start
