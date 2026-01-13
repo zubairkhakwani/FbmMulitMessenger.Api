@@ -18,12 +18,13 @@ namespace FBMMultiMessenger.Buisness.Service
         public async Task SendMessageNotification(string userId, string message, string senderName, string chatId, bool isSubscriptionExpired = false)
         {
             var client = new OneSignalClient(_restApiKey);
+            var externalId = $"FBM_{userId}";
 
             var options = new NotificationCreateOptions
 
             {
                 AppId = Guid.Parse(_appId),
-                IncludeExternalUserIds = new List<string>() { userId },
+                IncludeExternalUserIds = new List<string>() { externalId },
                 Headings = new Dictionary<string, string>
                 {
                     { "en", $"New message from {senderName}" }
