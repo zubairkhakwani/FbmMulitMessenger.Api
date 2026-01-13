@@ -1276,6 +1276,7 @@ async function ScrollSideBarToLoadChats() {
         if (Date.now() - startTime >= fiveMinutes) {
             clearInterval(interval);
             console.log('5 minutes completed!');
+            scrollableDiv.scrollTop = 0;
             return;
         }
         scrollableDiv.scrollTop += 100;  // This scrolls DOWN 100 pixels every 50ms
