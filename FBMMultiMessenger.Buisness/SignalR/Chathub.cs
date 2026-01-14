@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using FBMMultiMessenger.Buisness.Request.LocalServer;
-using FBMMultiMessenger.Buisness.Service.IServices;
-using MediatR;
+﻿using FBMMultiMessenger.Buisness.Service.IServices;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
@@ -46,7 +43,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             }
         }
 
-        public async Task RegisterApp(string appId)
+        public async Task RegisterApp(string appId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -54,7 +51,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 {
                     _connections[Context.ConnectionId] = new ConnectionMetadata() { UserId = appId };
 
-                    await Groups.AddToGroupAsync(Context.ConnectionId, appId);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, appId, cancellationToken);
 
                     Console.WriteLine($"User with id {appId} connected");
                 }

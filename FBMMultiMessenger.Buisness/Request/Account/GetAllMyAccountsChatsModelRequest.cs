@@ -5,6 +5,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class GetAllMyAccountsChatsModelRequest : IRequest<BaseResponse<GetAllMyAccountsChatsModelResponse>>
     {
+
     }
 
     public class GetAllMyAccountsChatsModelResponse
