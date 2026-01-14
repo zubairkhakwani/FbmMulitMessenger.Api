@@ -43,7 +43,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             }
         }
 
-        public async Task RegisterApp(string appId, CancellationToken cancellationToken = default)
+        public async Task RegisterApp(string appId)
         {
             try
             {
@@ -51,7 +51,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 {
                     _connections[Context.ConnectionId] = new ConnectionMetadata() { UserId = appId };
 
-                    await Groups.AddToGroupAsync(Context.ConnectionId, appId, cancellationToken);
+                    await Groups.AddToGroupAsync(Context.ConnectionId, appId);
 
                     Console.WriteLine($"User with id {appId} connected");
                 }
