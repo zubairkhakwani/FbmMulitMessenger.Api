@@ -27,7 +27,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             //Extra safety check: If the user has came to this point he will be logged in hence currenuser will never be null.
             if (currentUser is null)
             {
-                return BaseResponse<UserAccountsOverviewModelResponse>.Error("Invlaid Request, Please login again to continue.");
+                return BaseResponse<UserAccountsOverviewModelResponse>.Error("Invalid Request, Please login again to continue.");
             }
 
             var accounts = _dbContext.Accounts
