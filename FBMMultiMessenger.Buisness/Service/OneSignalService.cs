@@ -20,6 +20,10 @@ namespace FBMMultiMessenger.Buisness.Service
             var client = new OneSignalClient(_restApiKey);
             var externalId = $"FBM_{userId}";
 
+            var deepLinkUrl = isSubscriptionExpired
+                                                  ? $"myapp://packages?isExpired=true&message={Uri.EscapeDataString(message)}"
+                                                  : $"myapp://chat?isNotification=true&fbChatId={chatId}&isSubscriptionExpired=false";
+
             var options = new NotificationCreateOptions
 
             {
@@ -39,7 +43,8 @@ namespace FBMMultiMessenger.Buisness.Service
                     { "isSubscriptionExpired", isSubscriptionExpired.ToString() },
                     { "message",message },
                     { "type", "new_message" }
-                }
+                },
+                Url = deepLinkUrl
             };
 
             try
