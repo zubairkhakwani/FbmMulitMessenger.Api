@@ -11,6 +11,7 @@ using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
@@ -171,21 +172,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var endDate = activeSubscription.ExpiredAt;
             var isSubscriptionExpired = today >= endDate;
 
-            if (request.IsReceived)
-            {
-                var messageFrom = chatReference.FbListingTitle;
-                await SendMobileNotificationAsync(request, chatReference!.UserId, messageFrom, isSubscriptionExpired);
-            }
-
             if (!isSubscriptionExpired)
             {
                 await SendMessageToAppAsync(request, chatReference!, newChatMessage.CreatedAt, dbMessage, cancellationToken);
             }
 
+            if (request.IsReceived)
+            {
+                var messageFrom = chatReference.FbListingTitle;
+
+                var unreadMessages = _dbContext.ChatMessages.Include(c => c.Chat)
+                    .Where(cm => cm.Chat.FBChatId == request.FbChatId && !cm.IsRead)
+                    .OrderBy(cm => cm.FBTimestamp)
+                    .ToList();
+
+                await SendMobileNotificationAsync(request, unreadMessages, chatReference!.UserId, messageFrom, isSubscriptionExpired);
+            }
+
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
-        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int userId, string? messageFrom, bool isSubscriptionExpired = false)
+        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, List<ChatMessages> messages, int userId, string? messageFrom, bool isSubscriptionExpired = false)
         {
             try
             {
@@ -195,14 +202,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 {
                     var count = request.Messages.Count;
 
-                    string receivedMessage = request switch
+                    var tempMessage = messages.Select(m =>
                     {
-                        { IsImageMessage: true } => $"You have received {count} images",
-                        { IsVideoMessage: true } => $"You have received {count} videos",
-                        { IsAudioMessage: true } => $"You have received {count} videos",
-                        _ => request.Messages.FirstOrDefault()!
-                    };
-                    message = receivedMessage;
+                        string receivedMessage = m switch
+                        {
+                            { IsImageMessage: true } => $"You have received {count} images",
+                            { IsVideoMessage: true } => $"You have received {count} videos",
+                            { IsAudioMessage: true } => $"You have received {count} audio",
+                            _ => m.Message
+                        };
+
+                        return receivedMessage;
+                    }).ToList();
+
+                    message = string.Join("\n", tempMessage);
                 }
                 else
                 {
@@ -218,9 +231,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     isSubscriptionExpired: isSubscriptionExpired
                 );
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                
+
             }
         }
 
