@@ -11,7 +11,6 @@ using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
@@ -227,7 +226,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     userId: userId.ToString(),
                     message: message,
                     senderName: messageFrom ?? "FBM Multi Messenger",
-                    chatId: request.FbChatId,
+                    fbChatId: request.FbChatId,
                     isSubscriptionExpired: isSubscriptionExpired
                 );
             }

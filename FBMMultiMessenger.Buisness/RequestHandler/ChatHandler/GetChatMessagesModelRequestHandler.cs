@@ -40,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Chat not found", new());
             }
 
-            // Bulk update (fast, no loading into memory)
+            //Mark chat and its messages as read
             await _dbContext.Chats
                             .Where(c => c.Id == chatId)
                             .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
