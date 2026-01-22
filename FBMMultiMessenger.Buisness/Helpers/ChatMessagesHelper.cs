@@ -1,6 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Request.Chat;
-
-namespace FBMMultiMessenger.Buisness.Helpers
+﻿namespace FBMMultiMessenger.Buisness.Helpers
 {
     public static class ChatMessagesHelper
     {

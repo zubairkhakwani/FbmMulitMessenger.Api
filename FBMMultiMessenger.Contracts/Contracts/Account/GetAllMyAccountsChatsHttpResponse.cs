@@ -16,6 +16,8 @@
         public string? UserProfileImage { get; set; }
         public string? MessagePreview { get; set; }
         public string? SenderName { get; set; } // You or Hadia.
+        public string? ChattingWithId { get; set; } //Person's Id to which you are chatting with (You: Shaheer and Chatting With: Zubair)
+        public string? ChattingWithName { get; set; } //Person's name to which you are chatting with (You: Shaheer and Chatting With: Zubair)
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
         public bool IsAccountConnected { get; set; }
@@ -29,6 +31,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
     }
 

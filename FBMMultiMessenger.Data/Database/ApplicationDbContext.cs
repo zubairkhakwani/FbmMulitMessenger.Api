@@ -1,6 +1,5 @@
 ﻿using FBMMultiMessenger.Data.Database.DbModels;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
 
 namespace FBMMultiMessenger.Data.DB
 {

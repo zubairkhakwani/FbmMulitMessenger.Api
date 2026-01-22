@@ -38,8 +38,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                         .Where(u => u.UserId == currentUser.Id)
                                         .OrderByDescending(x => x.UpdatedAt)
                                         .ToListAsync(cancellationToken);
-            
-  
+
+
             var formattedChats = chats.Select(x =>
             {
                 var lastMessage = x.ChatMessages
@@ -49,14 +49,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                     new ChatMessages() { Message= string.Empty };
 
                 var account = x.Account;
+                var isAccountConnected = account is not null && account.AuthStatus == AccountAuthStatus.LoggedIn;
                 var chatAccount = account is null ? null : new GetMyChatAccountModelResponse()
                 {
                     Id = account.Id,
                     Name = account.Name,
                     CreatedAt = account.CreatedAt
                 };
-
-                var isAccountConnected = x.Account is not null && x.Account.AuthStatus == AccountAuthStatus.LoggedIn;
 
                 var messagePreview = ChatMessagesHelper.GetMessagePreview(lastMessage.ToMessagePreviewRequest(x.FbListingTitle ?? ""));
 
@@ -71,6 +70,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     UserProfileImage = x.UserProfileImage,
                     MessagePreview = messagePreview.MessagPreview,
                     SenderName = messagePreview.SenderName,
+                    ChattingWithName = x.OtherUserName,
+                    ChattingWithId = x.OtherUserId,
                     IsRead = x.IsRead,
                     UnReadCount = x.ChatMessages.Count(m => !m.IsRead),
                     StartedAt = x.StartedAt,

@@ -24,6 +24,8 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public decimal? FbListingPrice { get; set; }
         public string? MessagePreview { get; set; }
         public string? SenderName { get; set; } // You or Hadia.
+        public string? ChattingWithId { get; set; }//Person's Id to which you are chatting with (You: Shaheer and Chatting With: Zubairs)
+        public string? ChattingWithName { get; set; } //Person's name to which you are chatting with (You: Shaheer and Chatting With: Zubairs)
         public bool IsRead { get; set; }
         public int UnReadCount { get; set; }
         public bool IsAccountConnected { get; set; }
@@ -39,6 +41,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
     }
 
