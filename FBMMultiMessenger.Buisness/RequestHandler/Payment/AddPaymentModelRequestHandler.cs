@@ -48,7 +48,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
             var purcahsedPrice = request.PurchasedPrice;
 
 
-            var perAccountPrice = pricingTier.PricePerAccount;
+            var perAccountPrice = pricingTier.MonthlyPricePerAccount;
             var actualPurchasePrice = perAccountPrice * accountsPurchased;
 
             if (purcahsedPrice < actualPurchasePrice || purcahsedPrice > actualPurchasePrice)

@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260126055222_UpdatingPricingTierTable")]
+    partial class UpdatingPricingTierTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -466,7 +469,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AnnualPricePerAccount")
+                    b.Property<decimal>("AnnualPrice")
                         .HasColumnType("numeric");
 
                     b.Property<int>("MaxAccounts")
@@ -475,15 +478,53 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<int>("MinAccounts")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("MonthlyPricePerAccount")
+                    b.Property<decimal>("PricePerAccount")
                         .HasColumnType("numeric");
 
-                    b.Property<decimal>("SemiAnnualPricePerAccount")
+                    b.Property<decimal>("SemiAnnualPrice")
                         .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
                     b.ToTable("PricingTiers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AnnualPrice = 0m,
+                            MaxAccounts = 10,
+                            MinAccounts = 1,
+                            PricePerAccount = 100m,
+                            SemiAnnualPrice = 0m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AnnualPrice = 0m,
+                            MaxAccounts = 20,
+                            MinAccounts = 11,
+                            PricePerAccount = 50m,
+                            SemiAnnualPrice = 0m
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AnnualPrice = 0m,
+                            MaxAccounts = 100,
+                            MinAccounts = 21,
+                            PricePerAccount = 40m,
+                            SemiAnnualPrice = 0m
+                        },
+                        new
+                        {
+                            Id = 4,
+                            AnnualPrice = 0m,
+                            MaxAccounts = 2147483647,
+                            MinAccounts = 101,
+                            PricePerAccount = 30m,
+                            SemiAnnualPrice = 0m
+                        });
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>

@@ -25,8 +25,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
             {
                 MinAccounts = x.MinAccounts,
                 MaxAccounts = x.MaxAccounts,
-                PricePerAccount = x.PricePerAccount
-
+                MonthlyPricePerAccount = x.MonthlyPricePerAccount,
+                SemiAnnualPricePerAccount = x.SemiAnnualPricePerAccount,
+                AnnualPricePerAccount = x.AnnualPricePerAccount
             }).ToList();
 
             return BaseResponse<List<GetAllPricingModelResponse>>.Success("Operation performed successully", response);
