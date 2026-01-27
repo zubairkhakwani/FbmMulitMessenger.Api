@@ -140,5 +140,12 @@ namespace FBMMultiMessenger.Contracts.Enums
         [DisplayInfo("Account Already Exists", "An account with the same unique identifiers already exists.")]
         AccountAlreadyExists
     }
+    public enum BillingCylce
+    {
+        Monthly,
+        SemiAnnual,
+        Annual
+    }
+
 
 }

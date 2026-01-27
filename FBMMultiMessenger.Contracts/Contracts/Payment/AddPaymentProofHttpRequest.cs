@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FBMMultiMessenger.Contracts.Enums;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Payment
@@ -15,6 +16,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Payment
         [Required]
         public decimal PurchasedPrice { get; set; }
 
+        [Required(ErrorMessage = "Please select a valid billing plan")]
+        public BillingCylce BillingCylce { get; set; }
         public string? Note { get; set; }
     }
 

@@ -1,7 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
-using OneSignal.RestAPIv3.Client.Resources;
-using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Buisness.Request.Pricing
 {

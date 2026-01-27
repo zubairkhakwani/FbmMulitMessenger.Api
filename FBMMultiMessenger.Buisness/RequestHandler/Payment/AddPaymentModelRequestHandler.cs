@@ -7,7 +7,7 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using System.Net.NetworkInformation;
+using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {
@@ -41,14 +41,26 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 .Error(
                 $"The number of accounts you entered is not eligible for any pricing tier. Please select a value between {minAccounts} and {maxAccounts}."
                 );
+            }
 
+            if (!Enum.TryParse<BillingCylce>(request.BillingCylce.ToString(), out var value))
+            {
+                return BaseResponse<AddPaymentProofModelResponse>
+                .Error(
+                $"Please select a valid billing plan"
+                );
             }
 
             var accountsPurchased = request.AccountsPurchased;
             var purcahsedPrice = request.PurchasedPrice;
 
-
-            var perAccountPrice = pricingTier.MonthlyPricePerAccount;
+            var perAccountPrice = request.BillingCylce switch
+            {
+                BillingCylce.Monthly => pricingTier.MonthlyPricePerAccount,
+                BillingCylce.SemiAnnual => pricingTier.SemiAnnualPricePerAccount * 6,
+                BillingCylce.Annual => pricingTier.AnnualPricePerAccount * 12,
+                _ => 0
+            };
             var actualPurchasePrice = perAccountPrice * accountsPurchased;
 
             if (purcahsedPrice < actualPurchasePrice || purcahsedPrice > actualPurchasePrice)
