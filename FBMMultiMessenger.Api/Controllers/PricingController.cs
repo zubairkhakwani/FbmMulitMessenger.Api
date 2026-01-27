@@ -21,11 +21,10 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<BaseResponse<List<GetAllPricingHttpResponse>>> GetAll()
+        public async Task<BaseResponse<GetAllPricingHttpResponse>> GetAll()
         {
             var request = await _mediator.Send(new GetAllPricingModelRequest());
-            var httpResponse = _mapper.Map<BaseResponse<List<GetAllPricingHttpResponse>>>(request);
-
+            var httpResponse = _mapper.Map<BaseResponse<GetAllPricingHttpResponse>>(request);
             return httpResponse;
         }
     }

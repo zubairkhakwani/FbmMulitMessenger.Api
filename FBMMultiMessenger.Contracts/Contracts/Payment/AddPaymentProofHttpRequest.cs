@@ -6,12 +6,11 @@ namespace FBMMultiMessenger.Contracts.Contracts.Payment
 {
     public class AddPaymentProofHttpRequest
     {
+        [Required]
+        public int PricingTierId { get; set; } //selected pricing tier id
+
         [Required(ErrorMessage = "Please provide payment proof")]
         public List<IFormFile> PaymentImages { get; set; } = null!;
-
-        [Required]
-        [Range(1, 10000, ErrorMessage = "Accounts purchased must be between 1 and 10000.")]
-        public int AccountsPurchased { get; set; }
 
         [Required]
         public decimal PurchasedPrice { get; set; }

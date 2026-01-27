@@ -10,7 +10,10 @@ namespace FBMMultiMessenger.Buisness.Mapping.Pricing
         public PricingProfile()
         {
             CreateMap<GetAllPricingModelResponse, GetAllPricingHttpResponse>();
-            CreateMap<BaseResponse<List<GetAllPricingModelResponse>>, BaseResponse<List<GetAllPricingHttpResponse>>>();
+            CreateMap<PricingTierModelResponse, PricingTierHttpResponse>();
+            CreateMap<AccountDetailsModelResponse, AccountDetailsHttpResponse>();
+
+            CreateMap<BaseResponse<GetAllPricingModelResponse>, BaseResponse<GetAllPricingHttpResponse>>();
         }
     }
 }

@@ -7,7 +7,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {
@@ -25,52 +24,28 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
         }
         public async Task<BaseResponse<AddPaymentProofModelResponse>> Handle(AddPaymentProofModelRequest request, CancellationToken cancellationToken)
         {
-            var pricingTiers = await _dbContext.PricingTiers.ToListAsync(cancellationToken);
-
-            var minAccounts = pricingTiers.Min(x => x.MinAccounts);
-            var maxAccounts = pricingTiers.Max(x => x.MaxAccounts);
-
-            var pricingTier = pricingTiers
-                                        .FirstOrDefault(x => request.AccountsPurchased >= x.MinAccounts
-                                                         &&
-                                                        request.AccountsPurchased <= x.MaxAccounts);
+            var pricingTier = await _dbContext.PricingTiers
+                                              .FirstOrDefaultAsync(p => p.Id == request.PricingTierId, cancellationToken);
 
             if (pricingTier is null)
             {
-                return BaseResponse<AddPaymentProofModelResponse>
-                .Error(
-                $"The number of accounts you entered is not eligible for any pricing tier. Please select a value between {minAccounts} and {maxAccounts}."
-                );
+                return BaseResponse<AddPaymentProofModelResponse>.Error($"Invalid pricing tier selected. Please choose a valid plan and try again.");
             }
 
             if (!Enum.TryParse<BillingCylce>(request.BillingCylce.ToString(), out var value))
             {
-                return BaseResponse<AddPaymentProofModelResponse>
-                .Error(
-                $"Please select a valid billing plan"
-                );
+                return BaseResponse<AddPaymentProofModelResponse>.Error($"Please select a valid billing plan");
             }
 
-            var accountsPurchased = request.AccountsPurchased;
-            var purcahsedPrice = request.PurchasedPrice;
-
-            var perAccountPrice = request.BillingCylce switch
+            var months = request.BillingCylce switch
             {
-                BillingCylce.Monthly => pricingTier.MonthlyPricePerAccount,
-                BillingCylce.SemiAnnual => pricingTier.SemiAnnualPricePerAccount * 6,
-                BillingCylce.Annual => pricingTier.AnnualPricePerAccount * 12,
-                _ => 0
+                BillingCylce.Monthly => 1,
+                BillingCylce.SemiAnnual => 6,
+                BillingCylce.Annual => 12,
+                _ => 1
             };
-            var actualPurchasePrice = perAccountPrice * accountsPurchased;
 
-            if (purcahsedPrice < actualPurchasePrice || purcahsedPrice > actualPurchasePrice)
-            {
-                return BaseResponse<AddPaymentProofModelResponse>
-                    .Error
-                    (
-                     $"The payment amount is incorrect. Please ensure it matches the required price for {accountsPurchased} accounts."
-                    );
-            }
+            var actualPurchasePrice = request.PurchasedPrice;
 
             var currentUser = _currentUserService.GetCurrentUser();
 
@@ -105,8 +80,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
             {
                 var paymentVerification = new PaymentVerification()
                 {
-                    AccountsPurchased = request.AccountsPurchased,
-                    PurchasePrice = purcahsedPrice,
+                    AccountsPurchased = pricingTier.UptoAccounts,
+                    PurchasePrice = request.PurchasedPrice,
                     ActualPrice = actualPurchasePrice,
                     Status = PaymentStatus.Pending,
                     CreatedAt = DateTime.UtcNow,

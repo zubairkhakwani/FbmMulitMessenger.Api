@@ -2,12 +2,10 @@
 using FBMMultiMessenger.Buisness.Request.Payment;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Enums;
-using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 {
@@ -47,7 +45,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 AccountsPurchased = paymentVerifications.AccountsPurchased,
                 ActualPrice = paymentVerifications.ActualPrice,
                 PurchasePrice = paymentVerifications.PurchasePrice,
-                //FileName = paymentVerifications.FileName,
                 UploadedAt = paymentVerifications.CreatedAt,
                 ApprovedAt = paymentVerifications.ApprovedAt,
                 RejectedAt = paymentVerifications.RejectedAt,
@@ -68,7 +65,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 PaymentRejectionReason.PAYMENT_DATE_MISMATCH => PaymentRejectionMessages.PAYMENT_DATE_MISMATCH,
                 PaymentRejectionReason.RECIPIENT_ACCOUNT_INCORRECT => PaymentRejectionMessages.RECIPIENT_ACCOUNT_INCORRECT,
                 PaymentRejectionReason.OTHER => PaymentRejectionMessages.OTHER,
-                _ => "No reason provided",
+                _ => "Your payment is currently under review. Our team will verify your submission shortly and you'll be notified once your subscription is activated.",
             };
 
             return BaseResponse<GetMyVerificationStatusModelResponse>.Success("Success", response);

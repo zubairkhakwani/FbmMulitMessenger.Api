@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
 {
-    internal class GetAllPricingModelRequestHandler : IRequestHandler<GetAllPricingModelRequest, BaseResponse<List<GetAllPricingModelResponse>>>
+    internal class GetAllPricingModelRequestHandler : IRequestHandler<GetAllPricingModelRequest, BaseResponse<GetAllPricingModelResponse>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -14,23 +14,42 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
         {
             this._dbContext=dbContext;
         }
-        public async Task<BaseResponse<List<GetAllPricingModelResponse>>> Handle(GetAllPricingModelRequest request, CancellationToken cancellationToken)
+        public async Task<BaseResponse<GetAllPricingModelResponse>> Handle(GetAllPricingModelRequest request, CancellationToken cancellationToken)
         {
             var pricingTiers = await _dbContext
                                          .PricingTiers
-                                         .OrderBy(x => x.MinAccounts)
+                                         .OrderBy(x => x.UptoAccounts)
                                          .ToListAsync(cancellationToken);
 
-            var response = pricingTiers.Select(x => new GetAllPricingModelResponse()
+            var response = new GetAllPricingModelResponse()
             {
-                MinAccounts = x.MinAccounts,
-                MaxAccounts = x.MaxAccounts,
-                MonthlyPricePerAccount = x.MonthlyPricePerAccount,
-                SemiAnnualPricePerAccount = x.SemiAnnualPricePerAccount,
-                AnnualPricePerAccount = x.AnnualPricePerAccount
-            }).ToList();
-
-            return BaseResponse<List<GetAllPricingModelResponse>>.Success("Operation performed successully", response);
+                AccountDetails =new List<AccountDetailsModelResponse>
+                {
+                    new AccountDetailsModelResponse
+                    {
+                        BankName = "Habib Bank Limited (HBL)",
+                        Title = "Zubair Khan",
+                        AccountNo = "024598763412",
+                        IBAN = "PK58HABB0009876543210987"
+                    },
+                    new AccountDetailsModelResponse
+                    {
+                        BankName = "United Bank Limited (UBL)",
+                        Title = "Digital Services",
+                        AccountNo = "041276543210",
+                        IBAN = "PK12UNIL0004567890123456"
+                    }
+                },
+                PricingTiers = pricingTiers.Select(x => new PricingTierModelResponse()
+                {
+                    Id = x.Id,
+                    UptoAccounts = x.UptoAccounts,
+                    MonthlyPrice = x.MonthlyPrice,
+                    SemiAnnualPrice = x.SemiAnnualPrice,
+                    AnnualPrice = x.AnnualPrice
+                }).ToList()
+            };
+            return BaseResponse<GetAllPricingModelResponse>.Success("Operation performed successully", response);
         }
     }
 }
