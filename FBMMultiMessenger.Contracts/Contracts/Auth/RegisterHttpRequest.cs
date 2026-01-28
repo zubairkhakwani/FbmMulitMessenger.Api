@@ -22,9 +22,6 @@ namespace FBMMultiMessenger.Contracts.Contracts.Auth
 
         [Required(ErrorMessage = "Please enter your contact number")]
         public string ContactNumber { get; set; } = string.Empty;
-
-        //[Required(ErrorMessage = "You must accept the terms")]
-        //public bool AcceptTerms { get; set; }
     }
 
     public class RegisterHttpResponse

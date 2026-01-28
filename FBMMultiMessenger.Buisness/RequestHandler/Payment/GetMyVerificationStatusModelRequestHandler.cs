@@ -42,7 +42,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
             var response = new GetMyVerificationStatusModelResponse()
             {
                 Id = paymentVerifications.Id,
-                AccountsPurchased = paymentVerifications.AccountsPurchased,
+                AccountsPurchased = paymentVerifications.AccountLimit,
                 ActualPrice = paymentVerifications.ActualPrice,
                 PurchasePrice = paymentVerifications.PurchasePrice,
                 UploadedAt = paymentVerifications.CreatedAt,

@@ -35,10 +35,6 @@ namespace FBMMultiMessenger.Buisness.Service
                 {
                     { "en", message },
                 },
-                Subtitle = new Dictionary<string, string>
-                {
-                    { "en", "Iam subtitle" },
-                },
                 Data = new Dictionary<string, string>
                 {
                     { "fbChatId", fbChatId },

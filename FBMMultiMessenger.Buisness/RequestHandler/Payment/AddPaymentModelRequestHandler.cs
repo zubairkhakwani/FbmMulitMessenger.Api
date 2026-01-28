@@ -45,7 +45,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 _ => 1
             };
 
-            var actualPurchasePrice = request.PurchasedPrice;
+            var basePricePerMonth = pricingTier.MonthlyPrice;
+            var actualPurchasePrice = basePricePerMonth * months;
+
+            var userPurchasedPrice = request.BillingCylce switch
+            {
+                BillingCylce.Monthly => pricingTier.MonthlyPrice,
+                BillingCylce.SemiAnnual => pricingTier.SemiAnnualPrice,
+                BillingCylce.Annual => pricingTier.AnnualPrice,
+                _ => 1
+            };
+
+            userPurchasedPrice = userPurchasedPrice * months;
+
+            if (userPurchasedPrice != request.PurchasedPrice)
+            {
+                return BaseResponse<AddPaymentProofModelResponse>.Error("The purchased price does not match the selected pricing tier and billing cycle. Please review your selection and try again.");
+            }
+
 
             var currentUser = _currentUserService.GetCurrentUser();
 
@@ -73,16 +90,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 return BaseResponse<AddPaymentProofModelResponse>.Error("Your previous payment proof is still under review. Please wait for approval before submitting a new one.\r\n");
             }
 
-
             using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             try
             {
                 var paymentVerification = new PaymentVerification()
                 {
-                    AccountsPurchased = pricingTier.UptoAccounts,
-                    PurchasePrice = request.PurchasedPrice,
+                    AccountLimit = pricingTier.UptoAccounts,
+                    PurchasePrice = userPurchasedPrice,
                     ActualPrice = actualPurchasePrice,
+                    BasePricePerMonth = basePricePerMonth,
+                    SavingAmount = actualPurchasePrice - userPurchasedPrice,
+                    BillingCycle = request.BillingCylce,
                     Status = PaymentStatus.Pending,
                     CreatedAt = DateTime.UtcNow,
                     UserId = currentUserId,

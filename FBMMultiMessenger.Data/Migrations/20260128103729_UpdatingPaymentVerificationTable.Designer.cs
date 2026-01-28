@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260128103729_UpdatingPaymentVerificationTable")]
+    partial class UpdatingPaymentVerificationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -391,7 +394,7 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<decimal>("BasePricePerMonth")
                         .HasColumnType("numeric");
 
-                    b.Property<int?>("BillingCycle")
+                    b.Property<int>("BillingCylce")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
