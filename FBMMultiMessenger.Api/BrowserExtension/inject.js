@@ -49,12 +49,17 @@ let globalDefaultTemplate = `{
         const originalSend = wsInstance.send;
         wsInstance.send = function (data) {
             try {
-                // Replace your current ArrayBuffer branch with this:
-                if (data instanceof ArrayBuffer) {
-                    const text = new TextDecoder().decode(new Uint8Array(data));
-                    if (text.includes("otid")) {
-                        HandlerSentMessage(text);
-                    }
+                let text = null;
+
+                // Check for Uint8Array first, then ArrayBuffer
+                if (data instanceof Uint8Array) {
+                    text = new TextDecoder().decode(data);
+                } else if (data instanceof ArrayBuffer) {
+                    text = new TextDecoder().decode(new Uint8Array(data));
+                }
+
+                if (text && text.includes("otid")) {
+                    HandlerSentMessage(text);
                 }
             } catch (err) {
                 console.error("Error processing sent message:", err);
