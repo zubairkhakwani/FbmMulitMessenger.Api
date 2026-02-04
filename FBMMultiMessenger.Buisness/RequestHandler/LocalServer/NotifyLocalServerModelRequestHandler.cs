@@ -39,7 +39,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                            .ThenInclude(s => s.Subscriptions)
                                            .Include(a => a.Account)
                                            .ThenInclude(ls => ls.LocalServer)
-                                           .FirstOrDefaultAsync(c => c.FBChatId == request!.FbChatId
+                                           .FirstOrDefaultAsync(c => c.Id == request.ChatId
                                            &&
                                            c.UserId == currentUser.Id, cancellationToken);
 
@@ -86,7 +86,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             {
                 IsMessageFromApp = true,
                 ChatId = chat.Id,
-                FbChatId = request.FbChatId,
+                FbChatId = chat.FBChatId,
                 FbAccountId = chat.FbAccountId ?? string.Empty,
                 AccountId = chat.AccountId,
                 Message = request.Message,

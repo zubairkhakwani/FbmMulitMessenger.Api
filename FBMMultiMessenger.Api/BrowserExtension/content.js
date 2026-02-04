@@ -35,8 +35,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             let fbChatId = data.fbChatId;
 
             if (fbChatId) {
-
-
                 setMessage(data);
             }
         } catch (error) {

@@ -50,12 +50,12 @@ namespace FBMMultiMessenger.Api.Controllers
 
 
         [Authorize]
-        [HttpGet("{fbChatId}/chatmessages")]
-        public async Task<BaseResponse<List<GeChatMessagesHttpResponse>>> GetMyChatMessages([FromRoute] string fbChatId, CancellationToken cancellationToken = default)
+        [HttpGet("{chatId}/chatmessages")]
+        public async Task<BaseResponse<List<GetChatMessagesHttpResponse>>> GetMyChatMessages([FromRoute] int chatId, CancellationToken cancellationToken = default)
         {
-            BaseResponse<List<GetChatMessagesModelResponse>> response = await _mediator.Send(new GetChatMessagesModelRequest() { FbChatId = fbChatId }, cancellationToken);
+            BaseResponse<List<GetChatMessagesModelResponse>> response = await _mediator.Send(new GetChatMessagesModelRequest() { ChatId = chatId }, cancellationToken);
 
-            BaseResponse<List<GeChatMessagesHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GeChatMessagesHttpResponse>>>(response);
+            BaseResponse<List<GetChatMessagesHttpResponse>> httpResponse = _mapper.Map<BaseResponse<List<GetChatMessagesHttpResponse>>>(response);
 
             return httpResponse;
         }

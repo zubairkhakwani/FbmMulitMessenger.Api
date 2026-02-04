@@ -138,11 +138,9 @@ async function handleIncomingMessage(sendChatMessageRequest) {
     }
     console.log("processed media done.");
 
-    // Try active tab first
     const activeTabs = await chrome.tabs.query({
-        url: "*://*.facebook.com/messages*",
-        active: true,
-        currentWindow: true,
+        url: "*://*.facebook.com/*",
+
     });
 
     if (activeTabs.length > 0) {
@@ -153,51 +151,9 @@ async function handleIncomingMessage(sendChatMessageRequest) {
             });
             return;
         } catch (error) {
-            console.log("Could not send to active tab:", activeTabs[0].id);
+            console.log("Could not send message coming from our app to facebook:", activeTabs[0].id);
         }
     }
-
-    // Try any Facebook messages tab
-    const allTabs = await chrome.tabs.query({
-        url: "*://*.facebook.com/messages*",
-    });
-
-    if (allTabs.length > 0) {
-        try {
-            await chrome.tabs.sendMessage(allTabs[0].id, {
-                action: "sendMessageToFacebook",
-                data: sendChatMessageRequest,
-            });
-            return;
-        } catch (error) {
-            console.log("Could not send to first tab:", allTabs[0].id);
-        }
-    }
-
-    // No tabs found - create new one
-    console.log("No Facebook messages tabs found, creating new tab...");
-    const newTab = await chrome.tabs.create({
-        url: "https://www.facebook.com/messages",
-        active: true,
-    });
-
-    // Wait for tab to load before sending message
-    chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-        if (tabId === newTab.id && changeInfo.status === "complete") {
-            chrome.tabs.onUpdated.removeListener(listener);
-
-            setTimeout(() => {
-                chrome.tabs
-                    .sendMessage(newTab.id, {
-                        action: "sendMessageToFacebook",
-                        data: sendChatMessageRequest,
-                    })
-                    .catch((error) => {
-                        console.log("Could not send to new tab:", error);
-                    });
-            }, 2000); // Wait 2 seconds for page to fully load
-        }
-    });
 }
 
 //Handle default message requests from app
@@ -216,77 +172,9 @@ async function handleDefaultMessage(defaultMessage) {
             });
             return;
         } catch (error) {
-            console.log("Could not send to first tab:", facebookTabs[0].id);
+            console.log("Could not send default message to first tab:", facebookTabs[0].id);
         }
     }
-
-    // DEPRECATED: Tab creation logic removed because it causes the hidden WebView to become visible.
-    // When Facebook requests user interaction (security checks, "are you human", etc.), creating
-    // a new active tab forces Windows to bring the form to the foreground, exposing the automation.
-    // The user is always on the correct tab.
-
-    //DO NOT UNCOMMENT - Below code is just for reference
-
-
-    //const activeTabs = await chrome.tabs.query({
-    //    url: "*://*.facebook.com/messages*",
-    //    active: true,
-    //    currentWindow: true,
-    //});
-
-    //if (activeTabs.length > 0) {
-    //    try {
-    //        await chrome.tabs.sendMessage(activeTabs[0].id, {
-    //            action: "setDefaultMessage",
-    //            data: defaultMessage,
-    //        });
-    //        return;
-    //    } catch (error) {
-    //        console.log("Could not send to active tab:", activeTabs[0].id);
-    //    }
-    //}
-
-    //// Try any Facebook messages tab
-    //const allTabs = await chrome.tabs.query({
-    //    url: "*://*.facebook.com/messages*",
-    //});
-
-    //if (allTabs.length > 0) {
-    //    try {
-    //        await chrome.tabs.sendMessage(allTabs[0].id, {
-    //            action: "setDefaultMessage",
-    //            data: defaultMessage,
-    //        });
-    //        return;
-    //    } catch (error) {
-    //        console.log("Could not send to first tab:", allTabs[0].id);
-    //    }
-    //}
-
-    //// No tabs found - create new one
-    //console.log("No Facebook messages tabs found, creating new tab...");
-    //const newTab = await chrome.tabs.create({
-    //    url: "https://www.facebook.com/messages",
-    //    active: true,
-    //});
-
-    //// Wait for tab to load before sending message
-    //chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-    //    if (tabId === newTab.id && changeInfo.status === "complete") {
-    //        chrome.tabs.onUpdated.removeListener(listener);
-
-    //        setTimeout(() => {
-    //            chrome.tabs
-    //                .sendMessage(newTab.id, {
-    //                    action: "setDefaultMessage",
-    //                    data: defaultMessage,
-    //                })
-    //                .catch((error) => {
-    //                    console.log("Could not send to new tab:", error);
-    //                });
-    //        }, 2000); // Wait 2 seconds for page to fully load
-    //    }
-    //});
 }
 
 //Send Message To Server

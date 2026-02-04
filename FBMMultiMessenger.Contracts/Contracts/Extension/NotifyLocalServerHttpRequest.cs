@@ -7,7 +7,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
     public class NotifyLocalServerHttpRequest
     {
         [Required]
-        public string FbChatId { get; set; } = null!;
+        public int ChatId { get; set; }
 
         public string? Message { get; set; }
         public string OfflineUniqueId { get; set; } = string.Empty;

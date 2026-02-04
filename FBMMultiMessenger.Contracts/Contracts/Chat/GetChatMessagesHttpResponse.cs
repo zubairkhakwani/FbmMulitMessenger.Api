@@ -1,14 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components.Forms;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Chat
 {
-    public class GeChatMessagesHttpResponse
+    public class GetChatMessagesHttpResponse
     {
         public string FBChatId { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

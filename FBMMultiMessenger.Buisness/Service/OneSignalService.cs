@@ -15,12 +15,12 @@ namespace FBMMultiMessenger.Buisness.Service
             _restApiKey =  configuration.GetValue<string>("OneSignal:ApiKey")!;
         }
 
-        public async Task SendMessageNotification(string userId, string message, string senderName, string fbChatId, bool isSubscriptionExpired = false)
+        public async Task SendMessageNotification(string userId, string message, string senderName, int chatId, bool isSubscriptionExpired = false)
         {
             var client = new OneSignalClient(_restApiKey);
             var externalId = $"FBM_{userId}";
 
-            var deepLinkUrl = $"myapp://chat?isNotification=true&fbChatId={fbChatId}&isSubscriptionExpired={isSubscriptionExpired}&message=${message}";
+            var deepLinkUrl = $"myapp://chat?isNotification=true&chatId={chatId}&isSubscriptionExpired={isSubscriptionExpired}&message=${message}";
 
 
             var options = new NotificationCreateOptions
@@ -37,13 +37,13 @@ namespace FBMMultiMessenger.Buisness.Service
                 },
                 Data = new Dictionary<string, string>
                 {
-                    { "fbChatId", fbChatId },
+                    { "chatId", chatId.ToString() },
                     { "isSubscriptionExpired", isSubscriptionExpired.ToString() },
                     { "message",message},
                     { "type", "new_message" }
                 },
                 Url = deepLinkUrl,
-                CollapseId = fbChatId.ToString(),
+                CollapseId = chatId.ToString(),
             };
 
             try

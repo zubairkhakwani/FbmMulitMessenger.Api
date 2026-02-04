@@ -31,7 +31,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             // Get chat ID first
             var chatId = await _dbContext.Chats
                                          .AsNoTracking()
-                                         .Where(m => m.FBChatId == request.FbChatId && m.UserId == currentUser.Id)
+                                         .Where(m => m.Id == request.ChatId && m.UserId == currentUser.Id)
                                          .Select(m => m.Id)
                                          .FirstOrDefaultAsync(cancellationToken);
 
@@ -55,7 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 .OrderBy(x => x.FBTimestamp)
                 .Select(x => new GetChatMessagesModelResponse()
                 {
-                    FbChatId = request.FbChatId,
+                    ChatId = request.ChatId,
                     IsReceived = x.IsReceived,
                     Message = x.Message,
                     IsTextMessage = x.IsTextMessage,

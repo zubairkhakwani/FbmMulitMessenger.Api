@@ -28,16 +28,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
                     new AccountDetailsModelResponse
                     {
                         BankName = "Habib Bank Limited (HBL)",
-                        Title = "Zubair Khan",
-                        AccountNo = "024598763412",
-                        IBAN = "PK58HABB0009876543210987"
+                        Title = "M ZUBAIR KHAN",
+                        AccountNo = "02317901039803",
+                        IBAN = " PK70HABB0002317901039803"
                     },
                     new AccountDetailsModelResponse
                     {
-                        BankName = "United Bank Limited (UBL)",
-                        Title = "Digital Services",
-                        AccountNo = "041276543210",
-                        IBAN = "PK12UNIL0004567890123456"
+                        BankName = "Easypaisa",
+                        Title = "Muhammad zubair khan",
+                        AccountNo = "03476774413",
+                    },
+                     new AccountDetailsModelResponse
+                    {
+                        BankName = "Jazz cash",
+                        Title = "Muhammad zubair khan",
+                        AccountNo = "03185924729",
                     }
                 },
                 PricingTiers = pricingTiers.Select(x => new PricingTierModelResponse()

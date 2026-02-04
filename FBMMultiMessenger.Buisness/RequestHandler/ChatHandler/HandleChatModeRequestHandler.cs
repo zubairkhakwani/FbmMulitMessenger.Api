@@ -46,7 +46,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (request.FbOTID != null)
             {
-                string compositeKey = $"{request.FbAccountId}_{request.FbChatId}_{request.FbOTID}_{currentUser.Id}";
+                string compositeKey = $"{request.FbAccountId}_{request.FbChatId}_{request.FbOTID}_{request.AccountId}_{currentUser.Id}";
                 var now = DateTime.UtcNow;
 
                 // Try to add with timestamp
@@ -64,7 +64,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
 
             var chat = await _dbContext.Chats
-                                       .FirstOrDefaultAsync(x => x.FBChatId == request.FbChatId && x.UserId == currentUser.Id, cancellationToken);
+                                       .FirstOrDefaultAsync(x => x.AccountId == request.AccountId && x.FBChatId == request.FbChatId && x.UserId == currentUser.Id, cancellationToken);
 
             var chatReference = chat;
             var today = DateTime.UtcNow;
@@ -185,13 +185,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     .OrderBy(cm => cm.FBTimestamp)
                     .ToList();
 
-                await SendMobileNotificationAsync(request, unreadMessages, chatReference!.UserId, messageFrom, isSubscriptionExpired);
+                await SendMobileNotificationAsync(request, chatReference.Id, unreadMessages, chatReference!.UserId, messageFrom, isSubscriptionExpired);
             }
 
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
-        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, List<ChatMessages> messages, int userId, string? messageFrom, bool isSubscriptionExpired = false)
+        private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int chatId, List<ChatMessages> messages, int userId, string? messageFrom, bool isSubscriptionExpired = false)
         {
             try
             {
@@ -226,7 +226,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     userId: userId.ToString(),
                     message: message,
                     senderName: messageFrom ?? "FBM Multi Messenger",
-                    fbChatId: request.FbChatId,
+                    chatId: chatId,
                     isSubscriptionExpired: isSubscriptionExpired
                 );
             }
