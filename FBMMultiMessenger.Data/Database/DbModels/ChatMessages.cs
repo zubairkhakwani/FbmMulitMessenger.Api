@@ -11,6 +11,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(Chat))]
         public int ChatId { get; set; }
         public string? FbMessageId { get; set; }
+
         public long? FBTimestamp { get; set; }
 
         public required string Message { get; set; }

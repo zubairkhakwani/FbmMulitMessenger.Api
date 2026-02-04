@@ -55,6 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 .OrderBy(x => x.FBTimestamp)
                 .Select(x => new GetChatMessagesModelResponse()
                 {
+                    ChatMessageId = x.Id,
                     ChatId = request.ChatId,
                     FbMessageId = x.FbMessageId,
                     IsReceived = x.IsReceived,

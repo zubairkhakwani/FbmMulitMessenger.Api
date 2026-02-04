@@ -61,7 +61,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 return new GetMyChatsModelResponse
                 {
-                    Id = x.Id,
+                    ChatId = x.Id,
                     FbChatId = x.FBChatId!,
                     FbListingTitle = x.FbListingTitle,
                     FbListingLocation = x.FbListingLocation,

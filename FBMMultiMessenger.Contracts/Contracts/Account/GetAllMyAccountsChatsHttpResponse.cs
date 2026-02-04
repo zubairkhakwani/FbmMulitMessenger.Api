@@ -7,7 +7,7 @@
 
     public class GetMyChatsHttpResponse
     {
-        public int Id { get; set; }
+        public int ChatId { get; set; } // Primary key of this chat table
         public string FbChatId { get; set; } = null!;
         public string FbListingTitle { get; set; } = null!;
         public string FbListingLocation { get; set; } = null!;
