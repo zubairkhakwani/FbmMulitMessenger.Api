@@ -56,6 +56,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 .Select(x => new GetChatMessagesModelResponse()
                 {
                     ChatId = request.ChatId,
+                    FbMessageId = x.FbMessageId,
                     IsReceived = x.IsReceived,
                     Message = x.Message,
                     IsTextMessage = x.IsTextMessage,

@@ -5,6 +5,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
     public class GetChatMessagesHttpResponse
     {
         public string FBChatId { get; set; } = string.Empty;
+        public string? FbMessageId { get; set; }
         public string Message { get; set; } = string.Empty;
         public bool IsReceived { get; set; }
         public bool IsTextMessage { get; set; }

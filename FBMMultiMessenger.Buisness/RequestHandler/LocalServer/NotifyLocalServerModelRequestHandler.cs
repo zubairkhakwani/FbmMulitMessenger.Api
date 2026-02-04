@@ -7,7 +7,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
@@ -91,6 +90,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 AccountId = chat.AccountId,
                 Message = request.Message,
                 OfflineUniqueId = request.OfflineUniqueId,
+                FbMessageReplyId = request.FbMessageReplyId,
                 MediaPaths = mediaPaths
             };
 

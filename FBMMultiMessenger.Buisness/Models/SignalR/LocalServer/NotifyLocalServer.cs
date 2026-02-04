@@ -9,7 +9,7 @@
         public int? AccountId { get; set; }
         public string Message { get; set; } = null!;
         public string OfflineUniqueId { get; set; } = string.Empty;
-
+        public string? FbMessageReplyId { get; set; }
         public List<string> MediaPaths { get; set; } = new List<string>();
         public bool IsMessageFromApp { get; set; }
     }
