@@ -163,7 +163,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                     .FirstOrDefault();
 
 
-
             if (activeSubscription is null)
             {
                 return BaseResponse<HandleChatModelResponse>.Success($"Message received, but the user does not have any active subscription. No notification was sent and the UI was not updated.", new HandleChatModelResponse());
@@ -240,12 +239,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
         {
             var sendMessageToUserId = $"App_{chat.UserId}";
+            var chatMessage = await _dbContext.ChatMessages
+                                              .FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageReplyId, cancellationToken)
+                                              ??
+                                              new ChatMessages();
 
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
             {
                 Message = message,
                 ChatId = chat.Id,
+                FbMessageReplyId = request.FbMessageReplyId,
+                MessageReply = request.FbMessageReplyId is not null ? ChatMessagesHelper.GetMessageReply([chatMessage], request.FbMessageReplyId) : null,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
                 FbListingId = request.FbListingId!,

@@ -1,4 +1,6 @@
-﻿namespace FBMMultiMessenger.Buisness.Helpers
+﻿using FBMMultiMessenger.Data.Database.DbModels;
+
+namespace FBMMultiMessenger.Buisness.Helpers
 {
     public static class ChatMessagesHelper
     {
@@ -21,6 +23,28 @@
             };
 
             return new MessagePreviewResult() { MessagPreview = messagePreview, SenderName = senderName };
+        }
+
+        public static string? GetMessageReply(List<ChatMessages> chatMessages, string fbMessageReplyId)
+        {
+            var chatMessage = chatMessages.FirstOrDefault(cm => cm.FbMessageId == fbMessageReplyId);
+
+            if (chatMessage is null) return null;
+
+            if (chatMessage.IsVideoMessage)
+            {
+                return "Video message";
+            }
+            else if (chatMessage.IsImageMessage)
+            {
+                return "Image message";
+            }
+            else if (chatMessage.IsAudioMessage)
+            {
+                return "Audio message";
+            }
+
+            return chatMessage.Message;
         }
     }
 
