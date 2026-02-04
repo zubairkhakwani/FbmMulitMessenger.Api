@@ -12,7 +12,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? FbListingTitle { get; set; }
         public string? FbListingImg { get; set; }
         public string? UserProfileImg { get; set; }
-
+        public string? FbMessageReplyId { get; set; }
         public decimal? FbListingPrice { get; set; }
         public string? FbListingLocation { get; set; }
         public required List<string> Messages { get; set; }

@@ -141,6 +141,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsAudioMessage = request.IsAudioMessage,
                 CreatedAt = DateTime.UtcNow,
                 FbMessageId = request.FbMessageId,
+                FbMessageReplyId = request.FbMessageReplyId,
                 FBTimestamp = request.Timestamp,
             };
 

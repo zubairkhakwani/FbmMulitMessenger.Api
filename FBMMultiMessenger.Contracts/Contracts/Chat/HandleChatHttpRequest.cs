@@ -38,6 +38,7 @@
         public bool IsReceived { get; set; } //this bit will determine whether the message is received to user or the user has sent it.
         public long? FbOTID { get; set; }
         public string? FbMessageId { get; set; }
+        public string? FbMessageReplyId { get; set; }
         public long? Timestamp { get; set; }
 
     }
