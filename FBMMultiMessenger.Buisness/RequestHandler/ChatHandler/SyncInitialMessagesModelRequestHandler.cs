@@ -155,6 +155,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                             var chatMessage = new FBMMultiMessenger.Data.Database.DbModels.ChatMessages
                             {
                                 FbMessageId = syncMessage.MessageId,
+                                FbMessageReplyId = syncMessage.FbMessageReplyId,
                                 FBTimestamp = syncMessage.Timestamp,
                                 Message = dbMessage,
                                 IsReceived = syncMessage.IsReceived,

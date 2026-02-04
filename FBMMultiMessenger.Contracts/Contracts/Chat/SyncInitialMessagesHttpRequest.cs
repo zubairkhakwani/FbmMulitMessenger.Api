@@ -26,6 +26,7 @@
     public class SyncMessages
     {
         public string MessageId { get; set; }
+        public string? FbMessageReplyId { get; set; }
         public string? Text { get; set; }
         public long Timestamp { get; set; }
         public bool IsReceived { get; set; }
