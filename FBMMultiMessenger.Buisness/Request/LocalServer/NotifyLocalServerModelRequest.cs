@@ -9,7 +9,7 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
         public int ChatId { get; set; }
         public string Message { get; set; } = null!;
         public string OfflineUniqueId { get; set; } = string.Empty;
-
+        public string? FbMessageReplyId { get; set; }
         public List<IFormFile>? Files { get; set; }
     }
 

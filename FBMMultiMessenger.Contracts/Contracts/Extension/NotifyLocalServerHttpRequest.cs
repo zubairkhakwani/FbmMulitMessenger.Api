@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Extension
@@ -8,10 +7,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Extension
     {
         [Required]
         public int ChatId { get; set; }
-
         public string? Message { get; set; }
         public string OfflineUniqueId { get; set; } = string.Empty;
-
+        public string? FbMessageReplyId { get; set; }
         public List<IFormFile>? Files { get; set; }
     }
 
