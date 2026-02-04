@@ -155,10 +155,13 @@ let globalDefaultTemplate = `{
                         (msg) => msg.otid === task.payload.otid
                     );
 
+                    var fbMessageReplyId = task?.payload?.reply_metadata?.reply_source_id ?? null;
+
                     if (!otidExists) {
                         const pending = pendingMessages.find((msg) => !msg.otid);
                         if (pending) {
                             pending.otid = task.payload.otid;
+                            pending.fbMessageReplyId = fbMessageReplyId;
                         }
                     }
                 }
@@ -259,6 +262,7 @@ let globalDefaultTemplate = `{
             let offlineUniqueId;
             let fbOTID;
             let fbMessageId;
+            let fbMessageReplyId;
             let timeStamp;
             let messageText = findMessage(payload);
 
@@ -271,12 +275,17 @@ let globalDefaultTemplate = `{
                     const removed = pendingMessages.splice(indexOfPendingMessages, 1)[0];
                     offlineUniqueId = removed.uniqueId;
                     fbOTID = removed.otid;
+                    fbMessageReplyId = removed.fbMessageReplyId;
                 }
             }
 
             var otherMessageData = extractAllMessageData(messageData);
             fbMessageId = otherMessageData.messageId;
             timeStamp = otherMessageData.timestamp;
+
+            if (!fbMessageReplyId) {
+                fbMessageReplyId = otherMessageData.fbMessageReplyId;
+            }
 
             if (!fbOTID) {
                 //if customer sends message or we have two tabs opened and we send a message. this will help in both cases.
@@ -373,6 +382,7 @@ let globalDefaultTemplate = `{
                 !IsSent,
                 fbOTID,
                 fbMessageId,
+                fbMessageReplyId,
                 timeStamp
             );
         } catch (error) {
@@ -397,6 +407,7 @@ let globalDefaultTemplate = `{
         IsReceived,
         fbOTID,
         fbMessageId,
+        fbMessageReplyId,
         timestamp
     ) {
         var root = document.documentElement;
@@ -417,6 +428,7 @@ let globalDefaultTemplate = `{
             IsReceived,
             fbOTID,
             fbMessageId,
+            fbMessageReplyId,
             timestamp
         };
 
@@ -438,7 +450,8 @@ let globalDefaultTemplate = `{
                 messageId: null,
                 timestamp: null,
                 threadId: null,
-                messageText: null
+                messageText: null,
+                fbMessageReplyId: null
             };
 
             if (payload.step && Array.isArray(payload.step)) {
@@ -471,6 +484,9 @@ let globalDefaultTemplate = `{
                                 if (typeof item[10] === 'string' && item[10].startsWith('mid.$')) {
                                     result.messageId = item[10];
                                 }
+                                if (typeof item[25] === 'string' && item[25].startsWith('mid.$')) {
+                                    result.fbMessageReplyId = item[25];
+                                }
                             }
 
                             // Recursively search nested arrays
@@ -481,6 +497,12 @@ let globalDefaultTemplate = `{
 
                 extractData(payload.step);
             }
+
+            if (!result.messageId || !result.messageText) {
+                //ToDO:
+                //capture sentry exception with messagedata variable so we can find out why.
+            }
+
 
             return result;
         } catch (err) {
@@ -1311,7 +1333,7 @@ function isElementScrollable(element) {
         style.overflowY === 'auto' ||
         style.overflowY === 'scroll';
 
-    return hasOverflowProperty ;
+    return hasOverflowProperty;
 }
 
 setTimeout(() => {
