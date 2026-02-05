@@ -173,7 +173,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (!isSubscriptionExpired)
             {
-                await SendMessageToAppAsync(request, chatReference!, newChatMessage.CreatedAt, dbMessage, cancellationToken);
+                await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, dbMessage, cancellationToken);
             }
 
             if (request.IsReceived)
@@ -236,9 +236,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
         }
 
-        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, DateTime CreatedAt, string message, CancellationToken cancellationToken)
+        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, int chatMessageId, DateTime CreatedAt, string message, CancellationToken cancellationToken)
         {
             var sendMessageToUserId = $"App_{chat.UserId}";
+
             var chatMessage = await _dbContext.ChatMessages
                                               .FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageReplyId, cancellationToken)
                                               ??
@@ -249,8 +250,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             {
                 Message = message,
                 ChatId = chat.Id,
+                ChatMessageId = chatMessageId,
                 FbMessageReplyId = request.FbMessageReplyId,
-                MessageReply = request.FbMessageReplyId is not null ? ChatMessagesHelper.GetMessageReply([chatMessage], request.FbMessageReplyId) : null,
+                MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.Message,
+                MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.ReplyTo,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
                 FbListingId = request.FbListingId!,

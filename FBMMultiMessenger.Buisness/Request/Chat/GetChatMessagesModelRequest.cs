@@ -15,6 +15,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? FbMessageReplyId { get; set; }
         public string Message { get; set; } = null!;
         public string? MessageReply { get; set; }
+        public string? MessageReplyTo { get; set; }
 
         public bool IsReceived { get; set; } // This will tell if we send the message or we received the message
         public bool IsSent { get; set; } // This will tell whether message was send successfully to facebook via our app.

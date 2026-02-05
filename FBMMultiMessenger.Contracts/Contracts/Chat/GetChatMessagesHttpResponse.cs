@@ -10,7 +10,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public string? FbMessageReplyId { get; set; }
         public string Message { get; set; } = string.Empty;
         public string? MessageReply { get; set; }
-
+        public string? MessageReplyTo { get; set; }
         public bool IsReceived { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }

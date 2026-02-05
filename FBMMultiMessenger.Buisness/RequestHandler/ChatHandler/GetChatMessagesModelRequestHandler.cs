@@ -54,6 +54,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var dbChatMessages = _dbContext.ChatMessages
                                                .AsNoTracking()
+                                               .Include(cm => cm.Chat)
                                                .Where(cm => cm.ChatId == chatId)
                                                .OrderBy(x => x.FBTimestamp).ToList();
 
@@ -63,7 +64,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 ChatId = request.ChatId,
                 FbMessageId = x.FbMessageId,
                 FbMessageReplyId = x.FbMessageReplyId,
-                MessageReply = x.FbMessageReplyId != null ? ChatMessagesHelper.GetMessageReply(dbChatMessages, x.FbMessageReplyId) : null,
+                MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.Message,
+                MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.ReplyTo,
                 IsReceived = x.IsReceived,
                 Message = x.Message,
                 IsTextMessage = x.IsTextMessage,

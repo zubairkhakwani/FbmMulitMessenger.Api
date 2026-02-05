@@ -45,9 +45,12 @@
     public class HandleChatHttpResponse
     {
         public int ChatId { get; set; }
+        public int ChatMessageId { get; set; }
         public string Message { get; set; } = null!;
         public string? FbMessageReplyId { get; set; }
         public string? MessageReply { get; set; }
+        public string? MessageReplyTo { get; set; }
+
         public string? OfflineUniqueId { get; set; }
         public string FbUserId { get; set; } = null!;
         public string FbChatId { get; set; } = null!;
