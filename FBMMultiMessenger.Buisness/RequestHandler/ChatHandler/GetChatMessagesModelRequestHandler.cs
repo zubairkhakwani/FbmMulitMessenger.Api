@@ -1,9 +1,12 @@
-﻿using FBMMultiMessenger.Buisness.Request.Chat;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
@@ -49,25 +52,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                             .Where(m => m.ChatId == chatId)
                             .ExecuteUpdateAsync(p => p.SetProperty(m => m.IsRead, true), cancellationToken);
 
-            var chatMessages = await _dbContext.ChatMessages
-                .AsNoTracking()
-                .Where(cm => cm.ChatId == chatId)
-                .OrderBy(x => x.FBTimestamp)
-                .Select(x => new GetChatMessagesModelResponse()
-                {
-                    ChatMessageId = x.Id,
-                    ChatId = request.ChatId,
-                    FbMessageId = x.FbMessageId,
-                    IsReceived = x.IsReceived,
-                    Message = x.Message,
-                    IsTextMessage = x.IsTextMessage,
-                    IsImageMessage = x.IsImageMessage,
-                    IsVideoMessage = x.IsVideoMessage,
-                    IsAudioMessage = x.IsAudioMessage,
-                    IsSent = x.IsSent,
-                    CreatedAt = x.CreatedAt,
-                })
-                .ToListAsync(cancellationToken);
+            var dbChatMessages = _dbContext.ChatMessages
+                                               .AsNoTracking()
+                                               .Include(cm => cm.Chat)
+                                               .Where(cm => cm.ChatId == chatId)
+                                               .OrderBy(x => x.FBTimestamp).ToList();
+
+            var chatMessages = dbChatMessages.Select(x => new GetChatMessagesModelResponse()
+            {
+                ChatMessageId = x.Id,
+                ChatId = request.ChatId,
+                FbMessageId = x.FbMessageId,
+                FbMessageReplyId = x.FbMessageReplyId,
+                MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.Message,
+                MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.ReplyTo,
+                IsReceived = x.IsReceived,
+                Message = x.Message,
+                IsTextMessage = x.IsTextMessage,
+                IsImageMessage = x.IsImageMessage,
+                IsVideoMessage = x.IsVideoMessage,
+                IsAudioMessage = x.IsAudioMessage,
+                IsSent = x.IsSent,
+                CreatedAt = x.CreatedAt,
+            }).ToList();
 
 
             return BaseResponse<List<GetChatMessagesModelResponse>>.Success("Operation performed successfully", chatMessages);

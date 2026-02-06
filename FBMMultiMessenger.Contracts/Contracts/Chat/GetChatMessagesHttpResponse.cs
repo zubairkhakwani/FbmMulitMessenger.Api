@@ -7,7 +7,10 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public int ChatMessageId { get; set; } // Primary key of this chat message table
         public int ChatId { get; set; } // Foreign key referencing the chat this message belongs to
         public string? FbMessageId { get; set; } // Facebook message Id
+        public string? FbMessageReplyId { get; set; }
         public string Message { get; set; } = string.Empty;
+        public string? MessageReply { get; set; }
+        public string? MessageReplyTo { get; set; }
         public bool IsReceived { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }

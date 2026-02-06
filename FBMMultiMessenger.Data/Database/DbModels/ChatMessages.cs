@@ -16,7 +16,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public long? FBTimestamp { get; set; }
 
-        public required string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         public bool IsReceived { get; set; } // if true then the message was recevied other wise message was sent.
 

@@ -40,13 +40,17 @@
         public string? FbMessageId { get; set; }
         public string? FbMessageReplyId { get; set; }
         public long? Timestamp { get; set; }
-
     }
 
     public class HandleChatHttpResponse
     {
         public int ChatId { get; set; }
+        public int ChatMessageId { get; set; }
         public string Message { get; set; } = null!;
+        public string? FbMessageReplyId { get; set; }
+        public string? MessageReply { get; set; }
+        public string? MessageReplyTo { get; set; }
+
         public string? OfflineUniqueId { get; set; }
         public string FbUserId { get; set; } = null!;
         public string FbChatId { get; set; } = null!;
@@ -59,7 +63,6 @@
         public string? UserProfileImage { get; set; }
         public string MessagPreview { get; set; } = string.Empty;
         public string MessagePreviewFrom { get; set; } = string.Empty;
-
         public bool IsRead { get; set; }
         public bool IsTextMessage { get; set; }
         public bool IsVideoMessage { get; set; }

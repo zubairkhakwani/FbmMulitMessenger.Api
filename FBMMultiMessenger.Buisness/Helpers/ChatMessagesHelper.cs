@@ -1,4 +1,6 @@
-﻿namespace FBMMultiMessenger.Buisness.Helpers
+﻿using FBMMultiMessenger.Data.Database.DbModels;
+
+namespace FBMMultiMessenger.Buisness.Helpers
 {
     public static class ChatMessagesHelper
     {
@@ -22,6 +24,39 @@
 
             return new MessagePreviewResult() { MessagPreview = messagePreview, SenderName = senderName };
         }
+
+        public static MessageReplyResult? GetMessageReply(MessageReplyRequest request)
+        {
+            var fbMessageReplyId = request.FbMessageReplyId;
+
+            var chatMessages = request.ChatMessages;
+
+            if (fbMessageReplyId is null) return null;
+
+            var chatMessage = chatMessages.FirstOrDefault(cm => cm.FbMessageId == fbMessageReplyId);
+
+            if (chatMessage is null) return null;
+
+            var result = new MessageReplyResult();
+
+            result.ReplyTo = chatMessage.IsReceived ? chatMessage.Chat.OtherUserName : "You";
+
+            if (chatMessage.IsVideoMessage)
+            {
+                result.Message = "Video message";
+            }
+            else if (chatMessage.IsImageMessage)
+            {
+                result.Message = "Image message";
+            }
+            else if (chatMessage.IsAudioMessage)
+            {
+                result.Message = "Audio message";
+            }
+            result.Message = chatMessage.Message;
+
+            return result;
+        }
     }
 
     public class MessagePreviewRequest
@@ -38,5 +73,17 @@
     {
         public string MessagPreview { get; set; } = string.Empty;
         public string SenderName { get; set; } = string.Empty;
+    }
+
+
+    public class MessageReplyRequest
+    {
+        public string? FbMessageReplyId { get; set; }
+        public List<ChatMessages> ChatMessages = new();
+    }
+    public class MessageReplyResult
+    {
+        public string Message { get; set; } = string.Empty;
+        public string ReplyTo { get; set; } = string.Empty;
     }
 }
