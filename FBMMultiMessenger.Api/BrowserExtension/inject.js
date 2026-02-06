@@ -1520,7 +1520,8 @@ class MessengerPayloadParser {
                 senderId,
                 IsReceived: senderId != currentUserId,
                 attachments: [],
-                type: text ? 'text' : 'attachment'
+                type: text ? 'text' : 'attachment',
+                fbMessageReplyId: (params[23] && typeof params[23] === "string") ? params[23] : null  // Extract replied-to message ID
             };
 
             chat.messages.push(message);
@@ -1534,7 +1535,8 @@ class MessengerPayloadParser {
                 senderId,
                 IsReceived: senderId != currentUserId,
                 attachments: [],
-                type: 'attachment'
+                type: 'attachment',
+                fbMessageReplyId: (params[23] && typeof params[23] === "string") ? params[23] : null  // Extract replied-to message ID
             };
 
             chat.messages.push(message);
