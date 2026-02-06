@@ -10,6 +10,7 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
@@ -241,6 +242,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var sendMessageToUserId = $"App_{chat.UserId}";
 
             var chatMessage = await _dbContext.ChatMessages
+                                              .Include(cm => cm.Chat)
+                                              .AsNoTracking()
                                               .FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageReplyId, cancellationToken)
                                               ??
                                               new ChatMessages();
@@ -251,6 +254,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 Message = message,
                 ChatId = chat.Id,
                 ChatMessageId = chatMessageId,
+                FbMessageId = request.FbMessageId,
                 FbMessageReplyId = request.FbMessageReplyId,
                 MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.Message,
                 MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.ReplyTo,
@@ -271,7 +275,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 StartedAt = CreatedAt,
             };
 
-            var result = ChatMessagesHelper.GetMessagePreview(request.ToMessagePreviewRequest());
+            var result = ChatMessagesHelper.GetMessagePreview(request.ToMessagePreviewRequest(chat.OtherUserName));
 
             receivedChat.MessagPreview = result.MessagPreview;
             receivedChat.MessagePreviewFrom = result.SenderName;

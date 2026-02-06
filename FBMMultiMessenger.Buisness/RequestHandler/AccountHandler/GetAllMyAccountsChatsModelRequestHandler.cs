@@ -57,7 +57,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     CreatedAt = account.CreatedAt
                 };
 
-                var messagePreview = ChatMessagesHelper.GetMessagePreview(lastMessage.ToMessagePreviewRequest(x.FbListingTitle ?? ""));
+                var messagePreview = ChatMessagesHelper.GetMessagePreview(lastMessage.ToMessagePreviewRequest(x.OtherUserName ?? ""));
 
                 return new GetMyChatsModelResponse
                 {

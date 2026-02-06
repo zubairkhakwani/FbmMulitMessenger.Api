@@ -5,7 +5,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
 {
     public static class HandleChatModelRequestExtensions
     {
-        public static MessagePreviewRequest ToMessagePreviewRequest(this HandleChatModelRequest source)
+        public static MessagePreviewRequest ToMessagePreviewRequest(this HandleChatModelRequest source, string? otherUserName)
         {
             return new MessagePreviewRequest
             {
@@ -14,7 +14,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
                 IsImageMessage = source.IsImageMessage,
                 IsVideoMessage = source.IsVideoMessage,
                 IsAudioMessage = source.IsAudioMessage,
-                FbListingTitle = source.FbListingTitle
+                OtherUserName = otherUserName
             };
         }
     }

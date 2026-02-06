@@ -47,6 +47,7 @@
         public int ChatId { get; set; }
         public int ChatMessageId { get; set; }
         public string Message { get; set; } = null!;
+        public string? FbMessageId { get; set; }
         public string? FbMessageReplyId { get; set; }
         public string? MessageReply { get; set; }
         public string? MessageReplyTo { get; set; }

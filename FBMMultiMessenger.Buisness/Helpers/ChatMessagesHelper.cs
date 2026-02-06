@@ -6,7 +6,12 @@ namespace FBMMultiMessenger.Buisness.Helpers
     {
         public static MessagePreviewResult GetMessagePreview(MessagePreviewRequest request)
         {
-            var senderName = request.IsReceived ? (request.FbListingTitle?.Split(" ")[0] ?? "") : "You";
+            var senderName = "You";
+
+            if (request.IsReceived && !string.IsNullOrWhiteSpace(request.OtherUserName))
+            {
+                senderName = request.OtherUserName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+            }
 
             var messageCount = request.Messages.Count;
 
@@ -66,7 +71,7 @@ namespace FBMMultiMessenger.Buisness.Helpers
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
-        public string? FbListingTitle { get; set; }
+        public string? OtherUserName { get; set; }
     }
 
     public class MessagePreviewResult

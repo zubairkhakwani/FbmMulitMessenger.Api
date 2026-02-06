@@ -1,12 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
-using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Data.Database.DbModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Exntesions
 {
@@ -34,7 +28,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             }
             return new MessagePreviewRequest()
             {
-                FbListingTitle = fbListingTitle,
+                OtherUserName = fbListingTitle,
                 IsImageMessage = source.IsImageMessage,
                 IsVideoMessage = source.IsVideoMessage,
                 IsAudioMessage = source.IsAudioMessage,
