@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212062558_AddingPropertiesInPricingTiersTable")]
+    partial class AddingPropertiesInPricingTiersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -481,6 +484,15 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<decimal>("AnnualPrice")
                         .HasColumnType("numeric");
 
+                    b.Property<bool>("IsAnnualAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMonthlyAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSemiAnnualAvailable")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("MonthlyPrice")
                         .HasColumnType("numeric");
 
@@ -493,37 +505,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PricingTiers");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTierAvailability", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsAnnualAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsMonthlyAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSemiAnnualAvailable")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PricingTierAvailabilities");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            IsAnnualAvailable = true,
-                            IsMonthlyAvailable = true,
-                            IsSemiAnnualAvailable = true
-                        });
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>

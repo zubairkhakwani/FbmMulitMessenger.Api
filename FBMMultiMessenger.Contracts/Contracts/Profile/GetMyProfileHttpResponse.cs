@@ -16,6 +16,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Profile
         public string ExpiredAt { get; set; } = string.Empty;
         public string RemainingTimeText { get; set; } = string.Empty;
         public int RemainingDaysCount { get; set; }
+        public bool IsCurrentTrialSubscription { get; set; }
         public DateTime JoinedAt { get; set; }
     }
 }

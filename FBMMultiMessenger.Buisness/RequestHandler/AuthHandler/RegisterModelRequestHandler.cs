@@ -1,5 +1,4 @@
-﻿using AutoMapper.Configuration.Annotations;
-using FBMMultiMessenger.Buisness.Request.Auth;
+﻿using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
@@ -7,11 +6,6 @@ using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 {
@@ -48,12 +42,41 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 RoleId = (int)Roles.Customer
             };
 
+            var trialConfig = await _dbContext.TrialConfigurations.FirstOrDefaultAsync(cancellationToken);
+            var canAvailTrial = trialConfig is not null && trialConfig.IsEnabled;
+
+            var trialDurationDays = trialConfig?.DurationDays ?? 0;
+            var trialAccounts = trialConfig?.MaxAccounts ?? 0;
+
+            if (canAvailTrial)
+            {
+                var trialSubscription = new Data.Database.DbModels.Subscription()
+                {
+                    IsActive = true,
+                    IsTrial = true,
+                    MaxLimit = trialAccounts,
+                    StartedAt = DateTime.UtcNow,
+                    ExpiredAt = DateTime.UtcNow.AddDays(trialDurationDays),
+                };
+
+                newUser.Subscriptions = new List<Data.Database.DbModels.Subscription> { trialSubscription };
+            }
+
+            newUser.HasAvailedTrial = canAvailTrial;
+
             await _dbContext.Users.AddAsync(newUser, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.Name);
+            _ = _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.Name);
 
-            return BaseResponse<RegisterModelResponse>.Success("Resgistered Successfully", new RegisterModelResponse());
+            var modelResponse = new RegisterModelResponse()
+            {
+                HasAvailedTrial = canAvailTrial,
+                TrialAccounts = canAvailTrial ? trialAccounts : 0,
+                TrialDays = canAvailTrial ? trialDurationDays : 0,
+            };
+
+            return BaseResponse<RegisterModelResponse>.Success("Resgistered Successfully", new RegisterModelResponse() { HasAvailedTrial = canAvailTrial });
         }
     }
 }

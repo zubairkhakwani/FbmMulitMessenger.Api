@@ -16,6 +16,8 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsActive { get; set; }
         public bool IsEmailVerified { get; set; }
 
+        public bool HasAvailedTrial { get; set; }
+
         public DateTime CreatedAt { get; set; }
 
 

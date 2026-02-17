@@ -6,6 +6,8 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class GetMyAccountsModelRequest : PageableRequest, IRequest<BaseResponse<UserAccountsOverviewModelResponse>>
     {
+        public string? SelectedAuthStatus { get; set; }
+
     }
 }
 

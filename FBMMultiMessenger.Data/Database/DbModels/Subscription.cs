@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
@@ -14,6 +9,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public int LimitUsed { get; set; }
         public bool IsActive { get; set; }
         public bool CanRunOnOurServer { get; set; } //tells whether this subscription can run browsers on our server or not.
+        public bool IsTrial { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime ExpiredAt { get; set; }
 

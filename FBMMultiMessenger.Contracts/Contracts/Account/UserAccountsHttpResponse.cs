@@ -4,6 +4,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
     public class GetMyAccountsHttpRequest : PageableRequest
     {
+        public string? SelectedAuthStatus { get; set; }
+
     }
 
     public class UserAccountsOverviewHttpResponse

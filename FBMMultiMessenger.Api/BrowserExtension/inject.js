@@ -223,7 +223,6 @@ let globalDefaultTemplate = `{
             //applyAdminMessageCTA => means zubair started this chat
             //updateAttachmentCtaAtIndexIgnoringAuthority => means message option when first message receive on any listing, like "Is this available?", Sorry, its not available, etc.
             //moveThreadToInboxAndUpdateParent => means user send a message.
-
             //syncBumpThreadDataToClient => Profile to profile encrypted data. in this case insertMessage does not come in sp array. so it will not reach this point.
 
             //This will determine whether we received a message or we sent a message.
@@ -231,11 +230,13 @@ let globalDefaultTemplate = `{
                 (value) => value === "moveThreadToInboxAndUpdateParent"
             );
 
+
+
             //if this bit is coming it means that this is a legit message and not a system message
             //for example  "Zubair started the chat" , "Zubair named this group" so we don't need these messages
             //ONLY valid message including first initial message: "Is this available?"
             let isLegitUserMessage = sp.some(
-                (value) => value === "checkAuthoritativeMessageExists"
+                (value) => value === "updateParticipantLastMessageSendTimestamp"
             );
 
             //When new chat will start we will get this sp "removeAllParticipantsForThread"
@@ -327,7 +328,7 @@ let globalDefaultTemplate = `{
 
                 setTimeout(() => {
                     TriggerEnterEvent(input);
-                }, 1000);
+                }, 2000);
 
                 isNewChatStarted = false;
             }

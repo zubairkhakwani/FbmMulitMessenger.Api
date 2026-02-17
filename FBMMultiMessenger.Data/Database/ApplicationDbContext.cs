@@ -16,6 +16,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<DefaultMessage> DefaultMessages { get; set; }
         public DbSet<VerificationToken> VerificationTokens { get; set; }
         public DbSet<PricingTier> PricingTiers { get; set; }
+        public DbSet<PricingTierAvailability> PricingTierAvailabilities { get; set; }
         public DbSet<PaymentVerification> PaymentVerifications { get; set; }
         public DbSet<PaymentVerificationImage> PaymentVerificationImages { get; set; }
         public DbSet<ContactUs> ContactUs { get; set; }
@@ -24,6 +25,7 @@ namespace FBMMultiMessenger.Data.DB
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }
+        public DbSet<TrialConfiguration> TrialConfigurations { get; set; }
 
 
 
@@ -56,6 +58,10 @@ namespace FBMMultiMessenger.Data.DB
                 new Subscription() { Id =5, UserId = 5, MaxLimit = 1000, LimitUsed = 0, StartedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc), ExpiredAt = DateTime.SpecifyKind(new DateTime(2025, 12, 31), DateTimeKind.Utc) }
 
                 );
+
+            modelBuilder.Entity<PricingTierAvailability>().HasData(
+               new PricingTierAvailability() { Id = 1, IsMonthlyAvailable = true, IsSemiAnnualAvailable = true, IsAnnualAvailable=true }
+               );
         }
     }
 }

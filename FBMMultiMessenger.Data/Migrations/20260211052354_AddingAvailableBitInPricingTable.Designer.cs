@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260211052354_AddingAvailableBitInPricingTable")]
+    partial class AddingAvailableBitInPricingTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -481,6 +484,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<decimal>("AnnualPrice")
                         .HasColumnType("numeric");
 
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("MonthlyPrice")
                         .HasColumnType("numeric");
 
@@ -493,37 +499,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PricingTiers");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTierAvailability", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsAnnualAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsMonthlyAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsSemiAnnualAvailable")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PricingTierAvailabilities");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            IsAnnualAvailable = true,
-                            IsMonthlyAvailable = true,
-                            IsSemiAnnualAvailable = true
-                        });
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
@@ -651,9 +626,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsTrial")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("LimitUsed")
                         .HasColumnType("integer");
 
@@ -679,7 +651,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
-                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -691,7 +662,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
-                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -703,7 +673,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
-                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -715,7 +684,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
-                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -727,34 +695,11 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
-                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 1000,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             UserId = 5
                         });
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.TrialConfiguration", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("DurationDays")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("MaxAccounts")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TrialConfigurations");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
@@ -775,9 +720,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<bool>("HasAvailedTrial")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -809,7 +751,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "zbrkhakwani@gmail.com",
-                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Zubair Khakwani",
@@ -822,7 +763,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "shaheersk12@gmail.com",
-                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Shaheer Khawjikzai",
@@ -835,7 +775,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "test@gmail.com",
-                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Test_Customer",
@@ -848,7 +787,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@gmail.com",
-                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Test_Admin",
@@ -861,7 +799,6 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "super@gmail.com",
-                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Super_Server",

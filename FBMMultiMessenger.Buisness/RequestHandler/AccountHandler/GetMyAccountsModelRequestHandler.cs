@@ -7,6 +7,7 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -30,41 +31,56 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UserAccountsOverviewModelResponse>.Error("Invalid Request, Please login again to continue.");
             }
 
-            var accounts = _dbContext.Accounts
-                                     .Include(p => p.Proxy)
-                                     .Include(dm => dm.DefaultMessage)
-                                     .AsNoTracking()
-                                     .Where(x => x.UserId == currentUser.Id && x.IsActive);
+            var keyword = request.Keyword?.ToLower().Trim();
 
-            var userAccounts = await accounts
-                                     .Skip((request.PageNo - 1) * request.PageSize)
-                                     .Take(request.PageSize)
-                                        .Select(x => new UserAccountsModelResponse()
-                                        {
-                                            Id = x.Id,
-                                            Name = x.Name,
-                                            Cookie =  x.Cookie,
-                                            DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
-                                            ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
-                                            AuthStatus = x.AuthStatus.GetInfo().Name,
-                                            CreatedAt = x.CreatedAt,
-                                            Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
-                                            {
-                                                Id = x.Proxy.Id,
-                                                Name = x.Proxy.Name,
-                                                Ip_Port = x.Proxy.Ip_Port,
-                                            }
-                                        })
-                                        .OrderBy(x => x.Id)
-                                        .ToListAsync(cancellationToken);
+            AccountAuthStatus? status = Enum.TryParse<AccountAuthStatus>(request.SelectedAuthStatus, true, out var parsed)
+                                        && Enum.IsDefined<AccountAuthStatus>(parsed)
+                                        ? parsed
+                                        : null;
 
-            //Apply filter
-            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            var query = _dbContext.Accounts
+                                  .Include(p => p.Proxy)
+                                  .Include(dm => dm.DefaultMessage)
+                                  .AsNoTracking()
+                                  .Where(a => a.UserId == currentUser.Id && a.IsActive);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var keyword = request.Keyword.ToLower().Trim();
+                keyword = keyword.Trim().ToLower();
 
-                userAccounts = userAccounts.Where(x => x.Name.Trim().ToLower().Contains(keyword)).ToList();
+                query = query.Where(a => a.Name.ToLower().Contains(keyword));
             }
+
+            if (status.HasValue)
+            {
+                query = query.Where(a => a.AuthStatus == status.Value);
+            }
+
+            var accounts = await query
+                                .Skip((request.PageNo - 1) * request.PageSize)
+                                .Take(request.PageSize)
+                                .ToListAsync(cancellationToken);
+
+            var userAccounts = accounts
+                                     .Select(x => new UserAccountsModelResponse()
+                                     {
+                                         Id = x.Id,
+                                         Name = x.Name,
+                                         Cookie =  x.Cookie,
+                                         DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
+                                         ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
+                                         AuthStatus = x.AuthStatus.GetInfo().Name,
+                                         CreatedAt = x.CreatedAt,
+                                         Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
+                                         {
+                                             Id = x.Proxy.Id,
+                                             Name = x.Proxy.Name,
+                                             Ip_Port = x.Proxy.Ip_Port,
+                                         }
+                                     })
+                                      .OrderBy(x => x.Id)
+                                      .ToList();
+
 
             var totalCount = accounts.Count();
             var connectedAccounts = accounts.Count(x => x.AuthStatus == AccountAuthStatus.LoggedIn);

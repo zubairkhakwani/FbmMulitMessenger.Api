@@ -63,7 +63,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 return BaseResponse<AddPaymentProofModelResponse>.Error("The purchased price does not match the selected pricing tier and billing cycle. Please review your selection and try again.");
             }
 
-
             var currentUser = _currentUserService.GetCurrentUser();
 
             //Extra safety check

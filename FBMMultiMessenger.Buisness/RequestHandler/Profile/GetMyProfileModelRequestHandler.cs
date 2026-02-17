@@ -44,12 +44,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 return BaseResponse<GetMyProfileModelResponse>.Error("Invalid Request, User does not exist");
             }
 
-            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions);
-
-            if (activeSubscription is null)
-            {
-                activeSubscription = _userAccountService.GetLastActiveSubscription(user.Subscriptions);
-            }
+            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions)
+                                    ??
+                                    _userAccountService.GetLastActiveSubscription(user.Subscriptions);
 
             var formattedStartDate = activeSubscription?.StartedAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
             var formattedExpiredAt = activeSubscription?.ExpiredAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
@@ -91,7 +88,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 ExpiredAt = formattedExpiredAt,
                 StartedAt = formattedStartDate,
                 RemainingTimeText = message,
-                RemainingDaysCount = days
+                RemainingDaysCount = days,
+                IsCurrentTrialSubscription = activeSubscription?.IsTrial ?? false
             };
 
             return BaseResponse<GetMyProfileModelResponse>.Success("Operation performed successfully", response);

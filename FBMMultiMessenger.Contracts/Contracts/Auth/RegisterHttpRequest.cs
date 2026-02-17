@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FBMMultiMessenger.Contracts.Contracts.Auth
 {
@@ -17,7 +12,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Auth
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Please enter confirm password")]
-        [Compare(nameof(Password),ErrorMessage = "Password do not match")]
+        [Compare(nameof(Password), ErrorMessage = "Password do not match")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Please enter your contact number")]
@@ -26,6 +21,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Auth
 
     public class RegisterHttpResponse
     {
-
+        public bool HasAvailedTrial { get; set; }
+        public int TrialDays { get; set; }
+        public int TrialAccounts { get; set; }
     }
 }
