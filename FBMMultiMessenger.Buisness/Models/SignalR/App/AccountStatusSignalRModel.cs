@@ -1,4 +1,6 @@
-﻿namespace FBMMultiMessenger.Buisness.Models.SignalR.App
+﻿using FBMMultiMessenger.Contracts.Enums;
+
+namespace FBMMultiMessenger.Buisness.Models.SignalR.App
 {
     public class UserAccountSignalRModel
     {
@@ -10,8 +12,13 @@
     public class AccountStatusSignalRModel
     {
         public int AccountId { get; set; }
-        public string ConnectionStatus { get; set; } = string.Empty;
-        public string AuthStatus { get; set; } = string.Empty;
+        public string AccountName { get; set; } = string.Empty;
+        public AccountConnectionStatus ConnectionStatus { get; set; }
+        public string ConnectionStatusText { get; set; } = string.Empty;
+
+        public AccountAuthStatus AuthStatus { get; set; }
+        public string AuthStatusText { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
         public bool IsConnected { get; set; }
     }
 }

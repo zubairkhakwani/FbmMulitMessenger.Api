@@ -3,12 +3,10 @@ using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
@@ -82,8 +80,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     new AccountStatusSignalRModel()
                     {
                         AccountId = account.Id,
-                        ConnectionStatus = account.ConnectionStatus.ToString(),
-                        AuthStatus = account.AuthStatus.ToString(),
+                        ConnectionStatusText = account.ConnectionStatus.ToString(),
+                        AuthStatusText = account.AuthStatus.ToString(),
                     }
                 }
             };

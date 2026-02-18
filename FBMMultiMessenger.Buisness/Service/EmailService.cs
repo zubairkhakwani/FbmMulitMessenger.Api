@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Models;
+using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using MailKit.Net.Smtp;
 using MailKit.Security;
@@ -33,12 +34,165 @@ namespace FBMMultiMessenger.Buisness.Service
             return await SendEmailAsync(toEmail, subject, htmlBody);
         }
 
-        public async Task<bool> SendWelcomeEmailAsync(string toEmail, string userName)
+        public async Task<bool> SendWelcomeEmailAsync(string toEmail, string userName, bool hasAvailedTrial, int trialAccounts, int trialDurationDays)
         {
             var subject = "Welcome to FBM Multi Messenger! 🎉";
-            var htmlBody = GetWelcomeEmailTemplate(userName, toEmail);
-
+            var htmlBody = GetWelcomeEmailTemplate(userName, toEmail, hasAvailedTrial, trialAccounts, trialDurationDays);
             return await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        public async Task<bool> SendAccountLogoutEmailAsync(string toEmail, string userName, List<AccountStatusSignalRModel> accounts)
+        {
+            var subject = "⚠️ Account Logout Notification - FBM Multi Messenger";
+            var htmlBody = GetAccountLogoutEmailTemplate(userName, accounts);
+            return await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        private string GetAccountLogoutEmailTemplate(string userName, List<AccountStatusSignalRModel> accounts)
+        {
+            var accountRows = string.Join("", accounts.Select(a => $"""
+        <tr>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #333; font-size: 14px;">{a.AccountId}</td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #333; font-size: 14px;">{a.AccountName}</td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span style="background-color: #fff3cd; color: #856404; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                    {a.AuthStatus}
+                </span>
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #dc3545; font-size: 14px;">{a.Reason}</td>
+        </tr>
+    """));
+
+            return $"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <title>Account Logout Notification</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f9; padding: 40px 0;">
+                <tr>
+                    <td align="center">
+                        <table width="620" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+
+                            <!-- Header -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 36px 40px; text-align: center;">
+                                    <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+                                    <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">
+                                        Account Logout Alert
+                                    </h1>
+                                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">
+                                        FBM Multi Messenger
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <!-- Body -->
+                            <tr>
+                                <td style="padding: 36px 40px;">
+                                    <p style="margin: 0 0 8px; color: #555; font-size: 15px;">Hello <strong style="color: #222;">{userName}</strong>,</p>
+                                    <p style="margin: 0 0 24px; color: #555; font-size: 15px; line-height: 1.6;">
+                                        We detected that <strong>{accounts.Count} account(s)</strong> associated with your profile have been logged out or require re-authentication. Please review the details below and take action as needed.
+                                    </p>
+
+                                    <!-- Accounts Table -->
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="border-radius: 8px; overflow: hidden; border: 1px solid #e8e8e8;">
+                                        <thead>
+                                            <tr style="background-color: #f8f9fa;">
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e8e8e8;">ID</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e8e8e8;">Account Name</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e8e8e8;">Status</th>
+                                                <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e8e8e8;">Reason</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {accountRows}
+                                        </tbody>
+                                    </table>
+
+                                    <!-- Action Steps -->
+                                    <div style="margin: 32px 0 0; background-color: #f8f9fa; border-radius: 10px; padding: 28px 32px; border-left: 4px solid #e74c3c;">
+                                        <h2 style="margin: 0 0 20px; color: #222; font-size: 16px; font-weight: 700;">
+                                            🛠️ Steps to Restore Your Account
+                                        </h2>
+
+                                        <!-- Step 1 -->
+                                        <div style="display: flex; margin-bottom: 18px;">
+                                            <div style="min-width: 28px; height: 28px; background-color: #e74c3c; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; text-align: center; line-height: 28px; margin-right: 14px;">1</div>
+                                            <div>
+                                                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6;">
+                                                    <strong>Open Facebook in your browser.</strong> You will notice that your account has been logged out.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 2 -->
+                                        <div style="display: flex; margin-bottom: 18px;">
+                                            <div style="min-width: 28px; height: 28px; background-color: #e74c3c; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; text-align: center; line-height: 28px; margin-right: 14px;">2</div>
+                                            <div>
+                                                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6;">
+                                                    <strong>Enter your credentials</strong> and log back into your Facebook account.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 3 -->
+                                        <div style="display: flex; margin-bottom: 18px;">
+                                            <div style="min-width: 28px; height: 28px; background-color: #e74c3c; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; text-align: center; line-height: 28px; margin-right: 14px;">3</div>
+                                            <div>
+                                                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6;">
+                                                    <strong>Open your Cookie Extractor extension</strong> in the browser, find your Facebook session cookie, and click <em>"Copy as Header Cookie"</em> to copy it to your clipboard.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Step 4 -->
+                                        <div style="display: flex; margin-bottom: 18px;">
+                                            <div style="min-width: 28px; height: 28px; background-color: #e74c3c; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 700; text-align: center; line-height: 28px; margin-right: 14px;">4</div>
+                                            <div>
+                                                <p style="margin: 0; color: #333; font-size: 14px; line-height: 1.6;">
+                                                    <strong>Open the FBM Multi Messenger app,</strong> search for this account, paste the copied cookie, and save — your account will be back in sync!
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Note -->
+                                        <div style="background-color: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 14px 16px; margin-top: 8px;">
+                                            <p style="margin: 0; color: #795548; font-size: 13px; line-height: 1.6;">
+                                                💡 <strong>Don't have the Cookie Extractor?</strong> Please contact our support team and we'll guide you through the setup.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Apology Note -->
+                                    <p style="margin: 24px 0 0; color: #888; font-size: 13px; line-height: 1.6; text-align: center; font-style: italic;">
+                                        We sincerely apologize for the inconvenience. Facebook enforces strict security policies that may occasionally require re-authentication.
+                                    </p>
+                                </td>
+                            </tr>
+
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color: #f8f9fa; padding: 24px 40px; text-align: center; border-top: 1px solid #e8e8e8;">
+                                    <p style="margin: 0; color: #aaa; font-size: 12px;">
+                                        © {DateTime.UtcNow.Year} FBM Multi Messenger. All rights reserved.
+                                    </p>
+                                    <p style="margin: 6px 0 0; color: #aaa; font-size: 12px;">
+                                        This is an automated notification — please do not reply to this email.
+                                    </p>
+                                </td>
+                            </tr>
+
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    """;
         }
 
         private async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
@@ -288,8 +442,29 @@ namespace FBMMultiMessenger.Buisness.Service
 </html>";
         }
 
-        private string GetWelcomeEmailTemplate(string userName, string userEmail)
+
+
+        private string GetWelcomeEmailTemplate(string userName, string userEmail, bool hasAvailedTrial, int trialAccounts, int trialDurationDays)
         {
+            var trialSection = hasAvailedTrial ? $"""
+        <!-- Free Trial Gift Banner -->
+        <div style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); border-radius: 10px; padding: 28px 30px; margin: 30px 0; text-align: center; box-shadow: 0 4px 12px rgba(40,167,69,0.25);">
+            <div style="font-size: 38px; margin-bottom: 10px;">🎁</div>
+            <h2 style="margin: 0 0 10px; color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.4px;">
+                You've Received a Free Trial — Our Gift to You!
+            </h2>
+            <p style="margin: 0 0 18px; color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.7;">
+                As a warm welcome, <strong>FBM Multi Messenger</strong> is gifting you a completely free trial so you can explore everything we have to offer — no payment required.
+            </p>
+            <div style="display: inline-block; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.5); border-radius: 10px; padding: 16px 32px; margin-bottom: 6px;">
+                <p style="margin: 0 0 6px; color: #fff; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Trial Includes</p>
+                <p style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800;">
+                    {trialAccounts} Accounts &nbsp;•&nbsp; {trialDurationDays} Days Free
+                </p>
+            </div>
+        </div>
+    """ : string.Empty;
+
             return $@"
 <!DOCTYPE html>
 <html>
@@ -470,6 +645,8 @@ namespace FBMMultiMessenger.Buisness.Service
                 <p>Congratulations on taking the first step towards effortless multi-account management! Your account has been successfully created, and you're now in the right hands.</p>
                 <p style='margin-top: 15px;'><strong>We're here to guide you every step of the way.</strong></p>
             </div>
+
+            {trialSection}
             
             <div class='section'>
                 <h3>🚀 Why Choose FBM Multi Messenger?</h3>
@@ -583,5 +760,6 @@ namespace FBMMultiMessenger.Buisness.Service
 </body>
 </html>";
         }
+
     }
 }

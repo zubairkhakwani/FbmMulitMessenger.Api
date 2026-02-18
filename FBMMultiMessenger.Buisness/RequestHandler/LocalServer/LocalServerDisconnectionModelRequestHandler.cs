@@ -72,8 +72,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                         new AccountStatusSignalRModel()
                         {
                             AccountId = account.Id,
-                            ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name,
-                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            ConnectionStatusText = AccountConnectionStatus.Offline.GetInfo().Name,
+                            AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
                             IsConnected = false
                         });
                 }
@@ -109,8 +109,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                         new AccountStatusSignalRModel()
                         {
                             AccountId = account.Id,
-                            ConnectionStatus = AccountConnectionStatus.Starting.GetInfo().Name,
-                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            ConnectionStatusText = AccountConnectionStatus.Starting.GetInfo().Name,
+                            AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
                             IsConnected = false
                         });
                 }
@@ -128,8 +128,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                         new AccountStatusSignalRModel()
                         {
                             AccountId = account.Id,
-                            ConnectionStatus = AccountConnectionStatus.Offline.GetInfo().Name,
-                            AuthStatus = AccountAuthStatus.Idle.GetInfo().Name,
+                            ConnectionStatusText = AccountConnectionStatus.Offline.GetInfo().Name,
+                            AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
                             IsConnected = false
                         });
                 }

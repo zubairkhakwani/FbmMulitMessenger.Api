@@ -9,6 +9,7 @@ namespace FBMMultiMessenger.Buisness.Request.Pricing
 
     public class GetAllPricingModelResponse
     {
+        public PricingTierAvailabilityModelResponse PricingTierAvailability { get; set; } = new PricingTierAvailabilityModelResponse();
         public List<PricingTierModelResponse> PricingTiers { get; set; } = new List<PricingTierModelResponse>();
         public List<AccountDetailsModelResponse> AccountDetails { get; set; } = new List<AccountDetailsModelResponse>();
     }
@@ -26,5 +27,12 @@ namespace FBMMultiMessenger.Buisness.Request.Pricing
         public string Title { get; set; } = string.Empty;
         public string AccountNo { get; set; } = string.Empty;
         public string IBAN { get; set; } = string.Empty;
+    }
+    public class PricingTierAvailabilityModelResponse
+    {
+        public int Id { get; set; }
+        public bool IsMonthlyAvailable { get; set; }
+        public bool IsSemiAnnualAvailable { get; set; }
+        public bool IsAnnualAvailable { get; set; }
     }
 }

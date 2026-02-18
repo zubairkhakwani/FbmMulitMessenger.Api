@@ -67,7 +67,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
             await _dbContext.Users.AddAsync(newUser, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            _ = _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.Name);
+            _ = _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.Name, hasAvailedTrial: canAvailTrial, trialAccounts, trialDurationDays);
 
             var modelResponse = new RegisterModelResponse()
             {
@@ -76,7 +76,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                 TrialDays = canAvailTrial ? trialDurationDays : 0,
             };
 
-            return BaseResponse<RegisterModelResponse>.Success("Resgistered Successfully", new RegisterModelResponse() { HasAvailedTrial = canAvailTrial });
+            return BaseResponse<RegisterModelResponse>.Success("Resgistered Successfully", modelResponse);
         }
     }
 }
