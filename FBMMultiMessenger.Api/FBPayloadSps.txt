@@ -1,0 +1,89 @@
+﻿1. When we send message from our app to facebook. (app => facebook)
+
+[
+    "executeFirstBlockForSyncTransaction",
+    "bumpThread",
+    "verifyThreadExists",
+    "moveThreadToInboxAndUpdateParent",
+    "writeThreadCapabilities",
+    "updateThreadSnippet",
+    "insertMessage",
+    "appendDataTraceAddon",
+    "updateReadReceipt",
+    "setMessageTextHasLinks"  // sometimes present and sometimes not
+    "insertBlobAttachment", // present in images and videos
+    "setForwardScore",
+    "setMessageDisplayedContentTypes",
+    "updateParticipantLastMessageSendTimestamp",
+    "updateParentFolderReadWatermark",
+    "upsertSequenceId",
+    "executeFinallyBlockForSyncTransaction"
+]
+
+2. When we receive message from facebook. (facebook => app)
+[
+    "executeFirstBlockForSyncTransaction",
+    "bumpThread",
+    "verifyThreadExists",
+    "updateThreadSnippet",
+    "insertMessage",
+    "updateReadReceipt",
+    "setMessageTextHasLinks", // sometimes present and sometimes not
+    "insertBlobAttachment", // present in voice notes , images and videos
+    "insertStickerAttachment", // present in stickers, thumb reaction AND NOT FOR EMOJIS
+    "setForwardScore",
+    "setMessageDisplayedContentTypes",
+    "updateParticipantLastMessageSendTimestamp",
+    "updateParentFolderReadWatermark",
+    "upsertSequenceId",
+    "executeFinallyBlockForSyncTransaction"
+]
+
+3. When mark listing as available
+[
+    "executeFirstBlockForSyncTransaction",
+    "verifyThreadExists",
+    "moveThreadToInboxAndUpdateParent",
+    "updateThreadSnippet",
+    "insertMessage",
+    "updateParentFolderReadWatermark",
+    "upsertSequenceId",
+    "executeFinallyBlockForSyncTransaction"
+]
+
+4. When mark listing as sold
+[
+    "executeFirstBlockForSyncTransaction",
+    "verifyThreadExists",
+    "moveThreadToInboxAndUpdateParent",
+    "updateThreadSnippet",
+    "insertMessage",
+    "updateParentFolderReadWatermark",
+    "upsertSequenceId",
+    "executeFinallyBlockForSyncTransaction"
+]
+
+5. Inital message when the new Chat started
+[
+    "executeFirstBlockForSyncTransaction",
+    "applyNewGroupThread",
+    "removeAllParticipantsForThread", //Using this in inject.js to determine new chat
+    "addParticipantIdToGroupThread",
+    "insertNewMessageRange",
+    "bumpThread",
+    "insertMessage",
+    "syncUpdateThreadName",
+    "updateParticipantSubscribeSourceText",
+    "verifyThreadExists",
+    "updateThreadSnippet",
+    "updateReadReceipt",
+    "setThreadImageURL",
+    "upsertSequenceId",
+    "verifyContactRowExists",
+    "executeFinallyBlockForSyncTransaction"
+]
+
+
+6. Using this to detect the user message and ignore the system message e.g Hadia started this chat
+updateParticipantLastMessageSendTimestamp
+
