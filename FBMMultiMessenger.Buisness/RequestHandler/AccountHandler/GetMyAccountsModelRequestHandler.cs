@@ -7,7 +7,6 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -70,6 +69,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                          DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
                                          AuthStatus = x.AuthStatus.GetInfo().Name,
+                                         LogoutReason = x.LogoutReason.GetInfo().Name,
                                          CreatedAt = x.CreatedAt,
                                          Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
                                          {

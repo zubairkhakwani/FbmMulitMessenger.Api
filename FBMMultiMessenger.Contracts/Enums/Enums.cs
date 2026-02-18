@@ -120,6 +120,15 @@ namespace FBMMultiMessenger.Contracts.Enums
         LoggedOut = 3,
     }
 
+    public enum AccountLogOutReason
+    {
+        [DisplayInfoAttribute("", "")]
+        None = 0,
+
+        [DisplayInfoAttribute("Expired or Invalid Cookie", "Cookie is either expired or invalid.")]
+        ExpiredOrInvalidCookie = 1
+    }
+
     public enum AccountSkipReason
     {
         [DisplayInfo("Duplicate Cookie", "Account has a cookie that already exists in the system.")]

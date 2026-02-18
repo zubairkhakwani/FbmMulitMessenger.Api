@@ -66,6 +66,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 account.ConnectionStatus = operation.ConnectionStatus;
                 account.AuthStatus = operation.AuthStatus;
+                account.LogoutReason = operation.LogoutReason;
 
                 if (operation.FreeServer)
                 {
@@ -94,10 +95,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     AccountId = account.Id,
                     AccountName = account.Name,
+
+                    LogoutReason = operation.LogoutReason,
+                    LogoutReasonText = operation.LogoutReason.GetInfo().Name,
+
                     ConnectionStatus = operation.ConnectionStatus,
                     ConnectionStatusText =  operation.ConnectionStatus.GetInfo().Name,
+
                     AuthStatus = operation.AuthStatus,
                     AuthStatusText = operation.AuthStatus.GetInfo().Name,
+
                     IsConnected = operation.AuthStatus == AccountAuthStatus.LoggedIn
                 });
             }
@@ -117,7 +124,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     if (accountStatus.AuthStatus == AccountAuthStatus.LoggedOut)
                     {
-                        var message = $"{accountStatus.AccountName} has been logged out. Check your email for detail";
+                        var message = $"{accountStatus.AccountName} has been logged out. Check your email for more details";
                         var isSubscriptionExpired = activeSubscription is null ? true : false;
 
                         _ =  _oneSignalService.PushLogoutNotificationAsync(userId.ToString(), message, isSubscriptionExpired);

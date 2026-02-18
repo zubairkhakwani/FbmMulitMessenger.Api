@@ -9,6 +9,10 @@ const accountAuthStatus = {
     LoggedIn: 2,
     LoggedOut: 3,
 }
+const reason = {
+    None: 0,
+    ExpiredOrInvalidCookie: 1,
+}
 
 // Global FIFO queue - array of objects
 let pendingMessages = [];
@@ -1194,6 +1198,7 @@ function isAccountLoggedIn(cUser, emailInput) {
 
 function NotifyAccountAuthStatus(isLoggedIn) {
     var root = document.documentElement;
+    let logOutReason = isLoggedIn ? reason.None : reason.ExpiredOrInvalidCookie;
     let authStatus = isLoggedIn ? accountAuthStatus.LoggedIn : accountAuthStatus.LoggedOut;
     let connectionStatus = isLoggedIn ? accountConnectionStatus.Online : accountConnectionStatus.Offline;
 
@@ -1207,6 +1212,7 @@ function NotifyAccountAuthStatus(isLoggedIn) {
         accountId,
         accountAuthStatus: authStatus,
         accountConnectionStatus: connectionStatus,
+        logOutReason,
         isLoggedIn,
     }
     root.dispatchEvent(

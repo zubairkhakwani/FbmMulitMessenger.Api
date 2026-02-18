@@ -59,7 +59,7 @@ namespace FBMMultiMessenger.Buisness.Service
                     {a.AuthStatus}
                 </span>
             </td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #dc3545; font-size: 14px;">{a.Reason}</td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; color: #dc3545; font-size: 14px;">{a.LogoutReason}</td>
         </tr>
     """));
 

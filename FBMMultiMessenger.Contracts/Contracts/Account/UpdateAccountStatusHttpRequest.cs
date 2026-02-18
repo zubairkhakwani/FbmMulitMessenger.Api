@@ -12,6 +12,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         public int AccountId { get; set; }
         public AccountConnectionStatus ConnectionStatus { get; set; }
         public AccountAuthStatus AuthStatus { get; set; }
+        public AccountLogOutReason LogoutReason { get; set; }
         public bool FreeServer { get; set; }
     }
 
