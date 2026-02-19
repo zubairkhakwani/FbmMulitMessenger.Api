@@ -10,8 +10,8 @@ const accountAuthStatus = {
     LoggedOut: 3,
 }
 const reason = {
-    None: 0,
     ExpiredOrInvalidCookie: 1,
+    AssignedToLocalServer: 2,
 }
 
 // Global FIFO queue - array of objects
@@ -1181,9 +1181,6 @@ function getEmailInput() {
 function isAccountLoggedIn(cUser, emailInput) {
     var loggedIn = false;
 
-    console.log("CUser: ", cUser);
-    console.log("Email Input: ", emailInput);
-
     if (cUser) {
         loggedIn = true;
     }
@@ -1192,13 +1189,12 @@ function isAccountLoggedIn(cUser, emailInput) {
         loggedIn = false;
     }
 
-    console.log("Account Logged In: ", loggedIn)
     return loggedIn;
 }
 
 function NotifyAccountAuthStatus(isLoggedIn) {
     var root = document.documentElement;
-    let logOutReason = isLoggedIn ? reason.None : reason.ExpiredOrInvalidCookie;
+    let reason = isLoggedIn ? reason.AssignedToLocalServer : reason.ExpiredOrInvalidCookie;
     let authStatus = isLoggedIn ? accountAuthStatus.LoggedIn : accountAuthStatus.LoggedOut;
     let connectionStatus = isLoggedIn ? accountConnectionStatus.Online : accountConnectionStatus.Offline;
 
@@ -1212,7 +1208,7 @@ function NotifyAccountAuthStatus(isLoggedIn) {
         accountId,
         accountAuthStatus: authStatus,
         accountConnectionStatus: connectionStatus,
-        logOutReason,
+        reason,
         isLoggedIn,
     }
     root.dispatchEvent(
