@@ -7,6 +7,8 @@
         public required string Cookie { get; set; }
         public string? DefaultMessage { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public LocalServerAccountsProxyHttpResponse? Proxy { get; set; }
     }
 
     public class LocalServerAccountsProxyHttpResponse

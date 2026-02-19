@@ -9,9 +9,9 @@ const accountAuthStatus = {
     LoggedIn: 2,
     LoggedOut: 3,
 }
-const reason = {
+const accountReason = {
     ExpiredOrInvalidCookie: 1,
-    AssignedToLocalServer: 2,
+    AssignedToLocalServer: 3,
 }
 
 // Global FIFO queue - array of objects
@@ -1194,7 +1194,7 @@ function isAccountLoggedIn(cUser, emailInput) {
 
 function NotifyAccountAuthStatus(isLoggedIn) {
     var root = document.documentElement;
-    let reason = isLoggedIn ? reason.AssignedToLocalServer : reason.ExpiredOrInvalidCookie;
+    let reason = isLoggedIn ? accountReason.AssignedToLocalServer : accountReason.ExpiredOrInvalidCookie;
     let authStatus = isLoggedIn ? accountAuthStatus.LoggedIn : accountAuthStatus.LoggedOut;
     let connectionStatus = isLoggedIn ? accountConnectionStatus.Online : accountConnectionStatus.Offline;
 

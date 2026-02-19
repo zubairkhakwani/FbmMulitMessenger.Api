@@ -69,7 +69,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                          DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
                                          AuthStatus = x.AuthStatus.GetInfo().Name,
-                                         LogoutReason = x.LogoutReason.GetInfo().Name,
+                                         Reason = x.Reason.GetInfo().Name,
                                          CreatedAt = x.CreatedAt,
                                          Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
                                          {

@@ -47,6 +47,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
                 //Proxy extension files
                 string proxyBackgroundFilePath = Path.Combine(proxyExtensionFolder, "background.js");
+                string proxymanifestFilePath = Path.Combine(proxyExtensionFolder, "manifest.json");
 
                 if (!File.Exists(backgroundFilePath))
                 {
@@ -67,7 +68,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 var SignalRPackage = await File.ReadAllTextAsync(signalRFilePath, cancellationToken);
 
                 var ProxyBackgroundJs = await File.ReadAllTextAsync(proxyBackgroundFilePath, cancellationToken);
-                var PrxoyManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
+                var PrxoyManifestJson = await File.ReadAllTextAsync(proxymanifestFilePath, cancellationToken);
 
                 var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
                 var extensionVersion = settings?.Extension_Version;
@@ -98,12 +99,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 
                 var anonymousObj = new
                 {
+                    ExtensionVersion = extensionVersion,
                     BackgroundJs = BackgroundJs,
                     InjectJs = InjectJs,
                     ContentJs = ContentJs,
                     ManifestJson = ManifestJson,
                     SignalRPackage = SignalRPackage,
-                    ExtensionVersion = extensionVersion,
                     ProxyBackgroundJs = ProxyBackgroundJs,
                     ProxyManifestJson = PrxoyManifestJson
                 };

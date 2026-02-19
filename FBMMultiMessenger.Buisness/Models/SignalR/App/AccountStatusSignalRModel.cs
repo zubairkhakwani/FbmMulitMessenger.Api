@@ -20,8 +20,8 @@ namespace FBMMultiMessenger.Buisness.Models.SignalR.App
         public AccountAuthStatus AuthStatus { get; set; }
         public string AuthStatusText { get; set; } = string.Empty;
 
-        public AccountLogOutReason LogoutReason { get; set; }
-        public string LogoutReasonText { get; set; } = string.Empty;
+        public AccountReason Reason { get; set; }
+        public string ReasonText { get; set; } = string.Empty;
 
         public bool IsConnected { get; set; }
     }

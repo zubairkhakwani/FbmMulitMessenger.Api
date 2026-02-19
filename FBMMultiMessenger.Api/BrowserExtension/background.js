@@ -225,7 +225,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.key === "notifyAccountAuthState") {
         let detail = request.detail;
-
+        console.log(detail);
         fetch(`${localServerUrl}/api/accounts/${detail.accountId}/status`, {
             method: "PUT",
             headers: {

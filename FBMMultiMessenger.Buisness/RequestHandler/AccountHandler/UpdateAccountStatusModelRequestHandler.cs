@@ -62,9 +62,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 if (!accountLookup.TryGetValue(operation.AccountId, out var account))
                     continue;
 
-                account.ConnectionStatus = operation.ConnectionStatus;
-                account.AuthStatus = operation.AuthStatus;
-                account.LogoutReason = operation.LogoutReason;
+                var connectionStatus = operation.ConnectionStatus;
+                var authStatus = operation.AuthStatus;
+                var logoutReason = operation.Reason;
+
+                account.ConnectionStatus = connectionStatus;
+                account.AuthStatus = authStatus;
+                account.Reason = logoutReason;
 
                 if (operation.FreeServer)
                 {
@@ -94,14 +98,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     AccountId = account.Id,
                     AccountName = account.Name,
 
-                    LogoutReason = operation.LogoutReason,
-                    LogoutReasonText = operation.LogoutReason.GetInfo().Name,
+                    Reason = logoutReason,
+                    ReasonText = logoutReason.GetInfo().Name,
 
-                    ConnectionStatus = operation.ConnectionStatus,
-                    ConnectionStatusText =  operation.ConnectionStatus.GetInfo().Name,
+                    ConnectionStatus = connectionStatus,
+                    ConnectionStatusText =  connectionStatus.GetInfo().Name,
 
-                    AuthStatus = operation.AuthStatus,
-                    AuthStatusText = operation.AuthStatus.GetInfo().Name,
+                    AuthStatus = authStatus,
+                    AuthStatusText = authStatus.GetInfo().Name,
 
                     IsConnected = operation.AuthStatus == AccountAuthStatus.LoggedIn
                 });
@@ -141,7 +145,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     loggedOutAccounts.Add(userAccountSignal);
                 }
             }
-            if (user is not null)
+            if (user is not null && loggedOutAccounts.Count > 0)
             {
                 _=_emailService.SendAccountLogoutEmailAsync(user.Email, user.Name, loggedOutAccounts);
             }

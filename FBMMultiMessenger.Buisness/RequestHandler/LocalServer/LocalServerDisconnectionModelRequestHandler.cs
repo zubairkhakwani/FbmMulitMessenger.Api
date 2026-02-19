@@ -55,7 +55,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             //Accounts that were running on this server
             var localServerAccounts = localServer.Accounts;
 
-
             //If there is no server that can launch the accounts that are being disconnected.
             if (powerfullEligibleServers is null || powerfullEligibleServers.Count == 0)
             {
@@ -64,6 +63,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     account.LocalServerId = null;
                     account.ConnectionStatus = AccountConnectionStatus.Offline;
                     account.AuthStatus = AccountAuthStatus.Idle;
+                    account.Reason = AccountReason.NotAssignedToAnyLocalServer;
 
                     //Sync active browser count that were running on this server.
                     localServer.ActiveBrowserCount--;
@@ -74,6 +74,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                             AccountId = account.Id,
                             ConnectionStatusText = AccountConnectionStatus.Offline.GetInfo().Name,
                             AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
+                            ReasonText = AccountReason.NotAssignedToAnyLocalServer.GetInfo().Name,
                             IsConnected = false
                         });
                 }
@@ -101,6 +102,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     account.LocalServerId = leastLoadedServer!.Id;
                     account.ConnectionStatus = AccountConnectionStatus.Starting;
                     account.AuthStatus  = AccountAuthStatus.Idle;
+                    account.Reason = AccountReason.AssigningToLocalServer;
 
                     leastLoadedServer.ActiveBrowserCount++;
 
@@ -111,6 +113,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                             AccountId = account.Id,
                             ConnectionStatusText = AccountConnectionStatus.Starting.GetInfo().Name,
                             AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
+                            ReasonText  = AccountReason.AssigningToLocalServer.GetInfo().Name,
                             IsConnected = false
                         });
                 }
@@ -119,6 +122,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     account.LocalServerId = null;
                     account.ConnectionStatus = AccountConnectionStatus.Offline;
                     account.AuthStatus = AccountAuthStatus.Idle;
+                    account.Reason = AccountReason.NotAssigned_ServerOffline;
 
                     //Sync active browser count that were running on this server.
                     localServer.ActiveBrowserCount--;
@@ -130,6 +134,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                             AccountId = account.Id,
                             ConnectionStatusText = AccountConnectionStatus.Offline.GetInfo().Name,
                             AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
+                            ReasonText = AccountReason.NotAssigned_ServerOffline.GetInfo().Name,
                             IsConnected = false
                         });
                 }

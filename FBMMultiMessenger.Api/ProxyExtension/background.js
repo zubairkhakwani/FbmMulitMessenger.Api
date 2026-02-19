@@ -1,4 +1,4 @@
-console.log("Background script running");
+console.log("Proxy Background script running");
 
 if (userName && password) {
     chrome.webRequest.onAuthRequired.addListener(function (details, callbackFn) {
@@ -24,8 +24,7 @@ chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
     });
 });
 
-function clearProxy()
-{
+function clearProxy() {
     chrome.proxy.settings.clear({ scope: 'regular' });
 
     chrome.proxy.settings.set(

@@ -25,8 +25,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Invalid Request, please login again to continue");
             }
 
-            var isParsed = Enum.TryParse<Roles>(currentUser.Role, out var userRole);
-
+            _= Enum.TryParse<Roles>(currentUser.Role, out var userRole);
 
             var currentUserId = currentUser.Id;
             var localServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.UserId == currentUserId && ls.UniqueId == request.LocalServerId, cancellationToken);
@@ -87,14 +86,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.LocalServerId = localServer.Id;
                 account.ConnectionStatus = AccountConnectionStatus.Starting;
                 account.AuthStatus = AccountAuthStatus.Idle;
+                account.Reason = AccountReason.AssigningToLocalServer;
 
                 // Prepare SignalR data
                 accountStatusSignalR.Add(
                     new AccountStatusSignalRModel()
                     {
                         AccountId = account.Id,
+                        AccountName = account.Name,
+                        ConnectionStatus = AccountConnectionStatus.Starting,
                         ConnectionStatusText =  AccountConnectionStatus.Starting.GetInfo().Name,
+                        AuthStatus = AccountAuthStatus.Idle,
                         AuthStatusText = AccountAuthStatus.Idle.GetInfo().Name,
+                        Reason  = AccountReason.AssigningToLocalServer,
+                        ReasonText = AccountReason.AssigningToLocalServer.GetInfo().Name,
                         IsConnected = false
                     }
                     );
@@ -102,7 +107,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             localServer.ActiveBrowserCount = accountsToAllocate.Count;
             await _dbContext.SaveChangesAsync(cancellationToken);
-
 
             var responseData = accountsToAllocate.Select(a => new GetLocalServerAccountsModelResponse
             {

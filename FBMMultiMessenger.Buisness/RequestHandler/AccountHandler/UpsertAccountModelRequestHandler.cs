@@ -4,13 +4,11 @@ using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
@@ -76,31 +74,32 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
 
                 var isLimitReaced = _userAccountService.HasLimitExceeded(activeSubscription);
+                var incommingProxyId = request.ProxyId;
 
                 if (isLimitReaced)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", showSweetAlert: true, result: response);
                 }
 
-                if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+                if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(incommingProxyId))
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when adding account");
                 }
 
-                int? proxyId = null;
+                Data.Database.DbModels.Proxy? selectedProxy = null;
 
                 if (!string.IsNullOrWhiteSpace(request.ProxyId))
                 {
                     var userProxies = user.Proxies;
 
-                    proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId);
+                    var proxy = userProxies.FirstOrDefault(p => p.Id == Convert.ToInt32(incommingProxyId));
 
-                    var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
-
-                    if (!isValidUserProxy)
+                    if (proxy is null)
                     {
                         return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
                     }
+
+                    selectedProxy = proxy;
                 }
 
                 if (!user.IsEmailVerified)
@@ -114,68 +113,49 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
                 var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
-                LocalServerAccountDTO newAccountHttpResponse = null;
-                if (alreadyExistedAccount == null)
+                var newAccount = new Account()
                 {
-                    var newAccount = new Account()
-                    {
-                        UserId = request.UserId,
-                        Cookie = request.Cookie,
-                        Name = request.Name,
-                        FbAccountId = fbAccountId,
-                        ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
-                        AuthStatus = AccountAuthStatus.Idle,
-                        LocalServerId = assignedServer?.Id,
-                        ProxyId = proxyId,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-
-                    newAccountHttpResponse = new LocalServerAccountDTO()
-                    {
-                        Id = newAccount.Id,
-                        Name = newAccount.Name,
-                        Cookie = newAccount.Cookie,
-                        CreatedAt = newAccount.CreatedAt
-                    };
-                }
-                else
-                {
-                    alreadyExistedAccount.IsActive = true;
-                    alreadyExistedAccount.Cookie = request.Cookie;
-                    alreadyExistedAccount.Name = request.Name;
-                    alreadyExistedAccount.ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting;
-                    alreadyExistedAccount.AuthStatus = AccountAuthStatus.Idle;
-                    alreadyExistedAccount.LocalServerId = assignedServer?.Id;
-                    alreadyExistedAccount.ProxyId = proxyId;
-
-                    _dbContext.Accounts.Update(alreadyExistedAccount);
-                    await _dbContext.SaveChangesAsync();
-
-                    newAccountHttpResponse = new LocalServerAccountDTO()
-                    {
-                        Id = alreadyExistedAccount.Id,
-                        Name = alreadyExistedAccount.Name,
-                        Cookie = alreadyExistedAccount.Cookie,
-                        CreatedAt = alreadyExistedAccount.CreatedAt
-                    };
-                }
-
-                activeSubscription.LimitUsed++;
+                    UserId = request.UserId,
+                    Cookie = request.Cookie,
+                    Name = request.Name,
+                    FbAccountId = fbAccountId,
+                    ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
+                    AuthStatus = AccountAuthStatus.Idle,
+                    Reason = assignedServer is null ? AccountReason.NotAssignedToAnyLocalServer : AccountReason.AssigningToLocalServer,
+                    LocalServerId = assignedServer?.Id,
+                    ProxyId = selectedProxy?.Id,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
 
                 if (assignedServer is not null)
                 {
                     assignedServer.ActiveBrowserCount++;
                 }
+                activeSubscription.LimitUsed++;
 
+                await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var localServerAccountDTO = new LocalServerAccountDTO()
+                {
+                    Id = newAccount.Id,
+                    Name = newAccount.Name,
+                    Cookie = newAccount.Cookie,
+                    CreatedAt = newAccount.CreatedAt,
+                    Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
+                    {
+                        Id = selectedProxy.Id,
+                        Ip_Port = selectedProxy.Ip_Port,
+                        Name = selectedProxy.Name,
+                        Password = selectedProxy.Password
+                    }
+                };
 
                 if (assignedServer is not null)
                 {
                     // Inform our local server to open a new browser instance.
-                    await _signalRService.NotifyLocalServerAccountAdded(newAccountHttpResponse, assignedServer.UniqueId, cancellationToken);
+                    await _signalRService.NotifyLocalServerAccountAdded(localServerAccountDTO, assignedServer.UniqueId, cancellationToken);
                 }
 
                 return BaseResponse<UpsertAccountModelResponse>.Success("Account created successfully", response);
@@ -206,6 +186,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var user = account.User;
 
+            var incommingProxyId = request.ProxyId;
+
             var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions)
                                      ?? _userAccountService.GetLastActiveSubscription(user.Subscriptions);
 
@@ -216,25 +198,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, Looks like you don't have any subscription yet.", redirectToPackages: true);
             }
 
-            if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(request.ProxyId))
+            if (activeSubscription.CanRunOnOurServer && string.IsNullOrWhiteSpace(incommingProxyId))
             {
                 return BaseResponse<UpsertAccountModelResponse>.Error("Please provide proxy when editing account");
             }
 
-            int? proxyId = null;
+            Data.Database.DbModels.Proxy? selectedProxy = null;
 
-            if (!string.IsNullOrWhiteSpace(request.ProxyId))
+            if (!string.IsNullOrWhiteSpace(incommingProxyId))
             {
                 var userProxies = user.Proxies;
 
-                proxyId = string.IsNullOrWhiteSpace(request.ProxyId) ? null : Convert.ToInt32(request.ProxyId); ;
+                var proxy = userProxies.FirstOrDefault(p => p.Id == Convert.ToInt32(incommingProxyId));
 
-                var isValidUserProxy = userProxies.Any(p => p.Id == proxyId);
-
-                if (!isValidUserProxy)
+                if (proxy is not null)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
                 }
+                selectedProxy = proxy;
             }
 
             if (!user.IsEmailVerified)
@@ -269,18 +250,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             account.Name = request.Name;
             account.Cookie = request.Cookie;
             account.FbAccountId = fbAccountId;
-            account.ProxyId = proxyId;
+            account.ProxyId = selectedProxy?.Id;
             account.UpdatedAt = DateTime.UtcNow;
 
             if (isCookieChanged)
             {
                 account.ConnectionStatus = AccountConnectionStatus.Starting;
                 account.AuthStatus = AccountAuthStatus.Idle;
+                account.Reason = AccountReason.AssigningToLocalServer;
             }
+
             if (accountLocalServer is null)
             {
                 account.ConnectionStatus = AccountConnectionStatus.Offline;
                 account.AuthStatus = AccountAuthStatus.Idle;
+                account.Reason = AccountReason.NotAssignedToAnyLocalServer;
             }
 
             _dbContext.Accounts.Update(account);
@@ -289,16 +273,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             if (accountLocalServer is not null)
             {
                 //Inform user's local server.
-                var newAccountHttpResponse = new LocalServerAccountDTO()
+                var localServerAccountDTO = new LocalServerAccountDTO()
                 {
                     Id = account.Id,
                     Name = account.Name,
                     Cookie = account.Cookie,
                     CreatedAt = account.CreatedAt,
                     IsCookieChanged = isCookieChanged,
+                    Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
+                    {
+                        Id  = selectedProxy.Id,
+                        Ip_Port = selectedProxy.Ip_Port,
+                        Name = selectedProxy.Name,
+                        Password = selectedProxy.Password
+                    }
                 };
 
-                await _signalRService.NotifyLocalServerAccountUpdated(newAccountHttpResponse, accountLocalServer.UniqueId, cancellationToken);
+                await _signalRService.NotifyLocalServerAccountUpdated(localServerAccountDTO, accountLocalServer.UniqueId, cancellationToken);
             }
 
             return BaseResponse<UpsertAccountModelResponse>.Success("Account updated successfully", new UpsertAccountModelResponse());

@@ -28,7 +28,7 @@ public class UserAccountsModelResponse
     public string? DefaultMessage { get; set; }
     public string AuthStatus { get; set; } = string.Empty;
     public string ConnectionStatus { get; set; } = string.Empty;
-    public string LogoutReason { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 
     public AccountProxyModelResponse? Proxy { get; set; }
 

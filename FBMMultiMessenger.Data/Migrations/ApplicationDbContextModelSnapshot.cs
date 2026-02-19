@@ -56,14 +56,14 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<int?>("LocalServerId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("LogoutReason")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int?>("ProxyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Reason")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")

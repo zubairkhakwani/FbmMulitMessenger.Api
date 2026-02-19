@@ -47,7 +47,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 var userSubscriptions = user.Subscriptions;
 
-                if (!userSubscriptions.Any())
+                if (userSubscriptions.Count==0)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("Oh Snap, It looks like you don’t have a subscription yet. Please subscribe to continue.");
                 }
@@ -90,6 +90,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                         UserId  = currentUserId,
                         ConnectionStatus = AccountConnectionStatus.Offline,
                         AuthStatus = AccountAuthStatus.Idle,
+                        Reason = AccountReason.NotAssignedToAnyLocalServer,
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow,
                     }).ToList();
@@ -113,6 +114,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                 newAccount.LocalServerId = leastLoadedServer.Id;
                                 newAccount.ConnectionStatus = AccountConnectionStatus.Starting;
                                 newAccount.AuthStatus = AccountAuthStatus.Idle;
+                                newAccount.Reason = AccountReason.AssigningToLocalServer;
 
                                 leastLoadedServer.ActiveBrowserCount++;
 

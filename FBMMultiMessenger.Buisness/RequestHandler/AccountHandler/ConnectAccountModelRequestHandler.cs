@@ -4,6 +4,7 @@ using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -33,7 +34,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             var accountLocalServer = account.LocalServer;
 
-            if ((accountLocalServer is not null &&  account.AuthStatus == AccountAuthStatus.LoggedIn))
+            if ((accountLocalServer is not null && account.AuthStatus == AccountAuthStatus.LoggedIn))
             {
                 return BaseResponse<object>.Error("Account is already connected and running");
             }
@@ -66,7 +67,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
             account.ConnectionStatus = AccountConnectionStatus.Starting;
             account.AuthStatus = AccountAuthStatus.Idle;
+            account.Reason = AccountReason.AssigningToLocalServer;
+
             account.LocalServerId = assignedServer.Id;
+
             assignedServer.ActiveBrowserCount++;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -80,8 +84,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     new AccountStatusSignalRModel()
                     {
                         AccountId = account.Id,
-                        ConnectionStatusText = account.ConnectionStatus.ToString(),
-                        AuthStatusText = account.AuthStatus.ToString(),
+                        ConnectionStatusText = account.ConnectionStatus.GetInfo().Name,
+                        AuthStatusText = account.AuthStatus.GetInfo().Name,
+                        ReasonText = account.Reason.GetInfo().Name
                     }
                 }
             };

@@ -120,14 +120,27 @@ namespace FBMMultiMessenger.Contracts.Enums
         LoggedOut = 3,
     }
 
-    public enum AccountLogOutReason
+    public enum AccountReason
     {
-        [DisplayInfoAttribute("", "")]
-        None = 0,
+        [DisplayInfoAttribute("-", "Unknown reason.")]
+        Unknown = 0,
 
         [DisplayInfoAttribute("Expired or Invalid Cookie", "Cookie is either expired or invalid.")]
-        ExpiredOrInvalidCookie = 1
+        ExpiredOrInvalidCookie = 1,
+
+        [DisplayInfoAttribute("Assigning to Server", "Account is being assigned to server.")]
+        AssigningToLocalServer = 2,
+
+        [DisplayInfoAttribute("Assigned to Server", "Account is assigned to the server.")]
+        AssignedToLocalServer = 3,
+
+        [DisplayInfoAttribute("Not Assigned to Any Server", "Account is not assigned to any server.")]
+        NotAssignedToAnyLocalServer = 4,
+
+        [DisplayInfoAttribute("Not Assigned to Any Server / Server Offline", "Account is not assigned to any server.")]
+        NotAssigned_ServerOffline = 5
     }
+
 
     public enum AccountSkipReason
     {
