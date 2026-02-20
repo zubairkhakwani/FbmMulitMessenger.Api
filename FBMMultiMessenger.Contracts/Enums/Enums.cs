@@ -170,4 +170,21 @@ namespace FBMMultiMessenger.Contracts.Enums
     }
 
 
+    public enum AccountRestartReason
+    {
+        None = 0,
+        CookieUpdated = 1,
+        ProxyAdded = 2,
+        ProxyRemoved = 3,
+        ProxyUpdated = 4,
+        CookieAndProxyChanged = 5,
+    }
+
+    public enum NotificationCategory
+    {
+        Chat = 1,
+        Subscription = 2,
+        Account = 3,
+        System = 4
+    }
 }

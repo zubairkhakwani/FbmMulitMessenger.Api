@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.Contracts.Account;
+using FBMMultiMessenger.Contracts.Enums;
 
 namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
 {
@@ -9,7 +10,7 @@ namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
         public string Name { get; set; } = string.Empty;
         public string Cookie { get; set; } = string.Empty;
         public string? DefaultMessage { get; set; }
-        public bool IsCookieChanged { get; set; }
+        public AccountRestartReason RestartReason { get; set; }
         public DateTime CreatedAt { get; set; }
         public LocalServerProxyDTO? Proxy { get; set; }
 

@@ -143,13 +143,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     Name = newAccount.Name,
                     Cookie = newAccount.Cookie,
                     CreatedAt = newAccount.CreatedAt,
+                    RestartReason = AccountRestartReason.None,
                     Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
                     {
                         Id = selectedProxy.Id,
                         Ip_Port = selectedProxy.Ip_Port,
                         Name = selectedProxy.Name,
                         Password = selectedProxy.Password
-                    }
+                    },
                 };
 
                 if (assignedServer is not null)
@@ -211,10 +212,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 var proxy = userProxies.FirstOrDefault(p => p.Id == Convert.ToInt32(incommingProxyId));
 
-                if (proxy is not null)
+                if (proxy is null)
                 {
                     return BaseResponse<UpsertAccountModelResponse>.Error("Proxy does not exist, please provide valid proxy.");
                 }
+
                 selectedProxy = proxy;
             }
 
@@ -225,7 +227,32 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return _mapper.Map<BaseResponse<UpsertAccountModelResponse>>(emailVerificationResponse);
             }
 
+            //Determine account restart reason
+            var accountRestartReason = AccountRestartReason.None;
+
+            if (account.ProxyId is null && !string.IsNullOrWhiteSpace(incommingProxyId))
+            {
+                accountRestartReason = AccountRestartReason.ProxyAdded;
+            }
+            else if (account.ProxyId is not null && !string.IsNullOrWhiteSpace(incommingProxyId) && account.ProxyId != Convert.ToInt32(incommingProxyId))
+            {
+                accountRestartReason = AccountRestartReason.ProxyUpdated;
+            }
+            else if (account.ProxyId is not null && string.IsNullOrWhiteSpace(incommingProxyId))
+            {
+                accountRestartReason = AccountRestartReason.ProxyRemoved;
+            }
+
             var isCookieChanged = account.Cookie != request.Cookie;
+
+            if (isCookieChanged && accountRestartReason != AccountRestartReason.None)
+            {
+                accountRestartReason = AccountRestartReason.CookieAndProxyChanged;
+            }
+            else if (isCookieChanged)
+            {
+                accountRestartReason = AccountRestartReason.CookieUpdated;
+            }
 
             //on which localserver this account is currently running 
             var accountLocalServer = account.LocalServer;
@@ -279,7 +306,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     Name = account.Name,
                     Cookie = account.Cookie,
                     CreatedAt = account.CreatedAt,
-                    IsCookieChanged = isCookieChanged,
+                    RestartReason = accountRestartReason,
                     Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
                     {
                         Id  = selectedProxy.Id,

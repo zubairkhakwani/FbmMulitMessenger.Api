@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using FBMMultiMessenger.Contracts.Enums;
+using Microsoft.Extensions.Configuration;
 using OneSignal.RestAPIv3.Client;
 using OneSignal.RestAPIv3.Client.Resources.Notifications;
 using Org.BouncyCastle.Tls;
@@ -21,7 +22,9 @@ namespace FBMMultiMessenger.Buisness.Service
             var client = new OneSignalClient(_restApiKey);
             var externalId = $"FBM_{userId}";
 
-            var deepLinkUrl = $"myapp://chat?isNotification=true&chatId={chatId}&isSubscriptionExpired={isSubscriptionExpired}&message=${message}";
+            var category = NotificationCategory.Chat.ToString();
+
+            var deepLinkUrl = $"myapp://chat?category={category}&isNotification=true&chatId={chatId}&isSubscriptionExpired={isSubscriptionExpired}&message=${message}";
 
             var options = new NotificationCreateOptions
             {
@@ -37,6 +40,7 @@ namespace FBMMultiMessenger.Buisness.Service
                 },
                 Data = new Dictionary<string, string>
                 {
+                    { "category", category },
                     { "chatId", chatId.ToString() },
                     { "isSubscriptionExpired", isSubscriptionExpired.ToString() },
                     { "message",message},
@@ -64,12 +68,14 @@ namespace FBMMultiMessenger.Buisness.Service
 
 
 
-        public async Task PushLogoutNotificationAsync(string userId, string message, bool isSubscriptionExpired)
+        public async Task PushLogoutNotificationAsync(string userId, string message, string accountId, bool isSubscriptionExpired)
         {
             var client = new OneSignalClient(_restApiKey);
             var externalId = $"FBM_{userId}";
 
-            var deepLinkUrl = $"myapp://chat?isNotification=true&isSubscriptionExpired={isSubscriptionExpired}&message=${message}";
+            var category = NotificationCategory.Account.ToString();
+
+            var deepLinkUrl = $"myapp://account?category={category}&isNotification=true&accountId={accountId}&isSubscriptionExpired={isSubscriptionExpired}";
 
             var options = new NotificationCreateOptions
             {
@@ -85,8 +91,10 @@ namespace FBMMultiMessenger.Buisness.Service
                 },
                 Data = new Dictionary<string, string>
                 {
+                    { "category", category },
                     { "isSubscriptionExpired", isSubscriptionExpired.ToString() },
                     { "message",message},
+                    { "accountId",accountId},
                     { "type", "new_message" }
                 },
                 Url = deepLinkUrl,

@@ -2,7 +2,7 @@
 
 importScripts("./signalr.min.js");
 
-console.log('background.js main body run.');
+console.log('Scrapping Background script running.');
 
 let signalRConnection = null;
 let isConnected = false;
@@ -277,7 +277,6 @@ async function getBase64FromUrl(path) {
 
 chrome.runtime.onInstalled.addListener(() => {
     initializeSignalR();
-
     chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });
 });
 
@@ -285,7 +284,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === 'keepAlive') {
-        console.log('Service worker kept alive');
+        console.log('Scrapping Service worker kept alive.');
     }
 
     if (!signalRConnection) {

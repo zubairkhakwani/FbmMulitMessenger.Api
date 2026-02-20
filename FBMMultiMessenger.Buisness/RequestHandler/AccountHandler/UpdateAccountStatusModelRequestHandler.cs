@@ -127,9 +127,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     if (accountStatus.AuthStatus == AccountAuthStatus.LoggedOut)
                     {
                         var message = $"{accountStatus.AccountName} has been logged out. Check your email for more details";
-                        var isSubscriptionExpired = activeSubscription is null ? true : false;
 
-                        _ =  _oneSignalService.PushLogoutNotificationAsync(userId.ToString(), message, isSubscriptionExpired);
+                        _ =  _oneSignalService.PushLogoutNotificationAsync(userId.ToString(), message, accountStatus.AccountId.ToString(), isSubscriptionExpired: activeSubscription is null);
                     }
                 }
             }

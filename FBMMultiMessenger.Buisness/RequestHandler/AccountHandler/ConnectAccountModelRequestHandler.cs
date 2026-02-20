@@ -23,6 +23,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                           .Include(dm => dm.DefaultMessage)
                                           .Include(u => u.User)
                                           .ThenInclude(s => s.Subscriptions)
+                                          .Include(l => l.LocalServer)
                                           .FirstOrDefaultAsync(x => x.Id == request.AccountId
                                                          &&
                                                          x.UserId == currentUserId, cancellationToken);
