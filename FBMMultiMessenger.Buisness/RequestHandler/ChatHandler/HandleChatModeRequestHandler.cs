@@ -85,7 +85,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     FbListingPrice = request.FbListingPrice,
                     IsRead = !request.IsReceived,
                     StartedAt = today,
-                    UpdatedAt = today
+                    UpdatedAt = today,
+                    
                 };
 
                 await _dbContext.AddAsync(newChat, cancellationToken);
