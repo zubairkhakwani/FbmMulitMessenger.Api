@@ -100,6 +100,11 @@ namespace FBMMultiMessenger.Api
                 }
                 catch (Exception ex)
                 {
+                    if (!Directory.Exists("Logs"))
+                    {
+                        Directory.CreateDirectory("Logs");
+                    }
+
                     File.WriteAllText($"Logs\\db-migration-fail-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid()}.txt", $"Error while applying migration. exception is {ex.Message}, inner => {ex.InnerException?.Message}");
                 }
 

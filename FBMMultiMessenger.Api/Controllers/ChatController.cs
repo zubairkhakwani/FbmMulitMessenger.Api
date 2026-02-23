@@ -59,5 +59,14 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
+        [Authorize]
+        [HttpGet("get-unsynced-messages")]
+        public async Task<BaseResponse<GetUnSyncedMessagesModelResponse>> GetUnsyncedMessages([FromQuery] DateTimeOffset? lastSyncedAt, CancellationToken cancellationToken = default)
+        {
+            var response = await _mediator.Send(new GetUnSyncedMessagesModelRequest() { LastSyncedMessageAt = lastSyncedAt }, cancellationToken);
+
+            return response;
+        }
     }
 }

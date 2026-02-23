@@ -75,6 +75,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                             FbListingPrice = syncChat.FbListingPrice,
                             AccountId = account.Id,
                             UserId = currentUser.Id,
+                            StartedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow,
                             ChatMessages = new List<FBMMultiMessenger.Data.Database.DbModels.ChatMessages>()
                         };
                         account.Chats.Add(chat);
@@ -128,6 +130,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                         {
                             chat.FbListingPrice = syncChat.FbListingPrice;
                             anyChangeMade = true;
+                        }
+
+                        if(anyChangeMade)
+                        {
+                            chat.UpdatedAt = DateTime.UtcNow;
                         }
                     }
 
