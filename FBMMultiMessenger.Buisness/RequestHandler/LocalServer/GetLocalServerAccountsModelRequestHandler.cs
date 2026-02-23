@@ -2,14 +2,12 @@
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
@@ -28,11 +26,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             _= Enum.TryParse<Roles>(currentUser.Role, out var userRole);
 
             var currentUserId = currentUser.Id;
-            var localServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.UserId == currentUserId && ls.UniqueId == request.LocalServerId, cancellationToken);
+            var localServer = await _dbContext
+                                    .LocalServers
+                                    .Include(u => u.User)
+                                    .ThenInclude(s => s.Subscriptions)
+                                    .FirstOrDefaultAsync(ls => ls.UserId == currentUserId && ls.UniqueId == request.LocalServerId, cancellationToken);
 
             if (localServer is null)
             {
                 return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Local server not registered.");
+            }
+
+            var userSubscriptions = localServer.User.Subscriptions;
+
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+            if (activeSubscription is null)
+            {
+                return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Your subscription has expired, please renew to continue.");
             }
 
             List<Account> accountsToAllocate;
@@ -49,7 +60,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     .ToListAsync(cancellationToken);
 
                 accountsToAllocate = eligibleUsers
-                    .Where(u => u.Subscriptions != null && u.Subscriptions.Any())
+                    .Where(u => u.Subscriptions != null && u.Subscriptions.Count!=0)
                     .Select(u => new
                     {
                         User = u,

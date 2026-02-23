@@ -117,7 +117,6 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             return services;
         }
 
-        //TODO: Take suggestion from Zubair bhai and only allow that are required.
         public static IServiceCollection AddCors(this IServiceCollection services, IConfiguration configuration)
         {
             var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()!;
