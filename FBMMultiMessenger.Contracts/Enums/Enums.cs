@@ -138,7 +138,10 @@ namespace FBMMultiMessenger.Contracts.Enums
         NotAssignedToAnyLocalServer = 4,
 
         [DisplayInfoAttribute("Not Assigned to Any Server / Server Offline", "Account is not assigned to any server.")]
-        NotAssigned_ServerOffline = 5
+        NotAssigned_ServerOffline = 5,
+
+        [DisplayInfoAttribute("Invalid Proxy or misconfigured", "Either proxy is invalid or misconfigured")]
+        InvalidProxy = 6
     }
 
 
@@ -185,6 +188,7 @@ namespace FBMMultiMessenger.Contracts.Enums
         Chat = 1,
         Subscription = 2,
         Account = 3,
-        System = 4
+        System = 4,
+        Proxy = 5
     }
 }

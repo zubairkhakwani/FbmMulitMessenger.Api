@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class GetLocalServerAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<GetLocalServerAccountsModelRequest, BaseResponse<List<GetLocalServerAccountsModelResponse>>>
+    internal class GetLocalServerAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService) : IRequestHandler<GetLocalServerAccountsModelRequest, BaseResponse<List<GetLocalServerAccountsModelResponse>>>
     {
         public async Task<BaseResponse<List<GetLocalServerAccountsModelResponse>>> Handle(GetLocalServerAccountsModelRequest request, CancellationToken cancellationToken)
         {
@@ -79,7 +79,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                      .ToListAsync(cancellationToken);
             }
 
-            var accountStatusSignalR = new List<AccountStatusSignalRModel>();
+            var userAccountSignals = new List<UserAccountSignalRModel>();
 
             foreach (var account in accountsToAllocate)
             {
@@ -88,8 +88,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.AuthStatus = AccountAuthStatus.Idle;
                 account.Reason = AccountReason.AssigningToLocalServer;
 
+                var userSignal = userAccountSignals.FirstOrDefault(u => u.AppId == currentUserId);
+
+                if (userSignal == null)
+                {
+                    userSignal = new UserAccountSignalRModel
+                    {
+                        AppId = currentUserId
+                    };
+
+                    userAccountSignals.Add(userSignal);
+                }
+
                 // Prepare SignalR data
-                accountStatusSignalR.Add(
+                userSignal.AccountsStatus.Add(
                     new AccountStatusSignalRModel()
                     {
                         AccountId = account.Id,
@@ -125,8 +137,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             }).ToList();
 
-            await _hubContext.Clients.Group($"App_{currentUserId}")
-                        .SendAsync("HandleAccountStatus", accountStatusSignalR, cancellationToken);
+            //Inform app about the accounts status
+            await _signalRService.NotifyAppAccountStatus(userAccountSignals, cancellationToken);
 
             return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Success("Accounts allocated successfully.", responseData);
         }

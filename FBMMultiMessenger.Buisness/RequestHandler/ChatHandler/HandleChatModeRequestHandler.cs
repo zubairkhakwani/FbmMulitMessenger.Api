@@ -227,8 +227,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     userId: userId.ToString(),
                     message: message,
                     senderName: messageFrom ?? "FBM Multi Messenger",
-                    chatId: chatId,
-                    isSubscriptionExpired: isSubscriptionExpired
+                    chatId: chatId
                 );
             }
             catch (Exception ex)

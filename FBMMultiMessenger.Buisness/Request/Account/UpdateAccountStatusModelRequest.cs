@@ -6,6 +6,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 {
     public class UpdateAccountStatusModelRequest : IRequest<BaseResponse<UpdateAccountStatusModelResponse>>
     {
+        public int? ProxyId { get; set; }
         public List<AccountUpdateModelOperation> Accounts { get; set; } = new();
     }
 
