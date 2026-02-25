@@ -283,7 +283,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsReceived = request.IsReceived,
                 MessageReply = messageReply,
                 CreatedAt = CreatedAt,
-                FbTimestamp = fbTimeStamp
+                FbTimestamp = fbTimeStamp,
                 AccountId = request.AccountId,
                 AccountName = chat?.Account?.Name
             };
