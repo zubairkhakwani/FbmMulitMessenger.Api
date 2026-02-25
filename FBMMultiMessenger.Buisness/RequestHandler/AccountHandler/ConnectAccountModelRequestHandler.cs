@@ -92,7 +92,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
             };
 
-            var appId = $"App_{account.UserId}";
             //Send account status update to app
             await _signalRService.NotifyAppAccountStatus([userAccountSignalR], cancellationToken);
 

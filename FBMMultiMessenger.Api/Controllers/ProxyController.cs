@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
-using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.Proxy;
-using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Contracts.Proxy;
 using FBMMultiMessenger.Contracts.Response;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FBMMultiMessenger.Api.Controllers
@@ -57,5 +54,6 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
     }
 }

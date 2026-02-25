@@ -4,6 +4,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
 {
     public class UpdateAccountStatusHttpRequest
     {
+        public int? ProxyId { get; set; }
         public List<AccountUpdateHttpOperation> Accounts { get; set; } = new();
     }
 

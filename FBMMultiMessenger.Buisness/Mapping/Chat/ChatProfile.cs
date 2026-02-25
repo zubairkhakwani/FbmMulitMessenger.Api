@@ -29,6 +29,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
             CreateMap<BaseResponse<SyncInitialMessagesModelResponse>, BaseResponse<SyncInitialMessagesHttpResponse>>();
 
             CreateMap<GetChatMessagesModelResponse, GetChatMessagesHttpResponse>();
+            CreateMap<MessageReplyModelResponse, MessageReplyHttpResponse>();
+            CreateMap<MessageReplyFileModelResponse, MessageReplyFileHttpResponse>();
             CreateMap<BaseResponse<List<GetChatMessagesModelResponse>>, BaseResponse<List<GetChatMessagesHttpResponse>>>();
 
 

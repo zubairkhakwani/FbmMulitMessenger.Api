@@ -2,19 +2,17 @@
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class GetLocalServerAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, IHubContext<ChatHub> _hubContext) : IRequestHandler<GetLocalServerAccountsModelRequest, BaseResponse<List<GetLocalServerAccountsModelResponse>>>
+    internal class GetLocalServerAccountsModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService) : IRequestHandler<GetLocalServerAccountsModelRequest, BaseResponse<List<GetLocalServerAccountsModelResponse>>>
     {
         public async Task<BaseResponse<List<GetLocalServerAccountsModelResponse>>> Handle(GetLocalServerAccountsModelRequest request, CancellationToken cancellationToken)
         {
@@ -28,11 +26,24 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             _= Enum.TryParse<Roles>(currentUser.Role, out var userRole);
 
             var currentUserId = currentUser.Id;
-            var localServer = await _dbContext.LocalServers.FirstOrDefaultAsync(ls => ls.UserId == currentUserId && ls.UniqueId == request.LocalServerId, cancellationToken);
+            var localServer = await _dbContext
+                                    .LocalServers
+                                    .Include(u => u.User)
+                                    .ThenInclude(s => s.Subscriptions)
+                                    .FirstOrDefaultAsync(ls => ls.UserId == currentUserId && ls.UniqueId == request.LocalServerId, cancellationToken);
 
             if (localServer is null)
             {
                 return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Local server not registered.");
+            }
+
+            var userSubscriptions = localServer.User.Subscriptions;
+
+            var activeSubscription = _userAccountService.GetActiveSubscription(userSubscriptions);
+
+            if (activeSubscription is null)
+            {
+                return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Error("Your subscription has expired, please renew to continue.");
             }
 
             List<Account> accountsToAllocate;
@@ -49,7 +60,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     .ToListAsync(cancellationToken);
 
                 accountsToAllocate = eligibleUsers
-                    .Where(u => u.Subscriptions != null && u.Subscriptions.Any())
+                    .Where(u => u.Subscriptions != null && u.Subscriptions.Count!=0)
                     .Select(u => new
                     {
                         User = u,
@@ -79,7 +90,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                                                      .ToListAsync(cancellationToken);
             }
 
-            var accountStatusSignalR = new List<AccountStatusSignalRModel>();
+            var userAccountSignals = new List<UserAccountSignalRModel>();
 
             foreach (var account in accountsToAllocate)
             {
@@ -88,8 +99,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 account.AuthStatus = AccountAuthStatus.Idle;
                 account.Reason = AccountReason.AssigningToLocalServer;
 
+                var userSignal = userAccountSignals.FirstOrDefault(u => u.AppId == currentUserId);
+
+                if (userSignal == null)
+                {
+                    userSignal = new UserAccountSignalRModel
+                    {
+                        AppId = currentUserId
+                    };
+
+                    userAccountSignals.Add(userSignal);
+                }
+
                 // Prepare SignalR data
-                accountStatusSignalR.Add(
+                userSignal.AccountsStatus.Add(
                     new AccountStatusSignalRModel()
                     {
                         AccountId = account.Id,
@@ -125,8 +148,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             }).ToList();
 
-            await _hubContext.Clients.Group($"App_{currentUserId}")
-                        .SendAsync("HandleAccountStatus", accountStatusSignalR, cancellationToken);
+            //Inform app about the accounts status
+            await _signalRService.NotifyAppAccountStatus(userAccountSignals, cancellationToken);
 
             return BaseResponse<List<GetLocalServerAccountsModelResponse>>.Success("Accounts allocated successfully.", responseData);
         }

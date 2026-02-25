@@ -25,6 +25,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             {
                 var localServers = await _dbContext.LocalServers
                                                        .Include(ls => ls.Accounts)
+                                                       .Include(ls => ls.User)
+                                                       .ThenInclude(u => u.Subscriptions)
                                                        .Where(ls => ls.IsActive)
                                                        .ToListAsync(cancellationToken);
 

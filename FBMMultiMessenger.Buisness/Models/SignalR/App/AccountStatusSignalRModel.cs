@@ -4,7 +4,7 @@ namespace FBMMultiMessenger.Buisness.Models.SignalR.App
 {
     public class UserAccountSignalRModel
     {
-        public int AppId { get; set; }
+        public int AppId { get; set; } // the user id => can be fetched from currentUserService or account also have the userId
         public List<AccountStatusSignalRModel> AccountsStatus { get; set; } = new List<AccountStatusSignalRModel>();
     }
 
