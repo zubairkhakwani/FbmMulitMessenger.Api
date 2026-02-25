@@ -58,22 +58,39 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                                .Where(cm => cm.ChatId == chatId)
                                                .OrderBy(x => x.FBTimestamp).ToList();
 
-            var chatMessages = dbChatMessages.Select(x => new GetChatMessagesModelResponse()
+            var chatMessages = dbChatMessages.Select(x =>
             {
-                ChatMessageId = x.Id,
-                ChatId = request.ChatId,
-                FbMessageId = x.FbMessageId,
-                FbMessageReplyId = x.FbMessageReplyId,
-                MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.Message,
-                MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = dbChatMessages, FbMessageReplyId = x.FbMessageReplyId })?.ReplyTo,
-                IsReceived = x.IsReceived,
-                Message = x.Message,
-                IsTextMessage = x.IsTextMessage,
-                IsImageMessage = x.IsImageMessage,
-                IsVideoMessage = x.IsVideoMessage,
-                IsAudioMessage = x.IsAudioMessage,
-                IsSent = x.IsSent,
-                CreatedAt = x.CreatedAt,
+                var replyResult = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest
+                {
+                    ChatMessages = dbChatMessages,
+                    FbMessageReplyId = x.FbMessageReplyId
+                });
+
+                var messageReply = replyResult is null ? null : new MessageReplyModelResponse()
+                {
+                    Type = replyResult.Type,
+                    Reply = replyResult.Reply,
+                    ReplyTo = replyResult.ReplyTo,
+                    Attachments = replyResult.Attachments
+                };
+
+                return new GetChatMessagesModelResponse
+                {
+                    ChatMessageId = x.Id,
+                    ChatId = request.ChatId,
+                    FbMessageId = x.FbMessageId,
+                    FbMessageReplyId = x.FbMessageReplyId,
+                    IsReceived = x.IsReceived,
+                    Message = x.Message,
+                    IsTextMessage = x.IsTextMessage,
+                    IsImageMessage = x.IsImageMessage,
+                    IsVideoMessage = x.IsVideoMessage,
+                    IsAudioMessage = x.IsAudioMessage,
+                    IsSent = x.IsSent,
+                    MessageReply = messageReply,
+                    CreatedAt = x.CreatedAt,
+                    FbTimeStamp = x.FBTimestamp
+                };
             }).ToList();
 
 

@@ -10,7 +10,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
@@ -86,7 +85,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     IsRead = !request.IsReceived,
                     StartedAt = today,
                     UpdatedAt = today,
-                    
+
                 };
 
                 await _dbContext.AddAsync(newChat, cancellationToken);
@@ -150,8 +149,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             await _dbContext.ChatMessages.AddAsync(newChatMessage, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-
-
             //Get active subscription of the current user.
             var activeSubscription = _dbContext
                                      .Subscriptions
@@ -175,7 +172,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (!isSubscriptionExpired)
             {
-                await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, dbMessage, cancellationToken);
+                await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, newChatMessage.FBTimestamp, dbMessage, cancellationToken);
             }
 
             if (request.IsReceived)
@@ -193,6 +190,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
         }
+
         private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int chatId, List<ChatMessages> messages, int userId, string? messageFrom, bool isSubscriptionExpired = false)
         {
             try
@@ -237,16 +235,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
         }
 
-        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, int chatMessageId, DateTime CreatedAt, string message, CancellationToken cancellationToken)
+        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, int chatMessageId, DateTime CreatedAt, long? fbTimeStamp, string message, CancellationToken cancellationToken)
         {
-            var sendMessageToUserId = $"App_{chat.UserId}";
-
             var chatMessage = await _dbContext.ChatMessages
                                               .Include(cm => cm.Chat)
                                               .AsNoTracking()
                                               .FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageReplyId, cancellationToken)
                                               ??
                                               new ChatMessages();
+
+            var replyResult = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId });
+
+            var messageReply = replyResult is null ? null : new MessageReplyHttpResponse()
+            {
+                Type = replyResult.Type,
+                Reply = replyResult.Reply,
+                ReplyTo = replyResult.ReplyTo,
+                Attachments = replyResult.Attachments?.Select(x => new MessageReplyFileHttpResponse()
+                {
+                    Url  = x.Url
+                }).ToList()
+            };
 
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
@@ -256,8 +265,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 ChatMessageId = chatMessageId,
                 FbMessageId = request.FbMessageId,
                 FbMessageReplyId = request.FbMessageReplyId,
-                MessageReply = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.Message,
-                MessageReplyTo = ChatMessagesHelper.GetMessageReply(new MessageReplyRequest() { ChatMessages = [chatMessage], FbMessageReplyId= request.FbMessageReplyId })?.ReplyTo,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
                 FbListingId = request.FbListingId!,
@@ -272,7 +279,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 IsReceived = request.IsReceived,
-                StartedAt = CreatedAt,
+                MessageReply = messageReply,
+                CreatedAt = CreatedAt,
+                FbTimestamp = fbTimeStamp
             };
 
             var result = ChatMessagesHelper.GetMessagePreview(request.ToMessagePreviewRequest(chat.OtherUserName));
@@ -280,6 +289,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             receivedChat.MessagPreview = result.MessagPreview;
             receivedChat.MessagePreviewFrom = result.SenderName;
 
+
+            var sendMessageToUserId = $"App_{chat.UserId}";
 
             await _hubContext.Clients.Group(sendMessageToUserId)
                 .SendAsync("HandleMessage", receivedChat, cancellationToken);

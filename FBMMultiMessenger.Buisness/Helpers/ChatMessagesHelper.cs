@@ -1,4 +1,7 @@
-﻿using FBMMultiMessenger.Data.Database.DbModels;
+﻿using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Data.Database.DbModels;
+using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.Helpers
 {
@@ -46,19 +49,36 @@ namespace FBMMultiMessenger.Buisness.Helpers
 
             result.ReplyTo = chatMessage.IsReceived ? chatMessage.Chat.OtherUserName : "You";
 
+            var message = chatMessage.Message;
+
+            if (chatMessage.IsVideoMessage || chatMessage.IsImageMessage)
+            {
+                var mediaUrls = JsonSerializer.Deserialize<List<string>>(message);
+
+                result.Attachments = mediaUrls?.Select(x => new MessageReplyFileModelResponse()
+                {
+                    Url = x
+                }).ToList();
+            }
+
             if (chatMessage.IsVideoMessage)
             {
-                result.Message = "Video message";
+                result.Type = MessageReplyType.Video;
             }
             else if (chatMessage.IsImageMessage)
             {
-                result.Message = "Image message";
+                result.Type = MessageReplyType.Image;
             }
             else if (chatMessage.IsAudioMessage)
             {
-                result.Message = "Audio message";
+                result.Type = MessageReplyType.Audio;
             }
-            result.Message = chatMessage.Message;
+            else
+            {
+                result.Type = MessageReplyType.Text;
+            }
+
+            result.Reply = message ?? string.Empty;
 
             return result;
         }
@@ -88,7 +108,9 @@ namespace FBMMultiMessenger.Buisness.Helpers
     }
     public class MessageReplyResult
     {
-        public string Message { get; set; } = string.Empty;
+        public string Reply { get; set; } = string.Empty;
         public string ReplyTo { get; set; } = string.Empty;
+        public MessageReplyType Type { get; set; }
+        public List<MessageReplyFileModelResponse>? Attachments { get; set; }
     }
 }

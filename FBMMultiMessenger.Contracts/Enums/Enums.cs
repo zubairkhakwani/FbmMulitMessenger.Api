@@ -191,4 +191,12 @@ namespace FBMMultiMessenger.Contracts.Enums
         System = 4,
         Proxy = 5
     }
+
+    public enum MessageReplyType
+    {
+        Text = 1,
+        Image = 2,
+        Video = 3,
+        Audio = 4
+    }
 }
