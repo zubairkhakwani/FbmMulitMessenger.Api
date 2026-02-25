@@ -299,15 +299,16 @@ let globalDefaultTemplate = `{
 
             messages.push(messageText);
 
-            const mediaResult = extractMediaUrls(messageData);
+            const mediaResult = extractMediaUrls(messageData, messageText);
 
+            console.log("MessageText:", messageText)
             console.log("Media Result:", mediaResult);
 
             const fbChatId = extractChatId(messageData);
 
             var IsImageMessage = mediaResult.hasImages && !mediaResult.hasVideos;
             var IsVideoMessage = !IsImageMessage && mediaResult.hasVideos;
-            var IsAudioMessage = mediaResult.hasAudio;
+            var IsAudioMessage = mediaResult.hasAudio
             var IsTextMessage = !IsImageMessage && !IsVideoMessage && !IsAudioMessage;
 
             if (IsImageMessage) {
@@ -639,7 +640,21 @@ let globalDefaultTemplate = `{
     }
 
     // For images, videos & voice messages
-    function extractMediaUrls(rawPayload) {
+    function extractMediaUrls(rawPayload, messageText) {
+
+        if (typeof messageText === 'string' && messageText.trim()) {
+            return {
+                hasImages: false,
+                images: [],
+
+                hasVideos: false,
+                videos: [],
+
+                hasAudio: false,
+                audio: [],
+            };
+        }
+
         // Step 1: parse the outer JSON
         const parsed = JSON.parse(rawPayload);
 
