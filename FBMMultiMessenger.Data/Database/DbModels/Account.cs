@@ -1,8 +1,10 @@
 ﻿using FBMMultiMessenger.Contracts.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
+    [Index(nameof(FbAccountId), nameof(UserId), IsUnique = true)]
     public class Account
     {
         public int Id { get; set; }

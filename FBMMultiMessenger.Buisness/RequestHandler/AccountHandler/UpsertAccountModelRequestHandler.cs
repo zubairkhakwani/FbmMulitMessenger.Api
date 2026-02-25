@@ -113,45 +113,80 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var powerfullEligibleServer = _localServerService.GetPowerfulServers(elegibleServers);
                 var assignedServer = _localServerService.GetLeastLoadedServer(powerfullEligibleServer);
 
-                var newAccount = new Account()
-                {
-                    UserId = request.UserId,
-                    Cookie = request.Cookie,
-                    Name = request.Name,
-                    FbAccountId = fbAccountId,
-                    ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
-                    AuthStatus = AccountAuthStatus.Idle,
-                    Reason = assignedServer is null ? AccountReason.NotAssignedToAnyLocalServer : AccountReason.AssigningToLocalServer,
-                    LocalServerId = assignedServer?.Id,
-                    ProxyId = selectedProxy?.Id,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
-                };
-
                 if (assignedServer is not null)
                 {
                     assignedServer.ActiveBrowserCount++;
                 }
                 activeSubscription.LimitUsed++;
 
-                await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                var localServerAccountDTO = new LocalServerAccountDTO()
+                LocalServerAccountDTO localServerAccountDTO = null;
+                //one account can not exist more than once for same user. so this check is important..
+                if (alreadyExistedAccount == null)
                 {
-                    Id = newAccount.Id,
-                    Name = newAccount.Name,
-                    Cookie = newAccount.Cookie,
-                    CreatedAt = newAccount.CreatedAt,
-                    RestartReason = AccountRestartReason.None,
-                    Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
+                    var newAccount = new Account()
                     {
-                        Id = selectedProxy.Id,
-                        Ip_Port = selectedProxy.Ip_Port,
-                        Name = selectedProxy.Name,
-                        Password = selectedProxy.Password
-                    },
-                };
+                        UserId = request.UserId,
+                        Cookie = request.Cookie,
+                        Name = request.Name,
+                        FbAccountId = fbAccountId,
+                        ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
+                        AuthStatus = AccountAuthStatus.Idle,
+                        Reason = assignedServer is null ? AccountReason.NotAssignedToAnyLocalServer : AccountReason.AssigningToLocalServer,
+                        LocalServerId = assignedServer?.Id,
+                        ProxyId = selectedProxy?.Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+
+                    localServerAccountDTO = new LocalServerAccountDTO()
+                    {
+                        Id = newAccount.Id,
+                        Name = newAccount.Name,
+                        Cookie = newAccount.Cookie,
+                        CreatedAt = newAccount.CreatedAt,
+                        RestartReason = AccountRestartReason.None,
+                        Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
+                        {
+                            Id = selectedProxy.Id,
+                            Ip_Port = selectedProxy.Ip_Port,
+                            Name = selectedProxy.Name,
+                            Password = selectedProxy.Password
+                        }
+                    };
+                }
+                else
+                {
+                    alreadyExistedAccount.IsActive = true;
+                    alreadyExistedAccount.Cookie = request.Cookie;
+                    alreadyExistedAccount.Name = request.Name;
+                    alreadyExistedAccount.ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting;
+                    alreadyExistedAccount.AuthStatus = AccountAuthStatus.Idle;
+                    alreadyExistedAccount.LocalServerId = assignedServer?.Id;
+                    alreadyExistedAccount.ProxyId = selectedProxy?.Id;
+                    alreadyExistedAccount.UpdatedAt = DateTime.UtcNow;
+
+                    _dbContext.Accounts.Update(alreadyExistedAccount);
+                    await _dbContext.SaveChangesAsync();
+
+                    localServerAccountDTO = new LocalServerAccountDTO()
+                    {
+                        Id = alreadyExistedAccount.Id,
+                        Name = alreadyExistedAccount.Name,
+                        Cookie = alreadyExistedAccount.Cookie,
+                        CreatedAt = alreadyExistedAccount.CreatedAt,
+                        RestartReason = AccountRestartReason.None,
+                        Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
+                        {
+                            Id = selectedProxy.Id,
+                            Ip_Port = selectedProxy.Ip_Port,
+                            Name = selectedProxy.Name,
+                            Password = selectedProxy.Password
+                        }
+                    };
+                }
 
                 if (assignedServer is not null)
                 {
@@ -309,7 +344,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     RestartReason = accountRestartReason,
                     Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
                     {
-                        Id  = selectedProxy.Id,
+                        Id = selectedProxy.Id,
                         Ip_Port = selectedProxy.Ip_Port,
                         Name = selectedProxy.Name,
                         Password = selectedProxy.Password

@@ -34,6 +34,19 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
+        [HttpGet("statuses")]
+        public async Task<BaseResponse<GetAccountsStatusModelResponse>> GetAccountStatuses()
+        {
+            var request = new GetAccountsStatusModelRequest()
+            {
+            };
+
+            var response = await _mediator.Send(request);
+
+            return response;
+        }
+
+        [Authorize]
         [HttpPost("import")]
         public async Task<BaseResponse<UpsertAccountHttpResponse>> BulkImport([FromBody] List<ImportAccountsHttpRequest> httpRequest)
         {

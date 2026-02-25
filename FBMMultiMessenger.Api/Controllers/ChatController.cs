@@ -68,5 +68,20 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return response;
         }
+
+        [Authorize]
+        [HttpPut("{chatId}/mark-as-read")]
+        public async Task<BaseResponse<MarkChatAsReadModelResponse>> MarkAsRead([FromRoute] int chatId, [FromQuery] int lastLocalMessageId, CancellationToken cancellationToken = default)
+        {
+            var request = new MarkChatAsReadModelRequest()
+            {
+                ChatId = chatId,
+                LastLocalMessageId = lastLocalMessageId
+            };
+
+            var response = await _mediator.Send(request);
+
+            return response;
+        }
     }
 }
