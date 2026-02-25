@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
 
     public class GetUnSyncedMessagesModelResponse
     {
+        public List<SyncAccount> Accounts { get; set; }
         public List<SyncChat> Chats { get; set; }
         public DateTimeOffset LastSyncedAt { get; set; }
     }
@@ -47,7 +48,6 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public DateTime StartedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
-        public SyncAccount? Account { get; set; }
         public List<SyncChatMessages> ChatMessages { get; set; } = new List<SyncChatMessages>();
     }
 
@@ -74,6 +74,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 
     public class SyncAccount
@@ -81,6 +82,8 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public int Id { get; set; }
         public string Name { get; set; }
         public string FbAccountId { get; set; }
+        public bool IsActive { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

@@ -33,16 +33,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             try
             {
                 var chats = await _dbContext.Chats
-                                        .Include(a => a.Account)
                                         .Include(cm => cm.ChatMessages)
                                         .AsNoTracking()
                                         .Where(c => c.UserId == currentUser.Id && (request.LastSyncedMessageAt == null || c.UpdatedAt >= request.LastSyncedMessageAt))
                                         .OrderByDescending(x => x.UpdatedAt)
                                         .ToListAsync(cancellationToken);
 
+                var accounts = await _dbContext.Accounts
+                                        .AsNoTracking()
+                                        .Where(c => c.UserId == currentUser.Id && (request.LastSyncedMessageAt == null || c.UpdatedAt >= request.LastSyncedMessageAt))
+                                        .ToListAsync(cancellationToken);
+
+                var responseAccounts = accounts.Select(a => new SyncAccount
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    FbAccountId = a.FbAccountId,
+                    IsActive = a.IsActive,
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
+                }).ToList();
+
                 foreach (var chat in chats)
                 {
-                    chat.ChatMessages = chat.ChatMessages.Where(cm => (request.LastSyncedMessageAt == null || cm.CreatedAt >= request.LastSyncedMessageAt)).ToList();
+                    chat.ChatMessages = chat.ChatMessages.Where(cm => (request.LastSyncedMessageAt == null || cm.CreatedAt >= request.LastSyncedMessageAt || cm.UpdatedAt >= request.LastSyncedMessageAt)).ToList();
                 }
 
                 var responseChats = chats.Select(c => new SyncChat()
@@ -64,14 +78,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     IsRead = c.IsRead,
                     StartedAt = c.StartedAt,
                     UpdatedAt = c.UpdatedAt,
-                    Account = new SyncAccount
-                    {
-                        Id = c.Account.Id,
-                        Name = c.Account.Name,
-                        FbAccountId = c.Account.FbAccountId,
-                        CreatedAt = c.Account.CreatedAt,
-                        UpdatedAt = c.Account.UpdatedAt
-                    },
                     ChatMessages = c.ChatMessages.Select(cm => new SyncChatMessages()
                     {
                         Id = cm.Id,
@@ -87,13 +93,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                         IsImageMessage = cm.IsImageMessage,
                         IsVideoMessage = cm.IsVideoMessage,
                         IsAudioMessage = cm.IsAudioMessage,
-                        CreatedAt = cm.CreatedAt
+                        CreatedAt = cm.CreatedAt,
+                        UpdatedAt = cm.UpdatedAt,
                     }).ToList()
 
                 }).ToList();
 
                 var response = new GetUnSyncedMessagesModelResponse()
                 {
+                    Accounts = responseAccounts,
                     Chats = responseChats,
                     LastSyncedAt = lastSyncedAt
                 };

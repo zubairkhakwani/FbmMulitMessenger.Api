@@ -28,6 +28,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
 
         //Navigation Properties
         public Chat Chat { get; set; } = null!;

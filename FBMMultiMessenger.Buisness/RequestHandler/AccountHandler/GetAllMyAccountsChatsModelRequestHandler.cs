@@ -36,7 +36,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                         .Include(cm => cm.ChatMessages)
                                         .AsNoTracking()
                                         .Where(u => u.UserId == currentUser.Id)
-                                        .OrderByDescending(x => x.UpdatedAt)
+                                        .OrderByDescending(x => x.ChatMessages.Max(cm => (long?)cm.FBTimestamp))
                                         .ToListAsync(cancellationToken);
 
 

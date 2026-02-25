@@ -64,6 +64,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
 
             var chat = await _dbContext.Chats
+                                       .Include(c => c.Account)
                                        .FirstOrDefaultAsync(x => x.AccountId == request.AccountId && x.FBChatId == request.FbChatId && x.UserId == currentUser.Id, cancellationToken);
 
             var chatReference = chat;
@@ -141,6 +142,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 FbMessageId = request.FbMessageId,
                 FbMessageReplyId = request.FbMessageReplyId,
                 FBTimestamp = request.Timestamp,
@@ -281,7 +283,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsReceived = request.IsReceived,
                 MessageReply = messageReply,
                 CreatedAt = CreatedAt,
-                FbTimestamp = fbTimeStamp
+                FbTimestamp = fbTimeStamp,
+                AccountId = request.AccountId,
+                AccountName = chat?.Account?.Name
             };
 
             var result = ChatMessagesHelper.GetMessagePreview(request.ToMessagePreviewRequest(chat.OtherUserName));

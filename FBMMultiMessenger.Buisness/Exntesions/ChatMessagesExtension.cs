@@ -16,13 +16,13 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             }
             else
             {
-                try
+                if (source.Message.TrimStart().StartsWith("["))
                 {
-                    messages = JsonSerializer.Deserialize<List<string>>(source.Message) ?? new List<string> { source.Message };
+                    messages = JsonSerializer.Deserialize<List<string>>(source.Message)
+                               ?? new List<string> { source.Message };
                 }
-                catch (JsonException)
+                else
                 {
-                    // Not JSON, treat as plain string, because we are saving plain text as well and JSON is for only multiple messages 
                     messages = new List<string> { source.Message };
                 }
             }
