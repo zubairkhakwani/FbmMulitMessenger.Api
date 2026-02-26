@@ -1,4 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Buisness.Request.Subscription;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -11,11 +12,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
+        private readonly IMediator mediator;
 
-        public GetUnSyncedMessagesModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
+        public GetUnSyncedMessagesModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IMediator mediator)
         {
             this._dbContext = dbContext;
             this._currentUserService = currentUserService;
+            this.mediator = mediator;
         }
 
         public async Task<BaseResponse<GetUnSyncedMessagesModelResponse>> Handle(GetUnSyncedMessagesModelRequest request, CancellationToken cancellationToken)
@@ -29,6 +32,19 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
 
             var lastSyncedAt = DateTimeOffset.UtcNow;
+
+            var subscriptionResult = await mediator.Send(new GetMySubscriptionModelRequest());
+            if (!subscriptionResult.IsSuccess || !subscriptionResult.Data.HasActiveSubscription)
+            {
+                var response = new GetUnSyncedMessagesModelResponse()
+                {
+                    HasActiveSubscription = false,
+                    Accounts = new(),
+                    Chats = new(),
+                };
+
+                return BaseResponse<GetUnSyncedMessagesModelResponse>.Error("You can only view your old messages, but new messages will only be shown when you have an active subscription", redirectToPackages: false, showSweetAlert: false, result: response);
+            }
 
             try
             {
@@ -101,6 +117,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
                 var response = new GetUnSyncedMessagesModelResponse()
                 {
+                    HasActiveSubscription = true,
                     Accounts = responseAccounts,
                     Chats = responseChats,
                     LastSyncedAt = lastSyncedAt

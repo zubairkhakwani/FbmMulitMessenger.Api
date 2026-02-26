@@ -4,7 +4,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
 {
     public class HandleChatHttpRequest
     {
-
+        public string? OtherUserId { get; set; }
+        public string? OtherUserName { get; set; }
+        public string? OtherUserProfilePicture { get; set; }
         //[Required]
         public string? FbChatId { get; set; }
 

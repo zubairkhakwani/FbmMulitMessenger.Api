@@ -50,6 +50,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
 
             var formattedStartDate = activeSubscription?.StartedAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
             var formattedExpiredAt = activeSubscription?.ExpiredAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
+            var hasActiveSubscription = activeSubscription?.ExpiredAt <= DateTime.UtcNow;
+
 
             DateTime? expirationDate = activeSubscription?.ExpiredAt;
             DateTime currentDate = DateTime.UtcNow;
@@ -87,6 +89,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 JoinedAt = user.CreatedAt,
                 ExpiredAt = formattedExpiredAt,
                 StartedAt = formattedStartDate,
+                HasActiveSubscription = hasActiveSubscription,
                 RemainingTimeText = message,
                 RemainingDaysCount = days,
                 IsCurrentTrialSubscription = activeSubscription?.IsTrial ?? false

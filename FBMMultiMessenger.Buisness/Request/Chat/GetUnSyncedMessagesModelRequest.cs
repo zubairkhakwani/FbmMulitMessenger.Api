@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
 
     public class GetUnSyncedMessagesModelResponse
     {
+        public bool HasActiveSubscription { get; set; }
         public List<SyncAccount> Accounts { get; set; }
         public List<SyncChat> Chats { get; set; }
         public DateTimeOffset LastSyncedAt { get; set; }

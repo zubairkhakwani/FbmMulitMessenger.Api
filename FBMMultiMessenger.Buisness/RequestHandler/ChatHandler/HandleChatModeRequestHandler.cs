@@ -97,26 +97,52 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             else if (chatReference is not null)
             {
-                var userProfileImg = chatReference.UserProfileImage;
-                var fbListingTitle = chatReference.FbListingTitle;
-                var fbListingImage = chatReference.FBListingImage;
+                // Update chat details if needed
+                if (string.IsNullOrWhiteSpace(chatReference.OtherUserId) && !string.IsNullOrWhiteSpace(request.OtherUserId))
+                {
+                    chatReference.OtherUserId = request.OtherUserId;
+                }
 
-                if (request.UserProfileImg is not null && userProfileImg is null)
+                if (string.IsNullOrWhiteSpace(chatReference.OtherUserName) && !string.IsNullOrWhiteSpace(request.OtherUserName))
+                {
+                    chatReference.OtherUserName = request.OtherUserName;
+                }
+
+                if (string.IsNullOrWhiteSpace(chatReference.UserProfileImage) && !string.IsNullOrWhiteSpace(request.OtherUserProfilePicture))
+                {
+                    chatReference.UserProfileImage = request.OtherUserProfilePicture;
+                }
+
+                if (string.IsNullOrWhiteSpace(chatReference.UserProfileImage) && !string.IsNullOrWhiteSpace(request.UserProfileImg))
                 {
                     chatReference.UserProfileImage = request.UserProfileImg;
                 }
-                if (request.FbListingTitle is not null && fbListingTitle is null)
+                if (string.IsNullOrWhiteSpace(chatReference.FbListingTitle) && !string.IsNullOrWhiteSpace(request.FbListingTitle))
                 {
                     chatReference.FbListingTitle = request.FbListingTitle;
                 }
 
-                if (request.FbListingImg is not null && fbListingImage is null)
+                if (string.IsNullOrWhiteSpace(chatReference.FBListingImage) && !string.IsNullOrWhiteSpace(request.FbListingImg))
                 {
                     chatReference.FBListingImage = request.FbListingImg;
                 }
 
-                chatReference.UpdatedAt = today;
-                chatReference.IsRead = !request.IsReceived;
+                if (string.IsNullOrWhiteSpace(chatReference.FbListingId) && !string.IsNullOrWhiteSpace(request.FbListingId))
+                {
+                    chatReference.FbListingId = request.FbListingId;
+                }
+
+                if (string.IsNullOrWhiteSpace(chatReference.FbListingLocation) && !string.IsNullOrWhiteSpace(request.FbListingLocation))
+                {
+                    chatReference.FbListingLocation = request.FbListingLocation;
+                }
+
+                if (chat.FbListingPrice == null && request.FbListingPrice != null)
+                {
+                    chat.FbListingPrice = request.FbListingPrice;
+                }
+
+                chat.UpdatedAt = DateTime.UtcNow;
             }
 
             var dbMessage = string.Empty;
@@ -259,6 +285,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 }).ToList()
             };
 
+            var fbListingId = request.FbListingId ?? chat.FbListingId;
+
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
             {
@@ -269,15 +297,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 FbMessageReplyId = request.FbMessageReplyId,
                 FbChatId = request.FbChatId,
                 FbAccountId = request.FbAccountId,
-                FbListingId = request.FbListingId!,
+                FbListingId = fbListingId,
                 FbListingTitle = chat.FbListingTitle,
                 FbListingLocation = chat.FbListingLocation,
                 FbListingPrice = chat.FbListingPrice,
                 FbListingImage = chat.FBListingImage,
-                OfflineUniqueId =  request.OfflineUniqueId,
+                OfflineUniqueId = request.OfflineUniqueId,
                 UserProfileImage = chat.UserProfileImage,
                 IsTextMessage = request.IsTextMessage,
-                IsVideoMessage =request.IsVideoMessage,
+                IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 IsReceived = request.IsReceived,

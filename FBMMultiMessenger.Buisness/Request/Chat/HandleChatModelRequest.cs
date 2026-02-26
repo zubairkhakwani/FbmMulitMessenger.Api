@@ -8,6 +8,9 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public required string FbChatId { get; set; }
         public int AccountId { get; set; }
         public required string FbAccountId { get; set; }
+        public string? OtherUserId { get; set; }
+        public string? OtherUserName { get; set; }
+        public string? OtherUserProfilePicture { get; set; }
         public string? FbListingId { get; set; }
         public string? FbListingTitle { get; set; }
         public string? FbListingImg { get; set; }
