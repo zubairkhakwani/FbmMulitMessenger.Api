@@ -2,10 +2,12 @@
 using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Data.Database.DbModels;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using System.Globalization;
 
 namespace FBMMultiMessenger.Buisness.Service
 {
@@ -26,7 +28,7 @@ namespace FBMMultiMessenger.Buisness.Service
             return await SendEmailAsync(toEmail, subject, htmlBody);
         }
 
-        public async Task<bool> SendEmailVerificationEmailAsync(string toEmail, string otp, string userName = "")
+        public async Task<bool> SendEmailVerificationAsync(string toEmail, string otp, string userName = "")
         {
             var subject = "Verify Your Email - FBM Multi Messenger";
             var htmlBody = GetEmailVerificationEmailTemplate(otp, userName);
@@ -46,6 +48,13 @@ namespace FBMMultiMessenger.Buisness.Service
             var subject = "⚠️ Account Logout Notification - FBM Multi Messenger";
             var htmlBody = GetAccountLogoutEmailTemplate(userName, accounts);
             return await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        public async Task<bool> SendPaymentVerificationEmail(string userName, string email, string phoneNumber, string billingCycle, decimal purchasedPrice)
+        {
+            var subject = "New Payment Verification Submitted";
+            var htmlBody = GetPendingSubscriptionNotificationTemplate(userName, email, phoneNumber, billingCycle, purchasedPrice);
+            return await SendEmailAsync("zbrkhakwani@gmail.com", subject, htmlBody);
         }
 
         private string GetAccountLogoutEmailTemplate(string userName, List<AccountStatusSignalRModel> accounts)
@@ -442,8 +451,6 @@ namespace FBMMultiMessenger.Buisness.Service
 </html>";
         }
 
-
-
         private string GetWelcomeEmailTemplate(string userName, string userEmail, bool hasAvailedTrial, int trialAccounts, int trialDurationDays)
         {
             var trialSection = hasAvailedTrial ? $"""
@@ -759,6 +766,137 @@ namespace FBMMultiMessenger.Buisness.Service
     </div>
 </body>
 </html>";
+        }
+
+        private string GetPendingSubscriptionNotificationTemplate(string userName, string email, string phoneNumber, string billingCycle, decimal purchasedPrice)
+        {
+            string formattedPrice = purchasedPrice.ToString("C2", CultureInfo.CreateSpecificCulture("en-PK"));
+
+            return $"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New Subscription Request</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;background-color:#f4f6f9;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" 
+                       style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#4e73df 0%,#224abe 100%);
+                                   padding:30px;text-align:center;">
+                            <h1 style="margin:0;color:#ffffff;font-size:22px;">
+                                📩 New Subscription Application
+                            </h1>
+                            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">
+                                Payment Verification Pending
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:30px 35px;">
+
+                            <p style="font-size:15px;color:#555;margin:0 0 20px;">
+                                A new user has applied for a subscription. 
+                                The payment verification is currently 
+                                <strong style="color:#f6c23e;">Pending</strong>.
+                                Please review the details below and take necessary action.
+                            </p>
+
+                            <!-- User Details -->
+                            <table width="100%" cellpadding="0" cellspacing="0" 
+                                   style="border:1px solid #e3e6f0;border-radius:8px;overflow:hidden;">
+                                <tr style="background-color:#f8f9fc;">
+                                    <td colspan="2" style="padding:14px 16px;
+                                        font-weight:600;color:#4e73df;font-size:14px;">
+                                        Applicant Details
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#666;">
+                                        Full Name
+                                    </td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#333;">
+                                        {userName}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#666;">
+                                        Email Address
+                                    </td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#333;">
+                                        {email}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#666;">
+                                        Phone Number
+                                    </td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#333;">
+                                        {phoneNumber}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#666;">
+                                        Billing Cycle
+                                    </td>
+                                    <td style="padding:12px 16px;border-bottom:1px solid #eee;font-size:14px;color:#333;">
+                                        {billingCycle}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 16px;font-size:14px;color:#666;">
+                                        Purchased Price
+                                    </td>
+                                    <td style="padding:12px 16px;font-size:14px;color:#28a745;font-weight:600;">
+                                        {formattedPrice}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Action Required -->
+                            <div style="margin-top:25px;padding:18px;background-color:#fff3cd;
+                                        border-left:4px solid #f6c23e;border-radius:6px;">
+                                <p style="margin:0;font-size:14px;color:#856404;">
+                                    ⚠️ <strong>Action Required:</strong> 
+                                    Please log in to the portal and verify the payment 
+                                    to approve or reject this subscription request.
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#f8f9fc;padding:20px;text-align:center;
+                                   border-top:1px solid #e3e6f0;">
+                            <p style="margin:0;font-size:12px;color:#999;">
+                                © {DateTime.UtcNow.Year} FBM Multi Messenger - Admin Notification
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""";
         }
 
     }

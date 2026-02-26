@@ -59,7 +59,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 
             if (request.IsEmailVerification)
             {
-                await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);
+                await _emailService.SendEmailVerificationAsync(user.Email, otp, user.Name);
             }
             else
             {

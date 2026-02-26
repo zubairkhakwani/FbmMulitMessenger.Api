@@ -167,8 +167,13 @@ namespace FBMMultiMessenger.Contracts.Enums
     }
     public enum BillingCylce
     {
+        [DisplayInfoAttribute("Monthly", "Monthly billing cycle")]
         Monthly,
+
+        [DisplayInfoAttribute("Semi Annual", "Semi annual billing cycle")]
         SemiAnnual,
+
+        [DisplayInfoAttribute("Annual", "Annual billing cycle")]
         Annual
     }
 
