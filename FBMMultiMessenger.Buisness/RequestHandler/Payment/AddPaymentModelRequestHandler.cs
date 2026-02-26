@@ -1,6 +1,8 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Payment;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Contracts.Extensions;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
@@ -15,12 +17,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IEmailService _emailService;
 
-        public AddPaymentModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IWebHostEnvironment webHostEnvironment)
+        public AddPaymentModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IWebHostEnvironment webHostEnvironment, IEmailService emailService)
         {
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
             this._webHostEnvironment=webHostEnvironment;
+            this._emailService=emailService;
         }
         public async Task<BaseResponse<AddPaymentProofModelResponse>> Handle(AddPaymentProofModelRequest request, CancellationToken cancellationToken)
         {
@@ -80,6 +84,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
             }
 
             var latestPaymentProof = await _dbContext.PaymentVerifications
+                                                     .Include(u => u.User)
                                                      .Where(x => x.UserId == currentUserId)
                                                      .OrderByDescending(x => x.CreatedAt)
                                                      .FirstOrDefaultAsync(cancellationToken);
@@ -144,6 +149,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 await _dbContext.SaveChangesAsync(cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
+
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == currentUserId, cancellationToken);
+
+                if (user !=null)
+                {
+                    var userName = user.Name;
+
+                    var email = user.Email;
+
+                    var phoneNumber = user.ContactNumber;
+
+                    var billingCycle = request.BillingCylce.GetInfo().Name;
+
+
+                    _ = _emailService.SendPaymentVerificationEmail(userName, email, phoneNumber, billingCycle, userPurchasedPrice);
+                }
+               
             }
             catch (Exception ex)
             {

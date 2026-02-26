@@ -84,7 +84,7 @@ namespace FBMMultiMessenger.Buisness.Service
             await _dbContext.VerificationTokens.AddAsync(newPasswordResetToken, cancellationToken);
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await _emailService.SendEmailVerificationEmailAsync(user.Email, otp, user.Name);
+            await _emailService.SendEmailVerificationAsync(user.Email, otp, user.Name);
 
             return BaseResponse<EmailVerificationResponse>.Error("Please verify your email to continue.", result: new EmailVerificationResponse() { IsEmailVerified = false, EmailSendTo = user.Email });
         }
