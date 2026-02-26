@@ -308,7 +308,7 @@ let globalDefaultTemplate = `{
 
             var IsImageMessage = mediaResult.hasImages && !mediaResult.hasVideos;
             var IsVideoMessage = !IsImageMessage && mediaResult.hasVideos;
-            var IsAudioMessage = mediaResult.hasAudio
+            var IsAudioMessage = mediaResult.hasAudio;
             var IsTextMessage = !IsImageMessage && !IsVideoMessage && !IsAudioMessage;
 
             if (IsImageMessage) {
@@ -669,7 +669,8 @@ let globalDefaultTemplate = `{
         );
 
         //excluding thumbnails with stp= parameter => as we were getting multiple same images this would get the job done and will return only the image we needed.
-        if (imageUrls) {
+        if (imageUrls && imageUrls.length > 1) {
+            //in case of big thumb only stp image will come, and we are excluding it so it will be send to api as text message where text will be [9]
             imageUrls = imageUrls.filter((url) => !url.includes("stp="));
         }
 
@@ -1441,7 +1442,14 @@ class MessengerPayloadParser {
         // [6] = ?, [7] = threadId, ...
 
         const threadId = this.extractValue(params[7]);
-        if (!threadId) return;
+        if (!threadId) {
+            return;
+        }
+
+        if (typeof params[3] !== 'string') //in case of messages other than marketplace params[3] is [9] these chats mostly do not come in websocket request we are tracing, but in rare case they can.
+        {
+            return;
+        }
 
         if (!chats.has(threadId)) {
             chats.set(threadId, {
@@ -1585,7 +1593,8 @@ class MessengerPayloadParser {
         // [14] = threadId, [15] = ?, [16] = mimeType, [17] = timestamp,
         // [18] = messageId, [19] = stickerId, ...
 
-        const url = params[0];
+        var url = params[0];
+        const urlStp = params[4]; //in case of big thumb only stp image is coming and normal url will be array of 9 means [9]
         const description = params[13];
         const threadId = this.extractValue(params[14]);
         const messageId = params[18];
@@ -1601,6 +1610,9 @@ class MessengerPayloadParser {
         // Find the message this sticker belongs to
         const message = chat.messages.find(m => m.messageId === messageId);
         if (message) {
+            if (typeof url !== 'string') {
+                url = urlStp;//in case of big thumb only stp image is coming and normal url will be array of 9 means [9]
+            }
             message.attachments.push(url);
 
             // Update message type if it has no text
