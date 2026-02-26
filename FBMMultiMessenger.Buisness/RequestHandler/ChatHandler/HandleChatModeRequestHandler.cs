@@ -142,6 +142,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     chat.FbListingPrice = request.FbListingPrice;
                 }
 
+                chatReference.IsRead = !request.IsReceived;
                 chat.UpdatedAt = DateTime.UtcNow;
             }
 
@@ -161,7 +162,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
                 IsReceived = request.IsReceived,
-                IsRead = false,
+                IsRead = !request.IsReceived,
                 IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
