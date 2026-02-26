@@ -161,7 +161,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 Message = dbMessage.Trim(),
                 ChatId = chatReference!.Id,
                 IsReceived = request.IsReceived,
-                IsRead = !request.IsReceived,
+                IsRead = false,
                 IsSent = true,
                 IsTextMessage = request.IsTextMessage,
                 IsVideoMessage = request.IsVideoMessage,
