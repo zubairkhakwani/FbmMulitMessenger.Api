@@ -57,7 +57,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
                 var accounts = await _dbContext.Accounts
                                         .AsNoTracking()
-                                        .Where(c => c.UserId == currentUser.Id && (request.LastSyncedMessageAt == null || c.UpdatedAt >= request.LastSyncedMessageAt))
+                                        .Where(c => c.UserId == currentUser.Id && (request.LastSyncedMessageAt == null || c.CreatedAt >= request.LastSyncedMessageAt || c.UpdatedAt >= request.LastSyncedMessageAt))
                                         .ToListAsync(cancellationToken);
 
                 var responseAccounts = accounts.Select(a => new SyncAccount
