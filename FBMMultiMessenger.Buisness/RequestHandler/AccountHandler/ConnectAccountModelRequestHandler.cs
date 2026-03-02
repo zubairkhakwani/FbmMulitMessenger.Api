@@ -60,6 +60,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var newAccountHttpResponse = new LocalServerAccountDTO()
             {
                 Id =  account.Id,
+                UserName = account.UserName,
+                Password = account.Password,
                 Name = account.Name,
                 Cookie = account.Cookie,
                 DefaultMessage = account.DefaultMessage?.Message,

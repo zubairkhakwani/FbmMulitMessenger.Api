@@ -17,6 +17,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
     public class UserAccountsHttpResponse
     {
         public int Id { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
         public required string Name { get; set; }
         public required string Cookie { get; set; }
         public string? DefaultMessage { get; set; }

@@ -10,6 +10,7 @@ using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Principal;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -25,6 +26,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             request.UserId = currentUserId!.Value;
+            request.UserName = request.UserName.Trim().ToLower();
 
             if (request.AccountId is null)
             {
@@ -50,11 +52,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     return BaseResponse<UpsertAccountModelResponse>.Error("We couldn’t find your account. Please create an account to continue.");
                 }
 
-                var alreadyExistedAccount = user.Accounts.FirstOrDefault(x => x.FbAccountId == fbAccountId);
+                var alreadyExistedAccount = user.Accounts.FirstOrDefault(x => x.UserName == request.UserName);
 
                 if (alreadyExistedAccount != null && alreadyExistedAccount.IsActive)
                 {
-                    return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook cookie.");
+                    return BaseResponse<UpsertAccountModelResponse>.Error("This account is already being used, please provide another valid facebook account.");
                 }
 
                 var userSubscriptions = user.Subscriptions;
@@ -125,6 +127,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     var newAccount = new Account()
                     {
+                        UserName = request.UserName,
+                        Password = request.Password,
                         UserId = request.UserId,
                         Cookie = request.Cookie,
                         Name = request.Name,
@@ -143,6 +147,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                     localServerAccountDTO = new LocalServerAccountDTO()
                     {
+                        UserName = newAccount.UserName,
+                        Password = newAccount.Password,
                         Id = newAccount.Id,
                         Name = newAccount.Name,
                         Cookie = newAccount.Cookie,
@@ -160,6 +166,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 else
                 {
                     alreadyExistedAccount.IsActive = true;
+                    alreadyExistedAccount.UserName = request.UserName;
+                    alreadyExistedAccount.Password = request.Password;
                     alreadyExistedAccount.Cookie = request.Cookie;
                     alreadyExistedAccount.Name = request.Name;
                     alreadyExistedAccount.ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting;
@@ -173,6 +181,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                     localServerAccountDTO = new LocalServerAccountDTO()
                     {
+                        UserName = alreadyExistedAccount.UserName,
+                        Password = alreadyExistedAccount.Password,
                         Id = alreadyExistedAccount.Id,
                         Name = alreadyExistedAccount.Name,
                         Cookie = alreadyExistedAccount.Cookie,
@@ -309,6 +319,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             // Update account details
+            account.UserName = request.UserName;
+            account.Password = request.Password;
             account.Name = request.Name;
             account.Cookie = request.Cookie;
             account.FbAccountId = fbAccountId;
@@ -338,6 +350,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var localServerAccountDTO = new LocalServerAccountDTO()
                 {
                     Id = account.Id,
+                    UserName = account.UserName,
+                    Password = account.Password,
                     Name = account.Name,
                     Cookie = account.Cookie,
                     CreatedAt = account.CreatedAt,

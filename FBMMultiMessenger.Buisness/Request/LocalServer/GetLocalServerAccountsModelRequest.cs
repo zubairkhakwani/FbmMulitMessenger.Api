@@ -14,6 +14,8 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
     public class GetLocalServerAccountsModelResponse
     {
         public int Id { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
         public required string Name { get; set; }
         public required string Cookie { get; set; }
         public string? DefaultMessage { get; set; }

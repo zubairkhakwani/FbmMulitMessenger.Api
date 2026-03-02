@@ -134,6 +134,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             var responseData = accountsToAllocate.Select(a => new GetLocalServerAccountsModelResponse
             {
                 Id = a.Id,
+                UserName = a.UserName,
+                Password = a.Password,
                 Name = a.Name,
                 Cookie = a.Cookie,
                 DefaultMessage = a.DefaultMessage?.Message,

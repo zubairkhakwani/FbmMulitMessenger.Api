@@ -85,6 +85,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     var newAccounts = sanitizedAccounts.Select(x => new Account()
                     {
                         Name = x.Name,
+                        UserName = x.UserName,
+                        Password = x.Password,
                         FbAccountId = x.FbAccountId,
                         Cookie = x.Cookie,
                         UserId  = currentUserId,
@@ -121,6 +123,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                 var accountDTO = new LocalServerAccountDTO
                                 {
                                     Id = newAccount.Id,
+                                    UserName = newAccount.UserName,
+                                    Password = newAccount.Password,
                                     Name = newAccount.Name,
                                     Cookie = newAccount.Cookie,
                                     CreatedAt = newAccount.CreatedAt,
@@ -186,14 +190,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var incomingAccounts = request.Accounts;
             var uniqueAccounts = new List<ImportAccounts>();
-            var seenCookies = new HashSet<string>();
+            var seenAccounts = new HashSet<string>();
 
             foreach (var account in request.Accounts)
             {
-                if (seenCookies.Contains(account.Cookie))
+                if (seenAccounts.Contains(account.UserName))
                 {
                     response.SkippedAccounts.Add(new SkippedAccountModelResponse
                     {
+                        UserName = account.UserName,
                         Name = account.Name,
                         ProxyId = account.ProxyId,
                         Reason = AccountSkipReason.DuplicateCookie.GetInfo().Name
@@ -202,7 +207,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     continue;
                 }
 
-                seenCookies.Add(account.Cookie);
+                seenAccounts.Add(account.UserName);
                 uniqueAccounts.Add(account);
             }
 
@@ -217,6 +222,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     {
                         response.SkippedAccounts.Add(new SkippedAccountModelResponse
                         {
+                            UserName = account.UserName,
                             Name = account.Name,
                             ProxyId = account.ProxyId,
                             Reason = AccountSkipReason.InvalidProxyId.GetInfo().Name
@@ -230,6 +236,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     {
                         response.SkippedAccounts.Add(new SkippedAccountModelResponse
                         {
+                            UserName = account.UserName,
                             Name = account.Name,
                             ProxyId = account.ProxyId,
                             Reason = AccountSkipReason.UnauthorizedProxy.GetInfo().Name
@@ -241,6 +248,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 {
                     response.SkippedAccounts.Add(new SkippedAccountModelResponse
                     {
+                        UserName = account.UserName,
                         Name = account.Name,
                         ProxyId = account.ProxyId,
                         Reason = AccountSkipReason.MissingRequiredProxy.GetInfo().Name
@@ -248,27 +256,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     continue;
                 }
 
-                var (isValidCookie, fbAccountId) = FBCookieValidatior.Validate(account.Cookie);
+                //var (isValidCookie, fbAccountId) = FBCookieValidatior.Validate(account.Cookie);
 
-                if (!isValidCookie || fbAccountId == null)
-                {
-                    response.SkippedAccounts.Add(new SkippedAccountModelResponse
-                    {
-                        Name = account.Name,
-                        ProxyId = account.ProxyId,
-                        Reason = AccountSkipReason.InvalidCookie.GetInfo().Name
-                    });
-                    continue;
-                }
+                //if (!isValidCookie || fbAccountId == null)
+                //{
+                //    response.SkippedAccounts.Add(new SkippedAccountModelResponse
+                //    {
+                //        UserName = account.UserName,
+                //        Name = account.Name,
+                //        ProxyId = account.ProxyId,
+                //        Reason = AccountSkipReason.InvalidCookie.GetInfo().Name
+                //    });
+                //    continue;
+                //}
 
-                account.FbAccountId = fbAccountId;
+                //account.FbAccountId = fbAccountId;
 
-                bool accountAlreadyExists = existingUserAccounts.Any(existing => existing.FbAccountId == fbAccountId && existing.IsActive);
+                bool accountAlreadyExists = existingUserAccounts.Any(existing => existing.UserName == account.UserName && existing.IsActive);
 
                 if (accountAlreadyExists)
                 {
                     response.SkippedAccounts.Add(new SkippedAccountModelResponse
                     {
+                        UserName = account.UserName,
                         Name = account.Name,
                         ProxyId = account.ProxyId,
                         Reason = AccountSkipReason.AccountAlreadyExists.GetInfo().Name

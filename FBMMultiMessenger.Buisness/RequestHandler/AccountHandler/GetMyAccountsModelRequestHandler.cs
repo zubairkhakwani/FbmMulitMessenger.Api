@@ -65,6 +65,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                      {
                                          Id = x.Id,
                                          Name = x.Name,
+                                         UserName = x.UserName,
+                                         Password = x.Password,
                                          Cookie =  x.Cookie,
                                          DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,

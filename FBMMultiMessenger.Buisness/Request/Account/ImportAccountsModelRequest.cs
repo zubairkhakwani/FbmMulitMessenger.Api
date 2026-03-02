@@ -15,5 +15,8 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public string? ProxyId { get; set; }
 
         public string FbAccountId { get; set; } = string.Empty; //This will be generated in the handler by parsing the cookie so no need to pass fbAccountId
+
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 }

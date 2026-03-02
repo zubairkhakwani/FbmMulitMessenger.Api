@@ -10,6 +10,8 @@ namespace FBMMultiMessenger.Buisness.Models.SignalR.LocalServer
         public string Name { get; set; } = string.Empty;
         public string Cookie { get; set; } = string.Empty;
         public string? DefaultMessage { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
         public AccountRestartReason RestartReason { get; set; }
         public DateTime CreatedAt { get; set; }
         public LocalServerProxyDTO? Proxy { get; set; }

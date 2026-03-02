@@ -15,6 +15,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         [Required]
         public string Cookie { get; set; } = null!;
         public string? ProxyId { get; set; } = null!;
+
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 
     public class UpsertAccountHttpResponse

@@ -10,6 +10,9 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public string Name { get; set; } = null!;
         public string Cookie { get; set; } = null!;
         public string? ProxyId { get; set; }
+
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 
     public class UpsertAccountModelResponse
@@ -26,6 +29,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 
     public class SkippedAccountModelResponse
     {
+        public string UserName { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? ProxyId { get; set; }
         public string Reason { get; set; } = string.Empty;
