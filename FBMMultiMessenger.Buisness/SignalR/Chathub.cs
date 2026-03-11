@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Service.IServices;
+﻿using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
@@ -6,13 +7,12 @@ namespace FBMMultiMessenger.Buisness.SignalR
 {
     public class ChatHub : Hub
     {
-        private static ConcurrentDictionary<string, ConnectionMetadata> _connections = new ConcurrentDictionary<string, ConnectionMetadata>();
         public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
         private readonly ILocalServerService _localServerService;
 
         public ChatHub(ILocalServerService localServerService)
         {
-            this._localServerService=localServerService;
+            this._localServerService = localServerService;
         }
 
         public async Task RegisterLocalServer(string localServerId)
@@ -26,13 +26,13 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     ConnectedAt = DateTime.UtcNow
                 };
 
-                _connections[Context.ConnectionId] = metadata;
+                SingnalRConnectionManager._connections[Context.ConnectionId] = metadata;
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, localServerId);
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, "AllServers");
 
-                await _localServerService.HandleServerOnlineAsync(localServerId);
+                //await _localServerService.HandleServerOnlineAsync(localServerId);
 
                 Console.WriteLine($"User with id {localServerId} connected");
             }
@@ -49,7 +49,7 @@ namespace FBMMultiMessenger.Buisness.SignalR
             {
                 if (!string.IsNullOrWhiteSpace(appId))
                 {
-                    _connections[Context.ConnectionId] = new ConnectionMetadata() { UserId = appId };
+                    SingnalRConnectionManager._connections[Context.ConnectionId] = new ConnectionMetadata() { UserId = appId };
 
                     await Groups.AddToGroupAsync(Context.ConnectionId, appId);
 
@@ -62,19 +62,43 @@ namespace FBMMultiMessenger.Buisness.SignalR
             }
         }
 
+        public async Task RegisterExtension(ExtensionConnectionSignalRModel request)
+        {
+            var accountId = request.AccountId;
+            var apiUserId = request.UserId;
+
+            try
+            {
+                var extensionId = $"extension_{accountId}";
+
+                SingnalRConnectionManager._connections[Context.ConnectionId] = new ConnectionMetadata() { ExtensionId = extensionId, AccountId = accountId, APIUserId = apiUserId };
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, extensionId);
+                await Groups.AddToGroupAsync(Context.ConnectionId, "AllExtensinos");
+
+                await _localServerService.HandleServerOnlineAsync(accountId, apiUserId);
+
+                Console.WriteLine($"Extension with id {extensionId} connected");
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            var connectionMetadata = _connections.FirstOrDefault(x => x.Key == Context.ConnectionId).Value;
+            var connectionMetadata = SingnalRConnectionManager._connections.FirstOrDefault(x => x.Key == Context.ConnectionId).Value;
 
             if (connectionMetadata != null)
             {
-                _connections.TryRemove(Context.ConnectionId, out var _);
+                SingnalRConnectionManager._connections.TryRemove(Context.ConnectionId, out var _);
 
                 var userId = connectionMetadata.UserId;
-                if (connectionMetadata.IsLocalServer)
+                if (connectionMetadata.AccountId != null)
                 {
-                    await _localServerService.HandleServerOfflineAsync(userId);
+                    await _localServerService.HandleServerOfflineAsync(connectionMetadata.AccountId.Value, connectionMetadata.APIUserId.Value);
                 }
 
                 Console.WriteLine($"User with id {userId} disconnected");
@@ -85,6 +109,9 @@ namespace FBMMultiMessenger.Buisness.SignalR
         public class ConnectionMetadata
         {
             public string UserId { get; set; } = string.Empty;
+            public int? APIUserId { get; set; }
+            public string ExtensionId { get; set; } = string.Empty;
+            public int? AccountId { get; set; }
             public bool IsLocalServer { get; set; }
             public DateTime ConnectedAt { get; set; }
         }

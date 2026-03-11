@@ -27,7 +27,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 .Select(a => new AccountStatusResponse
                 {
                     Id = a.Id,
-                    IsConnected = (a.AuthStatus == AccountAuthStatus.LoggedIn)
+                    IsConnected = a.IsExtensionConnected
                 })
                 .ToListAsync();
 

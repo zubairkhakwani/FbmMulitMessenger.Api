@@ -1,20 +1,6 @@
 var root = document.documentElement;
 
 
-root.addEventListener("sendMessageToApi", function (e) {
-    chrome.runtime.sendMessage({
-        key: "sendMessageToApi",
-        detail: e.detail,
-    });
-});
-
-root.addEventListener("syncMessagesToApi", function (e) {
-    chrome.runtime.sendMessage({
-        key: "syncMessagesToApi",
-        detail: e.detail,
-    });
-});
-
 root.addEventListener("notifyAccountAuthState", function (e) {
     chrome.runtime.sendMessage({
         key: "notifyAccountAuthState",
@@ -22,11 +8,36 @@ root.addEventListener("notifyAccountAuthState", function (e) {
     });
 });
 
+root.addEventListener("sendRawChunkToApi", function (e) {
+    chrome.runtime.sendMessage({
+        key: "sendRawChunkToApi",
+        detail: e.detail,
+    });
+});
+
+root.addEventListener("syncListingDetail", function (e) {
+    debugger;
+
+    chrome.runtime.sendMessage({
+        key: "syncListingDetail",
+        detail: e.detail,
+    });
+});
+
 // Listen for messages from background script (SignalR messages)
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    if (request.action === "Print_Logs") {
-        PrintLogs(request.data);
+    if (request.action === 'recheckAuth') {
+        window.postMessage({ type: 'RECHECK_AUTH' }, '*');
+        sendResponse({ success: true });
+    }
+
+    if (request.action === 'getListingInfoRequest') {
+        window.postMessage({
+            type: 'getListingInfoRequest',
+            data: request.data
+        }, '*');
+        sendResponse({ success: true });
     }
 
     if (request.action === "sendMessageToFacebook") {
@@ -45,51 +56,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "setDefaultMessage") {
-        try {
-            let defaultMessage = request.data;
-            setDefaultMessage(defaultMessage);
-
-        } catch (error) {
-            console.error("Error setting default message", error);
-        }
-        sendResponse({ success: true });
-    }
-});
-
-
-
-
 function setMessage(data) {
     window.postMessage(
         {
             type: "SET_FACEBOOK_MESSAGE",
             data: data,
-        },
-
-        "*"
-    );
-}
-
-
-
-function setDefaultMessage(defaultMessage) {
-    window.postMessage(
-        {
-            type: "SET_DEFAULT_MESSAGE",
-            data: defaultMessage,
-        },
-
-        "*"
-    );
-}
-
-function PrintLogs(logs) {
-    window.postMessage(
-        {
-            type: "Print_Logs",
-            data: logs,
         },
 
         "*"

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
@@ -12,6 +13,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsTrial { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime ExpiredAt { get; set; }
+
+        /// <remarks>
+        /// This property gets mapped to the PostgreSQL xmin system column for the sake of enabling concurrency on the given entity.
+        /// </remarks>
+        [Timestamp]
+        public uint Version { get; set; }
 
 
         [ForeignKey(nameof(User))]

@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
@@ -9,13 +10,44 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using static FBMMultiMessenger.Buisness.Service.CurrentUserService;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
-    internal class LocalServerDisconnectionModelRequestHandler(ApplicationDbContext _dbContext, IUserAccountService _userAccountService, ILocalServerService _localServerService, ISubscriptionServerProviderService _subscriptionServerProviderService, IHubContext<ChatHub> _hubContext) : IRequestHandler<LocalServerDisconnectionModelRequest, BaseResponse<LocalServerDisconnectionModelResponse>>
+    internal class LocalServerDisconnectionModelRequestHandler(ApplicationDbContext _dbContext, IUserAccountService _userAccountService, ILocalServerService _localServerService, ISubscriptionServerProviderService _subscriptionServerProviderService, IHubContext<ChatHub> _hubContext, ISignalRService signalRService) : IRequestHandler<LocalServerDisconnectionModelRequest, BaseResponse<LocalServerDisconnectionModelResponse>>
     {
+        private readonly ISignalRService signalRService = signalRService;
+
         public async Task<BaseResponse<LocalServerDisconnectionModelResponse>> Handle(LocalServerDisconnectionModelRequest request, CancellationToken cancellationToken)
         {
+            var dbAccount = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.AccountId);
+            if(dbAccount != null)
+            {
+                dbAccount.IsExtensionConnected = false;
+                dbAccount.UpdatedAt = DateTime.UtcNow;
+                _dbContext.Update(dbAccount);
+
+
+                var signalrModel = new UserAccountSignalRModel
+                {
+                    AppId = request.UserId,
+                    AccountsStatus = new List<AccountStatusSignalRModel> { new(){
+                        AccountId = dbAccount.Id,
+                        ConnectionStatus = AccountConnectionStatus.Offline,
+                        AuthStatus = AccountAuthStatus.NotConnected,
+                        IsConnected = false,
+                        Reason = AccountReason.NotConnected,
+                    } }
+                };
+
+                await signalRService.NotifyAppAccountStatus(new List<UserAccountSignalRModel>() { signalrModel }, cancellationToken);
+
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return BaseResponse<LocalServerDisconnectionModelResponse>.Success("", new LocalServerDisconnectionModelResponse());
+
             var localServer = await _dbContext.LocalServers
                                               .Include(a => a.Accounts)
                                               .Include(u => u.User)

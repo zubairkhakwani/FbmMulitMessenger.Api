@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
-    [Index(nameof(FBChatId), nameof(UserId), IsUnique = true)]
+    [Index(nameof(FBChatId), nameof(FbAccountId), nameof(UserId), IsUnique = true)]
     public class Chat
     {
         public int Id { get; set; }

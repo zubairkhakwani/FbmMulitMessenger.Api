@@ -8,8 +8,8 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
 
         LocalServer? GetLeastLoadedServer(List<LocalServer>? servers);
 
-        Task HandleServerOnlineAsync(string uniqueId);
-        Task HandleServerOfflineAsync(string uniqueId);
+        Task HandleServerOnlineAsync(int accountId, int userId);
+        Task HandleServerOfflineAsync(int accountId, int userId);
         Task MonitorHeartBeatAsync();
 
         string GenereatetUniqueId(string systemUUID);

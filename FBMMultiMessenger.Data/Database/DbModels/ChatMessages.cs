@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace FBMMultiMessenger.Data.Database.DbModels
 {
     [Index(nameof(FBTimestamp))]
+    [Index(nameof(FbMessageId), nameof(ChatId), IsUnique = true)]
     public class ChatMessages
     {
         public int Id { get; set; }

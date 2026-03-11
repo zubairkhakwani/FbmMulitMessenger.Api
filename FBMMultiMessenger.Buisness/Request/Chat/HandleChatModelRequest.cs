@@ -11,13 +11,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? OtherUserId { get; set; }
         public string? OtherUserName { get; set; }
         public string? OtherUserProfilePicture { get; set; }
-        public string? FbListingId { get; set; }
-        public string? FbListingTitle { get; set; }
-        public string? FbListingImg { get; set; }
-        public string? UserProfileImg { get; set; }
         public string? FbMessageReplyId { get; set; }
-        public decimal? FbListingPrice { get; set; }
-        public string? FbListingLocation { get; set; }
         public required List<string> Messages { get; set; }
         public string? OfflineUniqueId { get; set; }
         public long? FbOTID { get; set; }
@@ -28,6 +22,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public bool IsReceived { get; set; }
+        public bool IsNewChatStarted { get; set; }
     }
 
     public class HandleChatModelResponse

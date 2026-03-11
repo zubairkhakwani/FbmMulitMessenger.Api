@@ -23,7 +23,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public required string Name { get; set; }
         public required string FbAccountId { get; set; }
-        public required string Cookie { get; set; }
+        public string? Cookie { get; set; }
         public AccountConnectionStatus ConnectionStatus { get; set; }
         public AccountAuthStatus AuthStatus { get; set; }
         public AccountReason Reason { get; set; }
@@ -31,6 +31,8 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        public bool IsExtensionConnected { get; set; }
 
 
         //Navigation Properties

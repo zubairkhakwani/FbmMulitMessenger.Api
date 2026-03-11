@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260306052215_FbMessageIdSetToUniqueInChatMessageTableUPdated")]
+    partial class FbMessageIdSetToUniqueInChatMessageTableUPdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -681,12 +684,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
@@ -704,8 +701,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 1,
-                            Version = 0u
+                            UserId = 1
                         },
                         new
                         {
@@ -717,8 +713,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 2,
-                            Version = 0u
+                            UserId = 2
                         },
                         new
                         {
@@ -730,8 +725,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 3,
-                            Version = 0u
+                            UserId = 3
                         },
                         new
                         {
@@ -743,8 +737,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 4,
-                            Version = 0u
+                            UserId = 4
                         },
                         new
                         {
@@ -756,8 +749,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             LimitUsed = 0,
                             MaxLimit = 1000,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 5,
-                            Version = 0u
+                            UserId = 5
                         });
                 });
 

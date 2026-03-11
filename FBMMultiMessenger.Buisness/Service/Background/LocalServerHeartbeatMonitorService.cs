@@ -16,7 +16,7 @@ namespace FBMMultiMessenger.Buisness.Service.Background
         {
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
 
                 if (!stoppingToken.IsCancellationRequested)
                 {

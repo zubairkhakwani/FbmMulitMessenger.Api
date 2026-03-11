@@ -40,14 +40,14 @@ namespace FBMMultiMessenger.Buisness.Service
                         .ThenByDescending(s => s.CoreCount).ToList();
         }
 
-        public async Task HandleServerOfflineAsync(string uniqueId)
+        public async Task HandleServerOfflineAsync(int accountId, int userId)
         {
-            await _mediator.Send(new LocalServerDisconnectionModelRequest() { UniqueId = uniqueId });
+            await _mediator.Send(new LocalServerDisconnectionModelRequest() { AccountId = accountId, UserId = userId});
         }
 
-        public async Task HandleServerOnlineAsync(string uniqueId)
+        public async Task HandleServerOnlineAsync(int accountId, int userId)
         {
-            await _mediator.Send(new LocalServerReconnectionModelRequest() { UniqueId = uniqueId });
+            await _mediator.Send(new LocalServerReconnectionModelRequest() { AccountId = accountId, UserId = userId });
         }
 
         public async Task MonitorHeartBeatAsync()

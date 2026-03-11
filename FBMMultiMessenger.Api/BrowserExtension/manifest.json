@@ -4,16 +4,17 @@
   "version": "1.0",
   "permissions": [
     "tabs",
-    "webRequest",
-    "webRequestAuthProvider",
-    "notifications",
-    "alarms"
+    "alarms",
+    "storage"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "FBM Messenger"
+  },
   "host_permissions": [
     "https://localhost:7095/*",
     "https://*.facebook.com/*",
-    "https://unpkg.com/*",
-    "<all_urls>"
+    "https://*.fbmmessenger.com/*"
   ],
   "background": {
     "service_worker": "background.js"

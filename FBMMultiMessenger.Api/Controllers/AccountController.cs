@@ -131,5 +131,25 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
+        [Authorize]
+        [HttpPut("{accountId}/status")]
+        public async Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Status([FromRoute] int accountId, [FromBody] UpdateAccountStatusFromExtensionRequest request)
+        {
+            request.AccountId = accountId;
+            
+            var response = await _mediator.Send(request);
+
+            return response;
+        }
+
+        [Authorize]
+        [HttpPost("register")]
+        public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> RegisterFromExtension([FromBody] RegisterFacebookAccountFromExtensionRequest request)
+        {
+            var response = await _mediator.Send(request);
+
+            return response;
+        }
     }
 }

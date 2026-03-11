@@ -1,7 +1,10 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
+using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
 using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
+using FBMMultiMessenger.Contracts.Contracts.Chat;
+using FBMMultiMessenger.Data.Database.DbModels;
 using Microsoft.AspNetCore.SignalR;
 using static FBMMultiMessenger.Buisness.Models.SignalR.LocalServer.LocalServerAccountDefaultMessage;
 
@@ -57,6 +60,22 @@ namespace FBMMultiMessenger.Buisness.Service
 
         #endregion
 
+        #region Extension
+
+        public async Task NotifyExtensionMessageSent(NotifyLocalServer notifyLocalServer, int accountId, CancellationToken cancellationToken)
+        {
+            await _hubContext.Clients.Group($"extension_{accountId}")
+            .SendAsync("SendMessage", notifyLocalServer, cancellationToken);
+        }
+
+        public async Task AskExtensionForListingInfo(int accountId, GetListingInfoRequest request, CancellationToken cancellationToken)
+        {
+            await _hubContext.Clients.Group($"extension_{accountId}")
+            .SendAsync("GetListingInfo", request, cancellationToken);
+        }
+
+        #endregion
+
 
         #region App
         public async Task NotifyAppAccountStatus(List<UserAccountSignalRModel> accountSignalRModels, CancellationToken cancellationToken)
@@ -67,6 +86,22 @@ namespace FBMMultiMessenger.Buisness.Service
                 await _hubContext.Clients.Group(appId)
                 .SendAsync("HandleAccountStatus", userAccountSignalR.AccountsStatus, cancellationToken);
             }
+        }
+
+        public async Task NotifyAppForMessage(int userId, HandleChatHttpResponse receivedChat, CancellationToken cancellationToken)
+        {
+            var sendMessageToUserId = $"App_{userId}";
+
+            await _hubContext.Clients.Group(sendMessageToUserId)
+                .SendAsync("HandleMessage", receivedChat, cancellationToken);
+        }
+
+        public async Task NotifyAppChatInfoUpdated(int userId, ChatInfoUpdatedSignalRModel request, CancellationToken cancellationToken)
+        {
+            var sendMessageToUserId = $"App_{userId}";
+
+            await _hubContext.Clients.Group(sendMessageToUserId)
+                .SendAsync("HandleChatInfoUpdated", request, cancellationToken);
         }
         #endregion
     }

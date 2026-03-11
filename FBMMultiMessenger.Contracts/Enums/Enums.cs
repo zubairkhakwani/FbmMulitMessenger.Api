@@ -118,6 +118,9 @@ namespace FBMMultiMessenger.Contracts.Enums
 
         [DisplayInfoAttribute("Logged Out", "The account is not authenticated or the user has logged out.")]
         LoggedOut = 3,
+
+        [DisplayInfoAttribute("Account not connected", "Account not connected.")]
+        NotConnected = 4
     }
 
     public enum AccountReason
@@ -141,7 +144,13 @@ namespace FBMMultiMessenger.Contracts.Enums
         NotAssigned_ServerOffline = 5,
 
         [DisplayInfoAttribute("Invalid Proxy or misconfigured", "Either proxy is invalid or misconfigured")]
-        InvalidProxy = 6
+        InvalidProxy = 6,
+
+        [DisplayInfoAttribute("Connected With Extension", "Connected With Extension")]
+        ConnectedWithExtension = 7,
+
+        [DisplayInfoAttribute("Connected With Extension", "Connected With Extension")]
+        NotConnected = 8
     }
 
 

@@ -75,7 +75,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             var accountLocalServer = chat.Account?.LocalServer;
 
             //if local server is null or offline return error
-            if (accountLocalServer is null || !accountLocalServer.IsOnline)
+            if (!chat.Account!.IsExtensionConnected)
             {
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Failed to send message", result: errorResponse);
             }
@@ -94,7 +94,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 MediaPaths = mediaPaths
             };
 
-            await _signalRService.NotifyLocalServerMessageSent(sendChatMessage, accountLocalServer.UniqueId, cancellationToken);
+            await _signalRService.NotifyExtensionMessageSent(sendChatMessage, chat.AccountId.Value, cancellationToken);
 
             return BaseResponse<NotifyLocalServerModelResponse>.Success($"Successfully notify extension of the message {request.Message}.", new NotifyLocalServerModelResponse());
         }

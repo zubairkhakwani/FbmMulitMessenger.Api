@@ -1,7 +1,10 @@
 ﻿using FBMMultiMessenger.Buisness.Exntesions;
 using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
 using FBMMultiMessenger.Buisness.Request.Chat;
+using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Contracts.Chat;
 using FBMMultiMessenger.Contracts.Shared;
@@ -10,8 +13,11 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1.Ocsp;
+using System;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Threading;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
@@ -19,22 +25,55 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
-        private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ISignalRService signalRService;
         private readonly ChatHub _chatHub;
         private readonly OneSignalService _oneSignalNotificationService;
-
+        private readonly IMediator mediator;
         private static readonly ConcurrentDictionary<string, DateTime> _processedOTIDs = new ConcurrentDictionary<string, DateTime>();
         private static DateTime _lastCleanup = DateTime.UtcNow;
 
-        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IHubContext<ChatHub> hubContext, ChatHub chatHub, OneSignalService oneSignalNotificationService)
+        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, ISignalRService signalRService, ChatHub chatHub, OneSignalService oneSignalNotificationService, IMediator mediator)
         {
             this._dbContext = dbContext;
             this._currentUserService=currentUserService;
-            this._hubContext = hubContext;
+            this.signalRService = signalRService;
             this._chatHub = chatHub;
             this._oneSignalNotificationService = oneSignalNotificationService;
+            this.mediator = mediator;
         }
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
+        {
+            var retriedCount = 0;
+
+            while(true)
+            {
+                try
+                {
+                    return await HandleInternal(request, cancellationToken);
+                }
+                catch (DbUpdateException ex)
+                {
+                    if (retriedCount >= 2)
+                    {
+                        return BaseResponse<HandleChatModelResponse>.Error("An error occurred."); // second failure → return failure
+                    }
+
+                    retriedCount++;
+
+                    // 🔹 Clear tracked entities (important!)
+                    _dbContext.ChangeTracker.Clear();
+
+                    // 🔹 Small delay to allow other transaction to commit
+                    await Task.Delay(1500, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    return BaseResponse<HandleChatModelResponse>.Error("An error occurred."); // second failure → return failure
+                }
+            }
+        }
+
+        private async Task<BaseResponse<HandleChatModelResponse>> HandleInternal(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
             var currentUser = _currentUserService.GetCurrentUser();
 
@@ -65,6 +104,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var chat = await _dbContext.Chats
                                        .Include(c => c.Account)
+                                       .ThenInclude(a => a.DefaultMessage)
                                        .FirstOrDefaultAsync(x => x.AccountId == request.AccountId && x.FBChatId == request.FbChatId && x.UserId == currentUser.Id, cancellationToken);
 
             var chatReference = chat;
@@ -77,12 +117,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     AccountId = request.AccountId,
                     FBChatId = request.FbChatId,
                     FbAccountId = request.FbAccountId,
-                    FbListingId = request.FbListingId,
-                    FbListingTitle = request.FbListingTitle,
-                    FBListingImage = request.FbListingImg,
-                    UserProfileImage = request.UserProfileImg,
-                    FbListingLocation = request.FbListingLocation,
-                    FbListingPrice = request.FbListingPrice,
                     IsRead = !request.IsReceived,
                     StartedAt = today,
                     UpdatedAt = today,
@@ -113,35 +147,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     chatReference.UserProfileImage = request.OtherUserProfilePicture;
                 }
 
-                if (string.IsNullOrWhiteSpace(chatReference.UserProfileImage) && !string.IsNullOrWhiteSpace(request.UserProfileImg))
-                {
-                    chatReference.UserProfileImage = request.UserProfileImg;
-                }
-                if (string.IsNullOrWhiteSpace(chatReference.FbListingTitle) && !string.IsNullOrWhiteSpace(request.FbListingTitle))
-                {
-                    chatReference.FbListingTitle = request.FbListingTitle;
-                }
-
-                if (string.IsNullOrWhiteSpace(chatReference.FBListingImage) && !string.IsNullOrWhiteSpace(request.FbListingImg))
-                {
-                    chatReference.FBListingImage = request.FbListingImg;
-                }
-
-                if (string.IsNullOrWhiteSpace(chatReference.FbListingId) && !string.IsNullOrWhiteSpace(request.FbListingId))
-                {
-                    chatReference.FbListingId = request.FbListingId;
-                }
-
-                if (string.IsNullOrWhiteSpace(chatReference.FbListingLocation) && !string.IsNullOrWhiteSpace(request.FbListingLocation))
-                {
-                    chatReference.FbListingLocation = request.FbListingLocation;
-                }
-
-                if (chat.FbListingPrice == null && request.FbListingPrice != null)
-                {
-                    chat.FbListingPrice = request.FbListingPrice;
-                }
-
                 chatReference.IsRead = !request.IsReceived;
                 chat.UpdatedAt = DateTime.UtcNow;
             }
@@ -155,6 +160,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             else
             {
                 dbMessage = request.Messages.FirstOrDefault() ?? string.Empty;
+            }
+
+            var alreadyMessage = await _dbContext.ChatMessages.FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageId && cm.ChatId == chatReference.Id);
+
+            if(alreadyMessage != null)
+            {
+                return BaseResponse<HandleChatModelResponse>.Success($"Message already exists.", new HandleChatModelResponse());
             }
 
             var newChatMessage = new ChatMessages()
@@ -204,6 +216,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, newChatMessage.FBTimestamp, dbMessage, cancellationToken);
             }
 
+            if(string.IsNullOrWhiteSpace(chatReference.FbListingId) || string.IsNullOrWhiteSpace(chatReference.FBListingImage) || string.IsNullOrWhiteSpace(chatReference.UserProfileImage) || string.IsNullOrWhiteSpace(chatReference.FbListingTitle))
+            {
+                await GetListingInfo(chatReference, cancellationToken);
+            }
+
             if (request.IsReceived)
             {
                 var messageFrom = chatReference.FbListingTitle;
@@ -216,8 +233,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await SendMobileNotificationAsync(request, chatReference.Id, unreadMessages, chatReference!.UserId, messageFrom, isSubscriptionExpired);
             }
 
+            if (request.IsNewChatStarted && request.IsReceived && chatReference.Account?.DefaultMessage != null)
+            {
+                var defaultMessageRequest = new NotifyLocalServerModelRequest
+                {
+                    ChatId = chatReference.Id,
+                    Message = chatReference.Account.DefaultMessage.Message,
+                };
+
+                await mediator.Send(defaultMessageRequest);
+            }
+
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
             return BaseResponse<HandleChatModelResponse>.Success(responseMessage, new HandleChatModelResponse());
+        }
+
+        private async Task GetListingInfo(Chat chat, CancellationToken cancellationToken)
+        {
+            var request = new GetListingInfoRequest
+            {
+                ChatId = chat.Id,
+                FbChatId = chat.FBChatId
+            };
+
+            await signalRService.AskExtensionForListingInfo(chat.AccountId.Value, request, cancellationToken);
         }
 
         private async Task SendMobileNotificationAsync(HandleChatModelRequest request, int chatId, List<ChatMessages> messages, int userId, string? messageFrom, bool isSubscriptionExpired = false)
@@ -286,7 +325,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 }).ToList()
             };
 
-            var fbListingId = request.FbListingId ?? chat.FbListingId;
+            var fbListingId = chat.FbListingId;
 
             //Inform the client via signalR.
             var receivedChat = new HandleChatHttpResponse()
@@ -322,11 +361,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             receivedChat.MessagPreview = result.MessagPreview;
             receivedChat.MessagePreviewFrom = result.SenderName;
 
-
-            var sendMessageToUserId = $"App_{chat.UserId}";
-
-            await _hubContext.Clients.Group(sendMessageToUserId)
-                .SendAsync("HandleMessage", receivedChat, cancellationToken);
+            await signalRService.NotifyAppForMessage(chat.UserId, receivedChat, cancellationToken);
         }
 
         private void CleanupOldOTIDs(DateTime currentTime)

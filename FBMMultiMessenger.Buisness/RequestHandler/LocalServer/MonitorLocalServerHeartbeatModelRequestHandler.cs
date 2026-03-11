@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.AccountServer;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
+using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
@@ -23,6 +24,29 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
         {
             try
             {
+                var accountsDict = await _dbContext.Accounts
+                    .Where(a => a.IsExtensionConnected)
+                    .Select(a => new { a.Id, a.UserId })
+                    .ToDictionaryAsync(a => a.Id, a => a.UserId);
+
+                var disconnectedAccounts = SingnalRConnectionManager.GetDisconnectedAccountsIds(accountsDict);
+
+                if (disconnectedAccounts.Any())
+                {
+                    var accountsToUpdate = await _dbContext.Accounts
+                        .Where(a => disconnectedAccounts.Contains(a.Id))
+                        .ToListAsync();
+
+                    foreach (var account in accountsToUpdate)
+                    {
+                        account.IsExtensionConnected = false;
+                    }
+
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                return BaseResponse<MonitorLocalServerHearbeatModelResponse>.Success("disconnected accounts marked as offline", new MonitorLocalServerHearbeatModelResponse());
+
                 var localServers = await _dbContext.LocalServers
                                                        .Include(ls => ls.Accounts)
                                                        .Include(ls => ls.User)

@@ -34,4 +34,11 @@
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="BrowserExtensionBackup\background.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
+	</ItemGroup>
 </Project>
