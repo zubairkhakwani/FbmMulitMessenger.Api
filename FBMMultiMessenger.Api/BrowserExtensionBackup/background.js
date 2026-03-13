@@ -323,7 +323,7 @@ async function handleMessage(request, sender, sendResponse) {
 
         const payload = {
             ...request.detail,
-            accountId,  // ensure accountId always comes from background.js
+            d: accountId,  // ensure accountId always comes from background.js
         };
 
         try {
