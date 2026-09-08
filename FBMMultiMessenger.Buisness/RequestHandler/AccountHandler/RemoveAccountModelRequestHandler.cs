@@ -52,6 +52,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<ToggleAcountStatusModelResponse>.Error("User has no active subscription.");
             }
 
+            //todo: on new subscription, set there LimitUsed to previous limit used.
             activeSubscription.LimitUsed-= accounts.Count;
 
             //Mark accounts as soft delete and decrease active browser count on assigned local servers
