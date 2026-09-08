@@ -204,6 +204,7 @@ async function registerExtensionUser() {
     }
 }
 
+
 async function GetListingInfoRequest(request) {
     console.log("GetListingInfoRequest");
 
@@ -223,6 +224,7 @@ async function GetListingInfoRequest(request) {
         }
     }
 }
+
 
 // Handle incoming messages from app
 async function handleIncomingMessage(sendChatMessageRequest) {
@@ -255,11 +257,13 @@ async function handleIncomingMessage(sendChatMessageRequest) {
     }
 }
 
+
 //Send Message To Server
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleMessage(request, sender, sendResponse);
     return true; // keep port open for ALL async responses
 });
+
 
 async function handleMessage(request, sender, sendResponse) {
     if (request.key === 'logout') {
@@ -405,6 +409,7 @@ async function handleMessage(request, sender, sendResponse) {
     }
 }
 
+
 //helper method
 async function getBase64FromUrl(path) {
     path = `${remoteApiUrl}/${path}`;
@@ -452,12 +457,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 
 
-
 async function loadAuthToken() {
     const result = await chrome.storage.local.get(['authToken', 'apiUserId']);
     authToken = result.authToken || null;
     apiUserId = result.apiUserId || null;
 }
+
+
 
 async function loginToApi(usernameOrKey, password = null) {
     try {
@@ -491,6 +497,7 @@ async function loginToApi(usernameOrKey, password = null) {
     return false;
 }
 
+
 // Helper: authenticated fetch wrapper
 async function apiFetch(url, options = {}) {
     return fetch(url, {
@@ -504,11 +511,15 @@ async function apiFetch(url, options = {}) {
     });
 }
 
+
+
 async function loadAccountId() {
     const result = await chrome.storage.local.get('accountId');
     accountId = result.accountId || null;
     console.log('Loaded accountId from storage:', accountId);
 }
+
+
 
 async function registerAccount(fbAccountId) {
     try {
@@ -530,6 +541,7 @@ async function registerAccount(fbAccountId) {
     }
     return false;
 }
+
 
 // Connects SignalR only if conditions are met
 async function connectSignalR() {
@@ -557,6 +569,8 @@ async function connectSignalR() {
     }
 }
 
+
+
 // Disconnects SignalR intentionally
 async function disconnectSignalR() {
     if (!signalRConnection) return;
@@ -580,11 +594,16 @@ async function disconnectSignalR() {
     }
 }
 
+
+
 // Check if any Facebook tab is currently open
 async function hasAnyFacebookTab() {
     const tabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });
     return tabs.length > 0;
 }
+
+
+
 
 // Disconnect SignalR when all FB tabs are closed
 chrome.tabs.onRemoved.addListener(async (tabId) => {
@@ -594,6 +613,8 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
         await disconnectSignalR();
     }
 });
+
+
 
 // Disconnect when user navigates away from FB on last remaining FB tab
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
@@ -613,6 +634,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     }
 });
 
+
+
 function notifyPopupStatusChange() {
     updateBadge(isConnected);
     chrome.runtime.sendMessage({
@@ -624,11 +647,13 @@ function notifyPopupStatusChange() {
     });
 }
 
+
 function updateBadge(isConnected) {
     const color = isConnected ? '#42c96b' : '#ff4d4d';
     chrome.action.setBadgeText({ text: ' ' });
     chrome.action.setBadgeBackgroundColor({ color });
 }
+
 
 async function recheckFbAuth() {
     const fbTabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });

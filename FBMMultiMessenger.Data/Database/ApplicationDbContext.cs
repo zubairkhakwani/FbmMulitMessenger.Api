@@ -22,6 +22,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<ContactUs> ContactUs { get; set; }
         public DbSet<LocalServer> LocalServers { get; set; }
         public DbSet<Proxy> Proxies { get; set; }
+        public DbSet<ApiKey> ApiKeys { get; set; }
 
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }
@@ -32,6 +33,18 @@ namespace FBMMultiMessenger.Data.DB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Many audit rows per user; only Users.ApiKey holds the live key.
+            modelBuilder.Entity<ApiKey>()
+                        .HasIndex(x => x.UserId);
+
+            modelBuilder.Entity<ApiKey>()
+                        .HasIndex(x => x.Key)
+                        .IsUnique();
+
+            modelBuilder.Entity<User>()
+                        .HasIndex(x => x.ApiKey)
+                        .IsUnique();
 
             modelBuilder.Entity<Role>().HasData(
                new Role() { Id = 1, Name="Customer", CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc) },

@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260908070535_ApiKeyTable")]
+    partial class ApiKeyTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -128,7 +131,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.HasIndex("Key")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("ApiKeys");
                 });
@@ -834,9 +838,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ApiKey")
-                        .HasColumnType("text");
-
                     b.Property<string>("ContactNumber")
                         .IsRequired()
                         .HasColumnType("text");
@@ -869,9 +870,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApiKey")
-                        .IsUnique();
 
                     b.HasIndex("RoleId");
 
@@ -1020,8 +1018,8 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ApiKey", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
-                        .WithMany("ApiKeys")
-                        .HasForeignKey("UserId")
+                        .WithOne("ApiKey")
+                        .HasForeignKey("FBMMultiMessenger.Data.Database.DbModels.ApiKey", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1195,7 +1193,7 @@ namespace FBMMultiMessenger.Data.Migrations
                 {
                     b.Navigation("Accounts");
 
-                    b.Navigation("ApiKeys");
+                    b.Navigation("ApiKey");
 
                     b.Navigation("DefaultMessages");
 

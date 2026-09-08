@@ -20,6 +20,8 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public DateTime CreatedAt { get; set; }
 
+        // Current / active API key. ApiKeys table holds the full generate/revoke audit history.
+        public string? ApiKey { get; set; }
 
         //Navigation Property
         public List<Subscription> Subscriptions { get; set; } = new List<Subscription>();
@@ -28,6 +30,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<VerificationToken> VerificationTokens { get; set; } = new List<VerificationToken>();
         public List<LocalServer> LocalServers { get; set; } = new List<LocalServer>();
         public List<Proxy> Proxies { get; set; } = new List<Proxy>();
+        public List<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
 
         public Role Role { get; set; } = null!;
 
