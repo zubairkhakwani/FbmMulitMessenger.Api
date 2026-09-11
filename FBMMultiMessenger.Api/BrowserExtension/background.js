@@ -13,6 +13,7 @@ var apiUserId = null;
 // Add near the top with other variables
 var authToken = null;
 var apiKey = null;
+var lastRegistrationError = null;
 
 function isAuthenticated() {
     return !!(apiKey || authToken);
@@ -53,9 +54,13 @@ async function retryFailedRequests() {
                 });
             }
             else if (request.key === 'registerAccount') {
-                const registered = await registerAccount(request.payload.fbAccountId);
-                if (!registered) {
-                    throw new Error('Registration still failing');
+                const result = await registerAccount(request.payload.fbAccountId);
+                if (!result.ok) {
+                    if (!result.retryable) {
+                        console.error('Registration failed (not retrying):', result.message);
+                        continue;
+                    }
+                    throw new Error(result.message || 'Registration still failing');
                 }
 
                 await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
@@ -301,6 +306,7 @@ async function handleMessage(request, sender, sendResponse) {
             accountId,
             authToken: isAuthenticated(), // boolean: API key or JWT present
             hasApiKey: !!apiKey,
+            registrationError: lastRegistrationError,
         });
         return true;
     }
@@ -373,11 +379,18 @@ async function handleMessage(request, sender, sendResponse) {
         if (isLoggedIn && fbAccountId) {
             // Register account if not already registered
             if (!accountId) {
-                const registered = await registerAccount(fbAccountId);
-                if (!registered) {
-                    console.error('Could not register account, skipping.');
-                    enqueueFailedRequest('registerAccount', request.detail );
-                    sendResponse({ success: false });
+                const result = await registerAccount(fbAccountId);
+                if (!result.ok) {
+                    console.error('Could not register account:', result.message);
+                    lastRegistrationError = result.message;
+                    notifyPopupRegistrationError();
+
+                    // Only retry when the server was unreachable — not for validation errors
+                    if (result.retryable) {
+                        enqueueFailedRequest('registerAccount', request.detail);
+                    }
+
+                    sendResponse({ success: false, message: result.message });
                     return true;
                 }
 
@@ -614,14 +627,34 @@ async function registerAccount(fbAccountId) {
 
         if (response.isSuccess && response.data && response.data.accountId) {
             accountId = response.data.accountId;
+            lastRegistrationError = null;
             await chrome.storage.local.set({ accountId });
             console.log('Account registered, accountId:', accountId);
-            return true;
+            return { ok: true };
         }
+
+        return {
+            ok: false,
+            message: response.message || 'Account registration failed.',
+            retryable: false,
+        };
     } catch (err) {
         console.error('Account registration failed:', err);
+        return {
+            ok: false,
+            message: 'Could not reach Multi Messenger server.',
+            retryable: true,
+        };
     }
-    return false;
+}
+
+function notifyPopupRegistrationError() {
+    chrome.runtime.sendMessage({
+        key: 'registrationError',
+        message: lastRegistrationError,
+    }).catch(() => {
+        // Popup not open — ignore
+    });
 }
 
 

@@ -7,6 +7,7 @@ const errorMsg = document.getElementById('errorMsg');
 const accountIdLabel = document.getElementById('accountIdLabel');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const registrationErrorMsg = document.getElementById('registrationErrorMsg');
 
 // ── Update the dot & label ────────────────────────────────
 function setStatus(isConnected) {
@@ -39,6 +40,7 @@ chrome.runtime.sendMessage({ key: 'getStatus' }, (response) => {
     // API key (Robo) or JWT login — show status, never ask for email/password when configured
     if (response.authToken || response.hasApiKey) {
         accountIdLabel.textContent = response.accountId || 'Pending...';
+        registrationErrorMsg.textContent = response.registrationError || '';
         showView(connectedView);
     } else {
         showView(loginView);
@@ -96,11 +98,16 @@ logoutBtn.addEventListener('click', () => {
 
 // ── Listen for real-time status changes from background ───
 chrome.runtime.onMessage.addListener((request) => {
+    if (request.key === 'registrationError') {
+        registrationErrorMsg.textContent = request.message || '';
+    }
+
     if (request.key === 'statusChanged') {
         setStatus(request.isConnected);
 
         if (request.accountId) {
             accountIdLabel.textContent = request.accountId;
+            registrationErrorMsg.textContent = '';
         }
     }
 });
