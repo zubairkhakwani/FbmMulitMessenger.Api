@@ -306,6 +306,7 @@ async function handleMessage(request, sender, sendResponse) {
             accountId,
             authToken: isAuthenticated(), // boolean: API key or JWT present
             hasApiKey: !!apiKey,
+            apiKey: apiKey || null,
             registrationError: lastRegistrationError,
         });
         return true;
