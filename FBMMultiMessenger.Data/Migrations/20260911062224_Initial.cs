@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,14 +36,30 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PricingTierAvailabilities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    IsMonthlyAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    IsSemiAnnualAvailable = table.Column<bool>(type: "boolean", nullable: false),
+                    IsAnnualAvailable = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PricingTierAvailabilities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PricingTiers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    MinAccounts = table.Column<int>(type: "integer", nullable: false),
-                    MaxAccounts = table.Column<int>(type: "integer", nullable: false),
-                    PricePerAccount = table.Column<decimal>(type: "numeric", nullable: false)
+                    UptoAccounts = table.Column<int>(type: "integer", nullable: false),
+                    MonthlyPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                    SemiAnnualPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                    AnnualPrice = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -80,6 +96,21 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TrialConfigurations",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    MaxAccounts = table.Column<int>(type: "integer", nullable: false),
+                    DurationDays = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TrialConfigurations", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -92,7 +123,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     ContactNumber = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     IsEmailVerified = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    HasAvailedTrial = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ApiKey = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -101,6 +134,32 @@ namespace FBMMultiMessenger.Data.Migrations
                         name: "FK_Users_Roles_RoleId",
                         column: x => x.RoleId,
                         principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ApiKeys",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    Key = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastUsedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ApiKeys", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ApiKeys_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -204,8 +263,10 @@ namespace FBMMultiMessenger.Data.Migrations
                     LimitUsed = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CanRunOnOurServer = table.Column<bool>(type: "boolean", nullable: false),
+                    IsTrial = table.Column<bool>(type: "boolean", nullable: false),
                     StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ExpiredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     UserId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -257,10 +318,14 @@ namespace FBMMultiMessenger.Data.Migrations
                     ProxyId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     FbAccountId = table.Column<string>(type: "text", nullable: false),
-                    Cookie = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
+                    Cookie = table.Column<string>(type: "text", nullable: true),
+                    ConnectionStatus = table.Column<int>(type: "integer", nullable: false),
+                    AuthStatus = table.Column<int>(type: "integer", nullable: false),
+                    Reason = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsExtensionConnected = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -297,14 +362,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     HandledByUserId = table.Column<int>(type: "integer", nullable: true),
                     SubscriptionId = table.Column<int>(type: "integer", nullable: true),
-                    AccountsPurchased = table.Column<int>(type: "integer", nullable: false),
+                    AccountLimit = table.Column<int>(type: "integer", nullable: false),
                     PurchasePrice = table.Column<decimal>(type: "numeric", nullable: false),
                     ActualPrice = table.Column<decimal>(type: "numeric", nullable: false),
+                    BasePricePerMonth = table.Column<decimal>(type: "numeric", nullable: false),
+                    SavingAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     SubmissionNote = table.Column<string>(type: "text", nullable: true),
                     ReviewNote = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     RejectionReason = table.Column<int>(type: "integer", nullable: false),
+                    BillingCycle = table.Column<int>(type: "integer", nullable: true),
                     ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RejectedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -345,6 +413,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     FbListingLocation = table.Column<string>(type: "text", nullable: true),
                     FBListingImage = table.Column<string>(type: "text", nullable: true),
                     UserProfileImage = table.Column<string>(type: "text", nullable: true),
+                    OtherUserName = table.Column<string>(type: "text", nullable: true),
+                    OtherUserId = table.Column<string>(type: "text", nullable: true),
                     FbListingPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
                     StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -395,6 +465,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ChatId = table.Column<int>(type: "integer", nullable: false),
+                    FbMessageId = table.Column<string>(type: "text", nullable: true),
+                    FbMessageReplyId = table.Column<string>(type: "text", nullable: true),
+                    FBTimestamp = table.Column<long>(type: "bigint", nullable: true),
                     Message = table.Column<string>(type: "text", nullable: false),
                     IsReceived = table.Column<bool>(type: "boolean", nullable: false),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
@@ -403,7 +476,8 @@ namespace FBMMultiMessenger.Data.Migrations
                     IsImageMessage = table.Column<bool>(type: "boolean", nullable: false),
                     IsVideoMessage = table.Column<bool>(type: "boolean", nullable: false),
                     IsAudioMessage = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -417,15 +491,9 @@ namespace FBMMultiMessenger.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "PricingTiers",
-                columns: new[] { "Id", "MaxAccounts", "MinAccounts", "PricePerAccount" },
-                values: new object[,]
-                {
-                    { 1, 10, 1, 100m },
-                    { 2, 20, 11, 50m },
-                    { 3, 100, 21, 40m },
-                    { 4, 2147483647, 101, 30m }
-                });
+                table: "PricingTierAvailabilities",
+                columns: new[] { "Id", "IsAnnualAvailable", "IsMonthlyAvailable", "IsSemiAnnualAvailable" },
+                values: new object[] { 1, true, true, true });
 
             migrationBuilder.InsertData(
                 table: "Roles",
@@ -440,32 +508,38 @@ namespace FBMMultiMessenger.Data.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "ContactNumber", "CreatedAt", "Email", "IsActive", "IsEmailVerified", "Name", "Password", "RoleId" },
+                columns: new[] { "Id", "ApiKey", "ContactNumber", "CreatedAt", "Email", "HasAvailedTrial", "IsActive", "IsEmailVerified", "Name", "Password", "RoleId" },
                 values: new object[,]
                 {
-                    { 1, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "zbrkhakwani@gmail.com", true, false, "Zubair Khakwani", "Zubair!", 3 },
-                    { 2, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "shaheersk12@gmail.com", true, false, "Shaheer Khawjikzai", "Shaheer1!", 3 },
-                    { 3, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "test@gmail.com", true, false, "Test_Customer", "Test1!", 1 },
-                    { 4, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", true, false, "Test_Admin", "Admin1!", 2 },
-                    { 5, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "super@gmail.com", true, false, "Super_Server", "Super1!", 4 }
+                    { 1, null, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "zbrkhakwani@gmail.com", false, true, false, "Zubair Khakwani", "Zubair!", 3 },
+                    { 2, null, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "shaheersk12@gmail.com", false, true, false, "Shaheer Khawjikzai", "Shaheer1!", 3 },
+                    { 3, null, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "test@gmail.com", false, true, false, "Test_Customer", "Test1!", 1 },
+                    { 4, null, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", false, true, false, "Test_Admin", "Admin1!", 2 },
+                    { 5, null, "03330337272", new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), "super@gmail.com", false, true, false, "Super_Server", "Super1!", 4 }
                 });
 
             migrationBuilder.InsertData(
                 table: "Subscriptions",
-                columns: new[] { "Id", "CanRunOnOurServer", "ExpiredAt", "IsActive", "LimitUsed", "MaxLimit", "StartedAt", "UserId" },
+                columns: new[] { "Id", "CanRunOnOurServer", "ExpiredAt", "IsActive", "IsTrial", "LimitUsed", "MaxLimit", "StartedAt", "UserId" },
                 values: new object[,]
                 {
-                    { 1, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 1 },
-                    { 2, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 2 },
-                    { 3, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 3 },
-                    { 4, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 4 },
-                    { 5, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, 0, 1000, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 5 }
+                    { 1, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 1 },
+                    { 2, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, false, 0, 100, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 2 },
+                    { 3, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 3 },
+                    { 4, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, false, 0, 50, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 4 },
+                    { 5, false, new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), false, false, 0, 1000, new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc), 5 }
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_DefaultMessageId",
                 table: "Accounts",
                 column: "DefaultMessageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Accounts_FbAccountId_UserId",
+                table: "Accounts",
+                columns: new[] { "FbAccountId", "UserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_LocalServerId",
@@ -483,14 +557,42 @@ namespace FBMMultiMessenger.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ApiKeys_Key",
+                table: "ApiKeys",
+                column: "Key",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApiKeys_UserId",
+                table: "ApiKeys",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ChatMessages_ChatId",
                 table: "ChatMessages",
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChatMessages_FbMessageId_ChatId",
+                table: "ChatMessages",
+                columns: new[] { "FbMessageId", "ChatId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatMessages_FBTimestamp",
+                table: "ChatMessages",
+                column: "FBTimestamp");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Chats_AccountId",
                 table: "Chats",
                 column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Chats_FBChatId_FbAccountId_UserId",
+                table: "Chats",
+                columns: new[] { "FBChatId", "FbAccountId", "UserId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Chats_UserId",
@@ -538,6 +640,12 @@ namespace FBMMultiMessenger.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Users_ApiKey",
+                table: "Users",
+                column: "ApiKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleId",
                 table: "Users",
                 column: "RoleId");
@@ -552,6 +660,9 @@ namespace FBMMultiMessenger.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ApiKeys");
+
+            migrationBuilder.DropTable(
                 name: "ChatMessages");
 
             migrationBuilder.DropTable(
@@ -561,10 +672,16 @@ namespace FBMMultiMessenger.Data.Migrations
                 name: "PaymentVerificationImages");
 
             migrationBuilder.DropTable(
+                name: "PricingTierAvailabilities");
+
+            migrationBuilder.DropTable(
                 name: "PricingTiers");
 
             migrationBuilder.DropTable(
                 name: "Settings");
+
+            migrationBuilder.DropTable(
+                name: "TrialConfigurations");
 
             migrationBuilder.DropTable(
                 name: "VerificationTokens");

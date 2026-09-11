@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260126061454_UpdatingPricingTierTableAgain")]
-    partial class UpdatingPricingTierTableAgain
+    [Migration("20260911062224_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,7 +40,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Cookie")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
@@ -56,6 +55,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsExtensionConnected")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("LocalServerId")
                         .HasColumnType("integer");
 
@@ -64,6 +66,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<int?>("ProxyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Reason")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -82,7 +87,53 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("FbAccountId", "UserId")
+                        .IsUnique();
+
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ApiKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ApiKeys");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
@@ -148,7 +199,8 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("FBChatId", "UserId");
+                    b.HasIndex("FBChatId", "FbAccountId", "UserId")
+                        .IsUnique();
 
                     b.ToTable("Chats");
                 });
@@ -171,6 +223,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<string>("FbMessageId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FbMessageReplyId")
                         .HasColumnType("text");
 
                     b.Property<bool>("IsAudioMessage")
@@ -198,11 +253,17 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChatId");
 
                     b.HasIndex("FBTimestamp");
+
+                    b.HasIndex("FbMessageId", "ChatId")
+                        .IsUnique();
 
                     b.ToTable("ChatMessages");
                 });
@@ -382,7 +443,7 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AccountsPurchased")
+                    b.Property<int>("AccountLimit")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("ActualPrice")
@@ -390,6 +451,12 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("BasePricePerMonth")
+                        .HasColumnType("numeric");
+
+                    b.Property<int?>("BillingCycle")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -408,6 +475,9 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<string>("ReviewNote")
                         .HasColumnType("text");
+
+                    b.Property<decimal>("SavingAmount")
+                        .HasColumnType("numeric");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -469,24 +539,52 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AnnualPricePerAccount")
+                    b.Property<decimal>("AnnualPrice")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("MaxAccounts")
+                    b.Property<decimal>("MonthlyPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("SemiAnnualPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("UptoAccounts")
                         .HasColumnType("integer");
-
-                    b.Property<int>("MinAccounts")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("MonthlyPricePerAccount")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("SemiAnnualPricePerAccount")
-                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
                     b.ToTable("PricingTiers");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PricingTierAvailability", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsAnnualAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMonthlyAvailable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSemiAnnualAvailable")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PricingTierAvailabilities");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsAnnualAvailable = true,
+                            IsMonthlyAvailable = true,
+                            IsSemiAnnualAvailable = true
+                        });
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
@@ -614,6 +712,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsTrial")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("LimitUsed")
                         .HasColumnType("integer");
 
@@ -625,6 +726,12 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -639,10 +746,12 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
+                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 1
+                            UserId = 1,
+                            Version = 0u
                         },
                         new
                         {
@@ -650,10 +759,12 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
+                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 100,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 2
+                            UserId = 2,
+                            Version = 0u
                         },
                         new
                         {
@@ -661,10 +772,12 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
+                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 3
+                            UserId = 3,
+                            Version = 0u
                         },
                         new
                         {
@@ -672,10 +785,12 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
+                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 50,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 4
+                            UserId = 4,
+                            Version = 0u
                         },
                         new
                         {
@@ -683,11 +798,35 @@ namespace FBMMultiMessenger.Data.Migrations
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = false,
+                            IsTrial = false,
                             LimitUsed = 0,
                             MaxLimit = 1000,
                             StartedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = 5
+                            UserId = 5,
+                            Version = 0u
                         });
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.TrialConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxAccounts")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TrialConfigurations");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
@@ -697,6 +836,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApiKey")
+                        .HasColumnType("text");
 
                     b.Property<string>("ContactNumber")
                         .IsRequired()
@@ -708,6 +850,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasAvailedTrial")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -728,6 +873,9 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ApiKey")
+                        .IsUnique();
+
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
@@ -739,6 +887,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "zbrkhakwani@gmail.com",
+                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Zubair Khakwani",
@@ -751,6 +900,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "shaheersk12@gmail.com",
+                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Shaheer Khawjikzai",
@@ -763,6 +913,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "test@gmail.com",
+                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Test_Customer",
@@ -775,6 +926,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@gmail.com",
+                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Test_Admin",
@@ -787,6 +939,7 @@ namespace FBMMultiMessenger.Data.Migrations
                             ContactNumber = "03330337272",
                             CreatedAt = new DateTime(2025, 9, 20, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "super@gmail.com",
+                            HasAvailedTrial = false,
                             IsActive = true,
                             IsEmailVerified = false,
                             Name = "Super_Server",
@@ -863,6 +1016,17 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("LocalServer");
 
                     b.Navigation("Proxy");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ApiKey", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -1033,6 +1197,8 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("ApiKeys");
 
                     b.Navigation("DefaultMessages");
 
