@@ -12,6 +12,11 @@ var apiUserId = null;
 
 // Add near the top with other variables
 var authToken = null;
+var apiKey = null;
+
+function isAuthenticated() {
+    return !!(apiKey || authToken);
+}
 
 let signalRConnection = null;
 let isConnected = false;
@@ -190,12 +195,21 @@ async function startSignalRConnection() {
 // Register the extension as a user
 async function registerExtensionUser() {
     try {
+        if (apiKey && !apiUserId) {
+            await resolveApiUserId();
+        }
+
+        if (!apiUserId) {
+            console.warn('Cannot register — apiUserId is missing.');
+            return;
+        }
+
         if (signalRConnection && isConnected && accountId) {
 
             var request = { accountId: accountId, userId: apiUserId };
 
             await signalRConnection.invoke("RegisterExtension", request);
-            console.log("Extension registered with accountId:", accountId);
+            console.log("Extension registered with accountId:", accountId, "userId:", apiUserId);
         } else {
             console.warn("Cannot register — not connected or no accountId.");
         }
@@ -268,9 +282,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleMessage(request, sender, sendResponse) {
     if (request.key === 'logout') {
         authToken = null;
-        apiUserId = null;
         accountId = null;
-        await chrome.storage.local.remove(['authToken', 'accountId']);
+        // Keep apiKey + apiUserId when Robo-injected key remains
+        const keysToRemove = ['authToken', 'accountId'];
+        if (!apiKey) {
+            apiUserId = null;
+            keysToRemove.push('apiUserId');
+        }
+        await chrome.storage.local.remove(keysToRemove);
         await disconnectSignalR();
         sendResponse({ success: true });
         return true;
@@ -280,7 +299,8 @@ async function handleMessage(request, sender, sendResponse) {
         sendResponse({
             isConnected,
             accountId,
-            authToken: !!authToken, // just a boolean, don't expose the actual token
+            authToken: isAuthenticated(), // boolean: API key or JWT present
+            hasApiKey: !!apiKey,
         });
         return true;
     }
@@ -292,7 +312,7 @@ async function handleMessage(request, sender, sendResponse) {
     }
 
     //all the authenticated api endpoint should be called below this. and not authenticated endpoints should be called above this..
-    if (!authToken)
+    if (!isAuthenticated())
     {
         console.log("Extension not logged in.");
         return;
@@ -427,7 +447,7 @@ async function getBase64FromUrl(path) {
 
 
 chrome.runtime.onInstalled.addListener(async () => {
-    await loadAuthToken();
+    await loadAuth();
     await loadAccountId();
     chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });
 
@@ -436,6 +456,12 @@ chrome.runtime.onInstalled.addListener(async () => {
         await connectSignalR();
     }
 });
+
+// Service worker restarts — restore auth from storage / Robo inject
+(async () => {
+    await loadAuth();
+    await loadAccountId();
+})();
 
 
 
@@ -457,19 +483,68 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 
 
-async function loadAuthToken() {
-    const result = await chrome.storage.local.get(['authToken', 'apiUserId']);
+async function loadAuth() {
+    // Robo injects __FBM_ROBO_API_KEY__ at the top of this file when packing the extension
+    if (typeof __FBM_ROBO_API_KEY__ !== 'undefined' && __FBM_ROBO_API_KEY__) {
+        apiKey = __FBM_ROBO_API_KEY__;
+        await chrome.storage.local.set({ apiKey });
+    }
+
+    const result = await chrome.storage.local.get(['authToken', 'apiUserId', 'apiKey']);
     authToken = result.authToken || null;
     apiUserId = result.apiUserId || null;
+    if (!apiKey) {
+        apiKey = result.apiKey || null;
+    }
+
+    if (apiKey && !apiUserId) {
+        await resolveApiUserId();
+    }
+}
+
+
+
+async function resolveApiUserId() {
+    if (!apiKey) {
+        return false;
+    }
+
+    try {
+        const res = await apiFetch(`${remoteApiUrl}/api/account/extension-identity`, {
+            method: 'GET',
+        });
+        const data = await res.json();
+
+        if (data.isSuccess && data.data?.userId) {
+            apiUserId = data.data.userId;
+            await chrome.storage.local.set({ apiUserId });
+            console.log('Resolved apiUserId from API key:', apiUserId);
+            return true;
+        }
+
+        console.error('Failed to resolve apiUserId:', data.message || res.status);
+    } catch (err) {
+        console.error('resolveApiUserId failed:', err);
+    }
+
+    return false;
 }
 
 
 
 async function loginToApi(usernameOrKey, password = null) {
+    // Prefer storing a Multi Messenger API key directly (no JWT login)
+    if (!password && usernameOrKey) {
+        apiKey = usernameOrKey;
+        await chrome.storage.local.set({ apiKey });
+        console.log('API key saved.');
+        await resolveApiUserId();
+        await recheckFbAuth();
+        return !!apiUserId;
+    }
+
     try {
-        const body = password
-            ? { email: usernameOrKey, password: password }   // username/password login
-            : { apiKey: usernameOrKey };               // api key login
+        const body = { email: usernameOrKey, password: password };
 
         const res = await fetch(`${remoteApiUrl}/api/auth/login`, {
             method: 'POST',
@@ -488,7 +563,7 @@ async function loginToApi(usernameOrKey, password = null) {
                 apiUserId: data.data.userId
             });
             console.log('Logged in, token saved. UserId:', data.data.userId);
-            await recheckFbAuth(); // 
+            await recheckFbAuth();
             return true;
         }
     } catch (err) {
@@ -500,12 +575,19 @@ async function loginToApi(usernameOrKey, password = null) {
 
 // Helper: authenticated fetch wrapper
 async function apiFetch(url, options = {}) {
+    const authHeaders = {};
+    if (apiKey) {
+        authHeaders['X-API-KEY'] = apiKey;
+    } else if (authToken) {
+        authHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
     return fetch(url, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            ...authHeaders,
             ...(options.headers || {}),
         },
     });
@@ -550,8 +632,17 @@ async function connectSignalR() {
         return;
     }
 
-    if (!authToken) {
+    if (!isAuthenticated()) {
         console.log('Extension not logged in, cannot connect SignalR.');
+        return;
+    }
+
+    if (apiKey && !apiUserId) {
+        await resolveApiUserId();
+    }
+
+    if (!apiUserId) {
+        console.log('No apiUserId yet, cannot connect SignalR.');
         return;
     }
 

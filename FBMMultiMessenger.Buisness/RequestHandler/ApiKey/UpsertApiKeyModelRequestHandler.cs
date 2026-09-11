@@ -12,11 +12,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly CurrentUserService _currentUserService;
+        private readonly AesEncryptionHelper _aesEncryptionHelper;
 
-        public UpsertApiKeyModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
+        public UpsertApiKeyModelRequestHandler(
+            ApplicationDbContext dbContext,
+            CurrentUserService currentUserService,
+            AesEncryptionHelper aesEncryptionHelper)
         {
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
+            this._aesEncryptionHelper=aesEncryptionHelper;
         }
         public async Task<BaseResponse<UpsertApiKeyModelResponse>> Handle(UpsertApiKeyModelRequest request, CancellationToken cancellationToken)
         {
@@ -55,7 +60,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
                 return BaseResponse<UpsertApiKeyModelResponse>.Error("You already have an API key. Please regenerate it instead.");
             }
 
-            var key = await GenerateUniqueKeyAsync(cancellationToken);
+            var key = ApiKeyHelper.GenerateKey(_aesEncryptionHelper, user.Id, out var expiresAt);
+
             var now = DateTime.UtcNow;
 
             var newApiKey = new Data.Database.DbModels.ApiKey()
@@ -64,7 +70,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
                 UserId = request.CurrentUserId,
                 IsActive = true,
                 CreatedAt = now,
-                UpdatedAt = now
+                UpdatedAt = now,
+                ExpiresAt = expiresAt
             };
 
             // Users.ApiKey always mirrors the latest active key; ApiKeys stores the audit trail.
@@ -95,7 +102,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
                 return BaseResponse<UpsertApiKeyModelResponse>.Error("You do not have an API key yet. Please generate one first.");
             }
 
-            var key = await GenerateUniqueKeyAsync(cancellationToken);
+            var key = ApiKeyHelper.GenerateKey(_aesEncryptionHelper, user.Id, out var expiresAt);
+
             var now = DateTime.UtcNow;
 
             // Keep previous keys in the audit table; mark them revoked instead of overwriting.
@@ -112,7 +120,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
                 UserId = request.CurrentUserId,
                 IsActive = true,
                 CreatedAt = now,
-                UpdatedAt = now
+                UpdatedAt = now,
+                ExpiresAt = expiresAt
             };
 
             user.ApiKey = key;
@@ -121,20 +130,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ApiKey
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             return BaseResponse<UpsertApiKeyModelResponse>.Success("API key regenerated successfully", new UpsertApiKeyModelResponse() { Key = key });
-        }
-
-        private async Task<string> GenerateUniqueKeyAsync(CancellationToken cancellationToken)
-        {
-            string key;
-
-            do
-            {
-                key = ApiKeyHelper.GenerateKey();
-            }
-            while (await _dbContext.ApiKeys.AnyAsync(x => x.Key == key, cancellationToken)
-                   || await _dbContext.Users.AnyAsync(x => x.ApiKey == key, cancellationToken));
-
-            return key;
         }
     }
 }

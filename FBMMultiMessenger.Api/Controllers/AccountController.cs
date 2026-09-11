@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.Authentication;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Shared;
@@ -132,7 +133,16 @@ namespace FBMMultiMessenger.Api.Controllers
             return httpResponse;
         }
 
-        [Authorize]
+        [ApiKeyAuthorize]
+        [HttpGet("extension-identity")]
+        public async Task<BaseResponse<GetExtensionIdentityModelResponse>> GetExtensionIdentity()
+        {
+            var response = await _mediator.Send(new GetExtensionIdentityModelRequest());
+
+            return response;
+        }
+
+        [ApiKeyAuthorize]
         [HttpPut("{accountId}/status")]
         public async Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Status([FromRoute] int accountId, [FromBody] UpdateAccountStatusFromExtensionRequest request)
         {
@@ -143,7 +153,7 @@ namespace FBMMultiMessenger.Api.Controllers
             return response;
         }
 
-        [Authorize]
+        [ApiKeyAuthorize]
         [HttpPost("register")]
         public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> RegisterFromExtension([FromBody] RegisterFacebookAccountFromExtensionRequest request)
         {

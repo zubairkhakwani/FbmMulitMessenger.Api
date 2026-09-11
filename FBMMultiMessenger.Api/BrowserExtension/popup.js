@@ -36,12 +36,11 @@ chrome.runtime.sendMessage({ key: 'getStatus' }, (response) => {
 
     setStatus(response.isConnected);
 
-    if (response.authToken) {
-        // Already logged in — show connected view
+    // API key (Robo) or JWT login — show status, never ask for email/password when configured
+    if (response.authToken || response.hasApiKey) {
         accountIdLabel.textContent = response.accountId || 'Pending...';
         showView(connectedView);
     } else {
-        // Not logged in — show login form
         showView(loginView);
     }
 });
@@ -67,7 +66,6 @@ loginBtn.addEventListener('click', async () => {
             loginBtn.textContent = 'Login';
 
             if (response?.success) {
-                // Ask for fresh status after login
                 chrome.runtime.sendMessage({ key: 'getStatus' }, (res) => {
                     setStatus(res?.isConnected || false);
                     accountIdLabel.textContent = res?.accountId || 'Pending...';
@@ -84,7 +82,15 @@ loginBtn.addEventListener('click', async () => {
 logoutBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({ key: 'logout' }, () => {
         setStatus(false);
-        showView(loginView);
+        // Re-check: if API key remains (Robo), stay on connected view
+        chrome.runtime.sendMessage({ key: 'getStatus' }, (res) => {
+            if (res?.hasApiKey || res?.authToken) {
+                accountIdLabel.textContent = res.accountId || 'Pending...';
+                showView(connectedView);
+            } else {
+                showView(loginView);
+            }
+        });
     });
 });
 
@@ -93,7 +99,6 @@ chrome.runtime.onMessage.addListener((request) => {
     if (request.key === 'statusChanged') {
         setStatus(request.isConnected);
 
-        // Update account id if available
         if (request.accountId) {
             accountIdLabel.textContent = request.accountId;
         }

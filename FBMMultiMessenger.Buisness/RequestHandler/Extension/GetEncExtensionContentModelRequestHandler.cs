@@ -44,6 +44,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 string contentFilePath = Path.Combine(extensionFolder, "content.js");
                 string manifestFilePath = Path.Combine(extensionFolder, "manifest.json");
                 string signalRFilePath = Path.Combine(extensionFolder, "signalR.min.js");
+                string popupHtmlFilePath = Path.Combine(extensionFolder, "popup.html");
+                string popupJsFilePath = Path.Combine(extensionFolder, "popup.js");
 
                 //Proxy extension files
                 string proxyBackgroundFilePath = Path.Combine(proxyExtensionFolder, "background.js");
@@ -61,11 +63,25 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                              $"background.js not found at: {proxyBackgroundFilePath}");
                 }
 
+                if (!File.Exists(popupHtmlFilePath))
+                {
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                             $"popup.html not found at: {popupHtmlFilePath}");
+                }
+
+                if (!File.Exists(popupJsFilePath))
+                {
+                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
+                             $"popup.js not found at: {popupJsFilePath}");
+                }
+
                 var BackgroundJs = await File.ReadAllTextAsync(backgroundFilePath, cancellationToken);
                 var InjectJs = await File.ReadAllTextAsync(injectFilePath, cancellationToken);
                 var ContentJs = await File.ReadAllTextAsync(contentFilePath, cancellationToken);
                 var ManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
                 var SignalRPackage = await File.ReadAllTextAsync(signalRFilePath, cancellationToken);
+                var PopupHtml = await File.ReadAllTextAsync(popupHtmlFilePath, cancellationToken);
+                var PopupJs = await File.ReadAllTextAsync(popupJsFilePath, cancellationToken);
 
                 var ProxyBackgroundJs = await File.ReadAllTextAsync(proxyBackgroundFilePath, cancellationToken);
                 var PrxoyManifestJson = await File.ReadAllTextAsync(proxymanifestFilePath, cancellationToken);
@@ -105,6 +121,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                     ContentJs = ContentJs,
                     ManifestJson = ManifestJson,
                     SignalRPackage = SignalRPackage,
+                    PopupHtml = PopupHtml,
+                    PopupJs = PopupJs,
                     ProxyBackgroundJs = ProxyBackgroundJs,
                     ProxyManifestJson = PrxoyManifestJson
                 };
