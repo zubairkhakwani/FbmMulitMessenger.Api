@@ -3,10 +3,9 @@ using FBMMultiMessenger.Buisness.Request.Auth;
 using FBMMultiMessenger.Contracts.Contracts.Auth;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FBMMultiMessenger.Server.Controllers
+namespace FBMMultiMessenger.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
