@@ -91,7 +91,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("{accountId}")]
+        [HttpPost("{accountId}")]
         public async Task<BaseResponse<UpsertAccountHttpResponse>> Edit([FromBody] UpsertAccountHttpRequest httpRequest, [FromRoute] int accountId)
         {
             UpsertAccountModelRequest request = _mapper.Map<UpsertAccountModelRequest>(httpRequest);
@@ -124,7 +124,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("update-status")]
+        [HttpPost("update-status")]
         public async Task<BaseResponse<UpdateAccountStatusHttpResponse>> UpdateStatus([FromBody] UpdateAccountStatusHttpRequest httpRequest)
         {
             BaseResponse<UpdateAccountStatusModelResponse> response = await _mediator.Send(_mapper.Map<UpdateAccountStatusModelRequest>(httpRequest));
@@ -143,7 +143,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [ApiKeyAuthorize]
-        [HttpPut("{accountId}/status")]
+        [HttpPost("{accountId}/status")]
         public async Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Status([FromRoute] int accountId, [FromBody] UpdateAccountStatusFromExtensionRequest request)
         {
             request.AccountId = accountId;

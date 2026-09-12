@@ -45,7 +45,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}")]
+        [HttpPost("{id}")]
         public async Task<BaseResponse<UpsertDefaultMessageHttpResponse>> Edit([FromBody] UpsertDefaultMessageHttpRequest httpRequest, [FromRoute] int id)
         {
             UpsertDefaultMessageModelRequest request = _mapper.Map<UpsertDefaultMessageModelRequest>(httpRequest);

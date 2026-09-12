@@ -64,7 +64,7 @@ async function retryFailedRequests() {
                 }
 
                 await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
-                    method: 'PUT',
+                    method: 'POST',
                     body: JSON.stringify({
                         ...request.payload,  // use original payload as-is from inject.js
                         accountId,
@@ -419,7 +419,7 @@ async function handleMessage(request, sender, sendResponse) {
 
             // Notify your API that this account is now online
             await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
-                method: 'PUT',
+                method: 'POST',
                 body: JSON.stringify(statusRequest),
             });
 

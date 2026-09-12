@@ -42,7 +42,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("regenerate")]
+        [HttpPost("regenerate")]
         public async Task<BaseResponse<UpsertApiKeyHttpResponse>> Regenerate()
         {
             BaseResponse<UpsertApiKeyModelResponse> response = await _mediator.Send(new UpsertApiKeyModelRequest() { IsRegenerate = true });
