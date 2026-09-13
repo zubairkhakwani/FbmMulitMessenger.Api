@@ -52,6 +52,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 Status = paymentVerifications.Status,
             };
 
+            if (paymentVerifications.Status == PaymentStatus.Approved)
+            {
+                response.Description = "Your payment has been verified.";
+                return BaseResponse<GetMyVerificationStatusModelResponse>.Success("Success", response);
+            }
+
+
             response.Description = paymentVerifications.RejectionReason switch
             {
                 PaymentRejectionReason.AMOUNT_LESS_THAN_REQUIRED => PaymentRejectionMessages.AMOUNT_LESS_THAN_REQUIRED,

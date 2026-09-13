@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Request.FacebookWebSocket;
+﻿using FBMMultiMessenger.Buisness.Authentication;
+using FBMMultiMessenger.Buisness.Request.FacebookWebSocket;
 using FBMMultiMessenger.Buisness.Request.Subscription;
 using FBMMultiMessenger.Contracts.Contracts.Subscription;
 using FBMMultiMessenger.Contracts.Shared;
@@ -20,7 +21,7 @@ namespace FBMMultiMessenger.Api.Controllers
             _mediator = mediator;
         }
 
-        [Authorize]
+        [ApiKeyAuthorize]
         [HttpPost]
         public async Task<BaseResponse<WebSocketModelResponse>> Sync([FromBody] WebSocketModelRequest request)
         {
@@ -29,7 +30,7 @@ namespace FBMMultiMessenger.Api.Controllers
             return response;
         }
 
-        [Authorize]
+        [ApiKeyAuthorize]
         [HttpPost("listing-info")]
         public async Task SyncListingInfo([FromBody] SyncListingInfoModelRequest request)
         {

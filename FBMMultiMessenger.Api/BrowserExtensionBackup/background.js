@@ -12,6 +12,12 @@ var apiUserId = null;
 
 // Add near the top with other variables
 var authToken = null;
+var apiKey = null;
+var lastRegistrationError = null;
+
+function isAuthenticated() {
+    return !!(apiKey || authToken);
+}
 
 let signalRConnection = null;
 let isConnected = false;
@@ -48,13 +54,17 @@ async function retryFailedRequests() {
                 });
             }
             else if (request.key === 'registerAccount') {
-                const registered = await registerAccount(request.payload.fbAccountId);
-                if (!registered) {
-                    throw new Error('Registration still failing');
+                const result = await registerAccount(request.payload.fbAccountId);
+                if (!result.ok) {
+                    if (!result.retryable) {
+                        console.error('Registration failed (not retrying):', result.message);
+                        continue;
+                    }
+                    throw new Error(result.message || 'Registration still failing');
                 }
 
                 await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
-                    method: 'PUT',
+                    method: 'POST',
                     body: JSON.stringify({
                         ...request.payload,  // use original payload as-is from inject.js
                         accountId,
@@ -190,12 +200,21 @@ async function startSignalRConnection() {
 // Register the extension as a user
 async function registerExtensionUser() {
     try {
+        if (apiKey && !apiUserId) {
+            await resolveApiUserId();
+        }
+
+        if (!apiUserId) {
+            console.warn('Cannot register — apiUserId is missing.');
+            return;
+        }
+
         if (signalRConnection && isConnected && accountId) {
 
             var request = { accountId: accountId, userId: apiUserId };
 
             await signalRConnection.invoke("RegisterExtension", request);
-            console.log("Extension registered with accountId:", accountId);
+            console.log("Extension registered with accountId:", accountId, "userId:", apiUserId);
         } else {
             console.warn("Cannot register — not connected or no accountId.");
         }
@@ -203,6 +222,7 @@ async function registerExtensionUser() {
         console.error("Error registering extension user:", error);
     }
 }
+
 
 async function GetListingInfoRequest(request) {
     console.log("GetListingInfoRequest");
@@ -223,6 +243,7 @@ async function GetListingInfoRequest(request) {
         }
     }
 }
+
 
 // Handle incoming messages from app
 async function handleIncomingMessage(sendChatMessageRequest) {
@@ -255,18 +276,25 @@ async function handleIncomingMessage(sendChatMessageRequest) {
     }
 }
 
+
 //Send Message To Server
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleMessage(request, sender, sendResponse);
     return true; // keep port open for ALL async responses
 });
 
+
 async function handleMessage(request, sender, sendResponse) {
     if (request.key === 'logout') {
         authToken = null;
-        apiUserId = null;
         accountId = null;
-        await chrome.storage.local.remove(['authToken', 'accountId']);
+        // Keep apiKey + apiUserId when Robo-injected key remains
+        const keysToRemove = ['authToken', 'accountId'];
+        if (!apiKey) {
+            apiUserId = null;
+            keysToRemove.push('apiUserId');
+        }
+        await chrome.storage.local.remove(keysToRemove);
         await disconnectSignalR();
         sendResponse({ success: true });
         return true;
@@ -276,7 +304,10 @@ async function handleMessage(request, sender, sendResponse) {
         sendResponse({
             isConnected,
             accountId,
-            authToken: !!authToken, // just a boolean, don't expose the actual token
+            authToken: isAuthenticated(), // boolean: API key or JWT present
+            hasApiKey: !!apiKey,
+            apiKey: apiKey || null,
+            registrationError: lastRegistrationError,
         });
         return true;
     }
@@ -288,7 +319,7 @@ async function handleMessage(request, sender, sendResponse) {
     }
 
     //all the authenticated api endpoint should be called below this. and not authenticated endpoints should be called above this..
-    if (!authToken)
+    if (!isAuthenticated())
     {
         console.log("Extension not logged in.");
         return;
@@ -349,11 +380,18 @@ async function handleMessage(request, sender, sendResponse) {
         if (isLoggedIn && fbAccountId) {
             // Register account if not already registered
             if (!accountId) {
-                const registered = await registerAccount(fbAccountId);
-                if (!registered) {
-                    console.error('Could not register account, skipping.');
-                    enqueueFailedRequest('registerAccount', request.detail );
-                    sendResponse({ success: false });
+                const result = await registerAccount(fbAccountId);
+                if (!result.ok) {
+                    console.error('Could not register account:', result.message);
+                    lastRegistrationError = result.message;
+                    notifyPopupRegistrationError();
+
+                    // Only retry when the server was unreachable — not for validation errors
+                    if (result.retryable) {
+                        enqueueFailedRequest('registerAccount', request.detail);
+                    }
+
+                    sendResponse({ success: false, message: result.message });
                     return true;
                 }
 
@@ -381,7 +419,7 @@ async function handleMessage(request, sender, sendResponse) {
 
             // Notify your API that this account is now online
             await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
-                method: 'PUT',
+                method: 'POST',
                 body: JSON.stringify(statusRequest),
             });
 
@@ -405,6 +443,7 @@ async function handleMessage(request, sender, sendResponse) {
     }
 }
 
+
 //helper method
 async function getBase64FromUrl(path) {
     path = `${remoteApiUrl}/${path}`;
@@ -422,7 +461,7 @@ async function getBase64FromUrl(path) {
 
 
 chrome.runtime.onInstalled.addListener(async () => {
-    await loadAuthToken();
+    await loadAuth();
     await loadAccountId();
     chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });
 
@@ -431,6 +470,12 @@ chrome.runtime.onInstalled.addListener(async () => {
         await connectSignalR();
     }
 });
+
+// Service worker restarts — restore auth from storage / Robo inject
+(async () => {
+    await loadAuth();
+    await loadAccountId();
+})();
 
 
 
@@ -452,18 +497,68 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 
 
+async function loadAuth() {
+    // Robo injects __FBM_ROBO_API_KEY__ at the top of this file when packing the extension
+    if (typeof __FBM_ROBO_API_KEY__ !== 'undefined' && __FBM_ROBO_API_KEY__) {
+        apiKey = __FBM_ROBO_API_KEY__;
+        await chrome.storage.local.set({ apiKey });
+    }
 
-async function loadAuthToken() {
-    const result = await chrome.storage.local.get(['authToken', 'apiUserId']);
+    const result = await chrome.storage.local.get(['authToken', 'apiUserId', 'apiKey']);
     authToken = result.authToken || null;
     apiUserId = result.apiUserId || null;
+    if (!apiKey) {
+        apiKey = result.apiKey || null;
+    }
+
+    if (apiKey && !apiUserId) {
+        await resolveApiUserId();
+    }
 }
 
-async function loginToApi(usernameOrKey, password = null) {
+
+
+async function resolveApiUserId() {
+    if (!apiKey) {
+        return false;
+    }
+
     try {
-        const body = password
-            ? { email: usernameOrKey, password: password }   // username/password login
-            : { apiKey: usernameOrKey };               // api key login
+        const res = await apiFetch(`${remoteApiUrl}/api/account/extension-identity`, {
+            method: 'GET',
+        });
+        const data = await res.json();
+
+        if (data.isSuccess && data.data?.userId) {
+            apiUserId = data.data.userId;
+            await chrome.storage.local.set({ apiUserId });
+            console.log('Resolved apiUserId from API key:', apiUserId);
+            return true;
+        }
+
+        console.error('Failed to resolve apiUserId:', data.message || res.status);
+    } catch (err) {
+        console.error('resolveApiUserId failed:', err);
+    }
+
+    return false;
+}
+
+
+
+async function loginToApi(usernameOrKey, password = null) {
+    // Prefer storing a Multi Messenger API key directly (no JWT login)
+    if (!password && usernameOrKey) {
+        apiKey = usernameOrKey;
+        await chrome.storage.local.set({ apiKey });
+        console.log('API key saved.');
+        await resolveApiUserId();
+        await recheckFbAuth();
+        return !!apiUserId;
+    }
+
+    try {
+        const body = { email: usernameOrKey, password: password };
 
         const res = await fetch(`${remoteApiUrl}/api/auth/login`, {
             method: 'POST',
@@ -482,7 +577,7 @@ async function loginToApi(usernameOrKey, password = null) {
                 apiUserId: data.data.userId
             });
             console.log('Logged in, token saved. UserId:', data.data.userId);
-            await recheckFbAuth(); // 
+            await recheckFbAuth();
             return true;
         }
     } catch (err) {
@@ -491,24 +586,36 @@ async function loginToApi(usernameOrKey, password = null) {
     return false;
 }
 
+
 // Helper: authenticated fetch wrapper
 async function apiFetch(url, options = {}) {
+    const authHeaders = {};
+    if (apiKey) {
+        authHeaders['X-API-KEY'] = apiKey;
+    } else if (authToken) {
+        authHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
     return fetch(url, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            ...authHeaders,
             ...(options.headers || {}),
         },
     });
 }
+
+
 
 async function loadAccountId() {
     const result = await chrome.storage.local.get('accountId');
     accountId = result.accountId || null;
     console.log('Loaded accountId from storage:', accountId);
 }
+
+
 
 async function registerAccount(fbAccountId) {
     try {
@@ -521,15 +628,36 @@ async function registerAccount(fbAccountId) {
 
         if (response.isSuccess && response.data && response.data.accountId) {
             accountId = response.data.accountId;
+            lastRegistrationError = null;
             await chrome.storage.local.set({ accountId });
             console.log('Account registered, accountId:', accountId);
-            return true;
+            return { ok: true };
         }
+
+        return {
+            ok: false,
+            message: response.message || 'Account registration failed.',
+            retryable: false,
+        };
     } catch (err) {
         console.error('Account registration failed:', err);
+        return {
+            ok: false,
+            message: 'Could not reach Multi Messenger server.',
+            retryable: true,
+        };
     }
-    return false;
 }
+
+function notifyPopupRegistrationError() {
+    chrome.runtime.sendMessage({
+        key: 'registrationError',
+        message: lastRegistrationError,
+    }).catch(() => {
+        // Popup not open — ignore
+    });
+}
+
 
 // Connects SignalR only if conditions are met
 async function connectSignalR() {
@@ -538,8 +666,17 @@ async function connectSignalR() {
         return;
     }
 
-    if (!authToken) {
+    if (!isAuthenticated()) {
         console.log('Extension not logged in, cannot connect SignalR.');
+        return;
+    }
+
+    if (apiKey && !apiUserId) {
+        await resolveApiUserId();
+    }
+
+    if (!apiUserId) {
+        console.log('No apiUserId yet, cannot connect SignalR.');
         return;
     }
 
@@ -556,6 +693,8 @@ async function connectSignalR() {
         await startSignalRConnection();
     }
 }
+
+
 
 // Disconnects SignalR intentionally
 async function disconnectSignalR() {
@@ -580,11 +719,16 @@ async function disconnectSignalR() {
     }
 }
 
+
+
 // Check if any Facebook tab is currently open
 async function hasAnyFacebookTab() {
     const tabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });
     return tabs.length > 0;
 }
+
+
+
 
 // Disconnect SignalR when all FB tabs are closed
 chrome.tabs.onRemoved.addListener(async (tabId) => {
@@ -594,6 +738,8 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
         await disconnectSignalR();
     }
 });
+
+
 
 // Disconnect when user navigates away from FB on last remaining FB tab
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
@@ -613,6 +759,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     }
 });
 
+
+
 function notifyPopupStatusChange() {
     updateBadge(isConnected);
     chrome.runtime.sendMessage({
@@ -624,11 +772,13 @@ function notifyPopupStatusChange() {
     });
 }
 
+
 function updateBadge(isConnected) {
     const color = isConnected ? '#42c96b' : '#ff4d4d';
     chrome.action.setBadgeText({ text: ' ' });
     chrome.action.setBadgeBackgroundColor({ color });
 }
+
 
 async function recheckFbAuth() {
     const fbTabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });

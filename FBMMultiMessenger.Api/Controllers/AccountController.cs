@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FBMMultiMessenger.Buisness.Authentication;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Contracts.Contracts.Account;
 using FBMMultiMessenger.Contracts.Shared;
@@ -90,7 +91,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("{accountId}")]
+        [HttpPost("{accountId}")]
         public async Task<BaseResponse<UpsertAccountHttpResponse>> Edit([FromBody] UpsertAccountHttpRequest httpRequest, [FromRoute] int accountId)
         {
             UpsertAccountModelRequest request = _mapper.Map<UpsertAccountModelRequest>(httpRequest);
@@ -123,7 +124,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("update-status")]
+        [HttpPost("update-status")]
         public async Task<BaseResponse<UpdateAccountStatusHttpResponse>> UpdateStatus([FromBody] UpdateAccountStatusHttpRequest httpRequest)
         {
             BaseResponse<UpdateAccountStatusModelResponse> response = await _mediator.Send(_mapper.Map<UpdateAccountStatusModelRequest>(httpRequest));
@@ -132,8 +133,17 @@ namespace FBMMultiMessenger.Api.Controllers
             return httpResponse;
         }
 
-        [Authorize]
-        [HttpPut("{accountId}/status")]
+        [ApiKeyAuthorize]
+        [HttpGet("extension-identity")]
+        public async Task<BaseResponse<GetExtensionIdentityModelResponse>> GetExtensionIdentity()
+        {
+            var response = await _mediator.Send(new GetExtensionIdentityModelRequest());
+
+            return response;
+        }
+
+        [ApiKeyAuthorize]
+        [HttpPost("{accountId}/status")]
         public async Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Status([FromRoute] int accountId, [FromBody] UpdateAccountStatusFromExtensionRequest request)
         {
             request.AccountId = accountId;
@@ -143,7 +153,7 @@ namespace FBMMultiMessenger.Api.Controllers
             return response;
         }
 
-        [Authorize]
+        [ApiKeyAuthorize]
         [HttpPost("register")]
         public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> RegisterFromExtension([FromBody] RegisterFacebookAccountFromExtensionRequest request)
         {

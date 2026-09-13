@@ -5,12 +5,6 @@ using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -37,8 +31,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 try
                 {
                     var user = await dbContext.Users
-                            .Include(u => u.Subscriptions)
-                            .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
+                                             .Include(u => u.Subscriptions)
+                                             .FirstOrDefaultAsync(u => u.Id == currentUser!.Id, cancellationToken);
 
                     if (user == null)
                     {
@@ -46,7 +40,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     }
 
                     var dbAccount = await dbContext.Accounts
-                                        .FirstOrDefaultAsync(a => a.FbAccountId == request.FbAccountId && a.UserId == currentUser.Id);
+                                                   .FirstOrDefaultAsync(a => a.FbAccountId == request.FbAccountId && a.UserId == currentUser!.Id, cancellationToken);
 
                     if (dbAccount != null && dbAccount.IsActive)
                     {
@@ -78,7 +72,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     var maxLimit = activeSubscription.MaxLimit;
                     var limitUsed = activeSubscription.LimitUsed;
 
-                    if(limitUsed >= maxLimit)
+                    if (limitUsed >= maxLimit)
                     {
                         return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan from the app.", showSweetAlert: true);
                     }

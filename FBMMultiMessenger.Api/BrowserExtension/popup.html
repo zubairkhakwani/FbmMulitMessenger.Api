@@ -126,6 +126,69 @@
             text-align: center;
         }
 
+        #connectedView .field {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        #connectedView label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #555;
+        }
+
+        #connectedView input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+            #connectedView input:focus {
+                border-color: #1877f2;
+            }
+
+        #connectedView .btn {
+            margin-top: 14px;
+        }
+
+        .api-key-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .api-key-row input {
+                flex: 1;
+                min-width: 0;
+            }
+
+        .icon-btn {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .icon-btn:hover {
+                background: #f0f0f0;
+                border-color: #1877f2;
+            }
+
             #connectedView .account-info {
                 background: white;
                 border-radius: 8px;
@@ -153,6 +216,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            margin-bottom: 14px;
         }
 
             .btn-logout:hover {
@@ -207,8 +271,18 @@
             <div class="account-info">
                 <strong id="accountIdLabel">—</strong>
                 <span>Account ID</span>
+                <div class="error-msg" id="registrationErrorMsg"></div>
             </div>
+            <div class="field">
+                <label>API Key</label>
+                <div class="api-key-row">
+                    <input type="password" id="apiKeyInput" placeholder="Enter Multi Messenger API key" autocomplete="off" spellcheck="false" />
+                    <button type="button" class="icon-btn" id="toggleApiKeyBtn" title="Show API key">👁</button>
+                </div>
+            </div>
+            <button class="btn" style="margin-bottom:0.5rem;" id="saveApiKeyBtn">Save API Key</button>
             <button class="btn-logout" id="logoutBtn">Logout</button>
+            <div class="error-msg" id="apiKeyErrorMsg"></div>
         </div>
 
     </div>

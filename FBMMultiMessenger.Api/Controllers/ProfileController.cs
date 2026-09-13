@@ -34,7 +34,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("me/edit")]
+        [HttpPost("me/edit")]
         public async Task<BaseResponse<object>> Edit([FromBody] EditProfileHttpRequest httpRequest)
         {
             EditProfileModelRequest request = _mapper.Map<EditProfileModelRequest>(httpRequest);
@@ -43,7 +43,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("me/changepassword")]
+        [HttpPost("me/changepassword")]
         public async Task<BaseResponse<object>> ChangePassword([FromBody] ChangePasswordHttpRequest httpRequest)
         {
             ChangePasswordModelRequest request = _mapper.Map<ChangePasswordModelRequest>(httpRequest);

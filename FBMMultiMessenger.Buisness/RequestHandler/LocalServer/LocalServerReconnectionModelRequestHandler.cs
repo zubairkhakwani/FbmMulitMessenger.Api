@@ -26,6 +26,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             if (dbAccount != null)
             {
                 dbAccount.IsExtensionConnected = true;
+                dbAccount.AuthStatus = AccountAuthStatus.LoggedIn;
+                dbAccount.ConnectionStatus = AccountConnectionStatus.Online;
                 dbAccount.UpdatedAt = DateTime.UtcNow;
                 _dbContext.Update(dbAccount);
 

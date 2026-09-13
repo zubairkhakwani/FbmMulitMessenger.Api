@@ -43,7 +43,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("{proxyId}")]
+        [HttpPost("{proxyId}")]
         public async Task<BaseResponse<UpsertProxyHttpResponse>> Update([FromBody] UpsertProxyHttpRequest httpRequest, [FromRoute] int proxyId)
         {
             var request = _mapper.Map<UpsertProxyModelRequest>(httpRequest);

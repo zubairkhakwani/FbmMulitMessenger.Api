@@ -70,7 +70,7 @@ namespace FBMMultiMessenger.Api.Controllers
         }
 
         [Authorize]
-        [HttpPut("{chatId}/mark-as-read")]
+        [HttpPost("{chatId}/mark-as-read")]
         public async Task<BaseResponse<MarkChatAsReadModelResponse>> MarkAsRead([FromRoute] int chatId, [FromQuery] int lastLocalMessageId, CancellationToken cancellationToken = default)
         {
             var request = new MarkChatAsReadModelRequest()

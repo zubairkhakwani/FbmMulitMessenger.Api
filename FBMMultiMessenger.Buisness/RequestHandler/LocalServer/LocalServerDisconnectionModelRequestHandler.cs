@@ -1,6 +1,5 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
-using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
@@ -10,7 +9,6 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using static FBMMultiMessenger.Buisness.Service.CurrentUserService;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
@@ -24,6 +22,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             if(dbAccount != null)
             {
                 dbAccount.IsExtensionConnected = false;
+                dbAccount.AuthStatus = AccountAuthStatus.NotConnected;
+                dbAccount.ConnectionStatus = AccountConnectionStatus.Offline;
                 dbAccount.UpdatedAt = DateTime.UtcNow;
                 _dbContext.Update(dbAccount);
 
@@ -33,14 +33,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     AppId = request.UserId,
                     AccountsStatus = new List<AccountStatusSignalRModel> { new(){
                         AccountId = dbAccount.Id,
-                        ConnectionStatus = AccountConnectionStatus.Offline,
-                        AuthStatus = AccountAuthStatus.NotConnected,
+                        ConnectionStatusText = AccountConnectionStatus.Offline.GetInfo().Name,
+                        AuthStatusText = AccountAuthStatus.NotConnected.GetInfo().Name,
                         IsConnected = false,
                         Reason = AccountReason.NotConnected,
                     } }
                 };
 
-                await signalRService.NotifyAppAccountStatus(new List<UserAccountSignalRModel>() { signalrModel }, cancellationToken);
+                await signalRService.NotifyAppAccountStatus(new 
+                    List<UserAccountSignalRModel>() { signalrModel }, cancellationToken);
 
 
                 await _dbContext.SaveChangesAsync(cancellationToken);

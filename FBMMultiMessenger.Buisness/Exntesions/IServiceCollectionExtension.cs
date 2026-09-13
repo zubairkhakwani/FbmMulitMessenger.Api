@@ -1,9 +1,11 @@
-﻿using FBMMultiMessenger.Buisness.Helpers;
+﻿using FBMMultiMessenger.Buisness.Authentication;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.Background;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -48,8 +50,24 @@ namespace FBMMultiMessenger.Buisness.Exntesions
                         "Example: \"Bearer 12345abcdef\"",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
-                    Scheme = "Bearer"
+                    Scheme = "Bearer",
+                    Type = SecuritySchemeType.Http,
+                    BearerFormat = "JWT"
                 });
+
+                options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+                {
+                    Description =
+                        "FBM Multi Messenger API key authentication.\r\n\r\n" +
+                        "Generate the key from the Multi Messenger app under Settings → API Keys.\r\n\r\n" +
+                        "Enter the full key in the text input below (including the FBM_ prefix).\r\n\r\n" +
+                        "This header is only accepted on extension endpoints (Sync, Account register/status).\r\n\r\n" +
+                        "Example: \"FBM_…\"",
+                    Name = ApiKeyDefaults.HeaderName,
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey
+                });
+
                 options.AddSecurityRequirement(new OpenApiSecurityRequirement()
                 {
                     {
@@ -63,6 +81,23 @@ namespace FBMMultiMessenger.Buisness.Exntesions
                             Scheme = "oauth2",
                             Name = "Bearer",
                             In = ParameterLocation.Header
+                        },
+                        new List<string>()
+                    }
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                                        {
+                                            Type = ReferenceType.SecurityScheme,
+                                            Id = "ApiKey"
+                                        },
+                            In = ParameterLocation.Header,
+                            Name = ApiKeyDefaults.HeaderName
                         },
                         new List<string>()
                     }
@@ -91,7 +126,10 @@ namespace FBMMultiMessenger.Buisness.Exntesions
                      ValidateIssuer = false,
                      ValidateAudience = false
                  };
-             });
+             })
+             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+                 ApiKeyDefaults.AuthenticationScheme,
+                 null);
 
             return services;
         }
