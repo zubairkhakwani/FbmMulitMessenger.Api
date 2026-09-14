@@ -399,13 +399,15 @@ async function handleMessage(request, sender, sendResponse) {
             }
 
 
-            if (isLoggedIn && isInitialLogin)
+            // Only Robo-packed builds inject __FBM_AUTO_OPEN_MESSENGER__ = true.
+            // Standalone extension installs leave this unset and must not auto-navigate.
+            if (isLoggedIn && isInitialLogin
+                && typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined'
+                && __FBM_AUTO_OPEN_MESSENGER__)
             {
-                //naviagte to fb messages page so initial sync logic can run..
-
+                // Navigate to FB messages so initial sync logic can run (Robo browser launch only).
                 const fbTabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });
                 if (fbTabs.length > 0) {
-                    // Only do initial sync on first tab
                     await chrome.tabs.update(fbTabs[0].id, {
                         url: 'https://www.facebook.com/messages/t/'
                     });

@@ -871,5 +871,10 @@ function isElementScrollable(element) {
 setTimeout(() => {
     CloseFbChatRecoverPopup();
     checkAccountAuth();
-    ScrollSideBarToLoadChats();
+    // Robo injects __FBM_AUTO_OPEN_MESSENGER__ into this file when packing (Browser Launch only).
+    console.log(`FBM AUTO OPEN MESSENGER ${__FBM_AUTO_OPEN_MESSENGER__}`)
+    if (typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined' && __FBM_AUTO_OPEN_MESSENGER__) {
+
+        ScrollSideBarToLoadChats();
+    }
 }, 1100);
