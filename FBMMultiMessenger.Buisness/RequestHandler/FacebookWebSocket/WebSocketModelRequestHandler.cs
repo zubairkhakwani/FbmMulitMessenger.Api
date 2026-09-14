@@ -214,7 +214,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
             // mirrors: IsImageMessage, IsVideoMessage, IsAudioMessage, IsTextMessage
             bool isImageMessage = mediaResult.HasImages && !mediaResult.HasVideos;
             bool isVideoMessage = !isImageMessage && mediaResult.HasVideos;
-            bool isAudioMessage = mediaResult.HasAudio;
+            bool isAudioMessage = mediaResult.HasAudio && !isImageMessage; //GIF kay case mai dono aa rhaay hotay hain.
             bool isTextMessage = !isImageMessage && !isVideoMessage && !isAudioMessage;
 
             // mirrors: if IsImage -> messages = images, elif IsVideo -> videos, etc
@@ -503,10 +503,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
 
             // mirrors: image regex
             var imageUrls = Regex.Matches(
-                innerPayload,
-                @"https://scontent[^"" ]+\.(?:png|jpg|jpeg|webp|gif)[^"" ]*",
-                RegexOptions.IgnoreCase
-            ).Select(m => m.Value).Distinct().ToList();
+                                 innerPayload,
+                                 @"https://(?:scontent[^""\s]+|cdn\.fbsbx\.com/v/[^""\s]+)\.(?:png|jpg|jpeg|webp|gif)[^""\s]*",
+                                 RegexOptions.IgnoreCase
+                             ).Select(m => m.Value).Distinct().ToList();
 
             // mirrors: if (imageUrls.length > 1) filter out stp=
             if (imageUrls.Count > 1)
