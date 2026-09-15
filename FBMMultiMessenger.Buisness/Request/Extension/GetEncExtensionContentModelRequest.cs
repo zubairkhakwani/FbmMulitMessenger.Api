@@ -5,7 +5,6 @@ namespace FBMMultiMessenger.Buisness.Request.Extension
 {
     public class GetEncExtensionContentModelRequest : IRequest<BaseResponse<GetEncExtensionContentModelResponse>>
     {
-        public bool UpdateServer { get; set; }
     }
 
     public class GetEncExtensionContentModelResponse

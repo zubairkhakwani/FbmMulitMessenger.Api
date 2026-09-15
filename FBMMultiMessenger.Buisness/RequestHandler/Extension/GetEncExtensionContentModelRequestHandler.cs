@@ -1,149 +1,30 @@
-﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Extension;
-using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
-using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 {
-    internal class GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext) : IRequestHandler<GetEncExtensionContentModelRequest, BaseResponse<GetEncExtensionContentModelResponse>>
+    internal class GetEncExtensionContentModelRequestHandler(AesEncryptionHelper aesEncryptionHelper, ApplicationDbContext dbContext, ExtensionContentCache cache) : IRequestHandler<GetEncExtensionContentModelRequest, BaseResponse<GetEncExtensionContentModelResponse>>
     {
         private readonly AesEncryptionHelper _aesEncryptionHelper = aesEncryptionHelper;
-        private readonly IHubContext<ChatHub> _hubContext = hubContext;
         private readonly ApplicationDbContext _dbContext = dbContext;
+        private readonly ExtensionContentCache _cache = cache;
 
         public async Task<BaseResponse<GetEncExtensionContentModelResponse>> Handle(GetEncExtensionContentModelRequest request, CancellationToken cancellationToken)
         {
             try
             {
-                string baseDir = AppContext.BaseDirectory;
-                string extensionFolder = Path.Combine(baseDir, "BrowserExtension");
-                string proxyExtensionFolder = Path.Combine(baseDir, "ProxyExtension");
-
-                if (!Directory.Exists(extensionFolder))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                        $"BrowserExtension folder not found at: {extensionFolder}");
-                }
-
-                if (!Directory.Exists(proxyExtensionFolder))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                        $"ProxyExtension folder not found at: {extensionFolder}");
-                }
-
-
-                //Browser extension files that will help fetching FBM messages.
-                string backgroundFilePath = Path.Combine(extensionFolder, "background.js");
-                string injectFilePath = Path.Combine(extensionFolder, "inject.js");
-                string contentFilePath = Path.Combine(extensionFolder, "content.js");
-                string manifestFilePath = Path.Combine(extensionFolder, "manifest.json");
-                string signalRFilePath = Path.Combine(extensionFolder, "signalR.min.js");
-                string popupHtmlFilePath = Path.Combine(extensionFolder, "popup.html");
-                string popupJsFilePath = Path.Combine(extensionFolder, "popup.js");
-
-                //Proxy extension files
-                string proxyBackgroundFilePath = Path.Combine(proxyExtensionFolder, "background.js");
-                string proxymanifestFilePath = Path.Combine(proxyExtensionFolder, "manifest.json");
-
-                if (!File.Exists(backgroundFilePath))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                             $"background.js not found at: {backgroundFilePath}");
-                }
-
-                if (!File.Exists(proxyBackgroundFilePath))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                             $"background.js not found at: {proxyBackgroundFilePath}");
-                }
-
-                if (!File.Exists(popupHtmlFilePath))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                             $"popup.html not found at: {popupHtmlFilePath}");
-                }
-
-                if (!File.Exists(popupJsFilePath))
-                {
-                    return BaseResponse<GetEncExtensionContentModelResponse>.Error(
-                             $"popup.js not found at: {popupJsFilePath}");
-                }
-
-                var BackgroundJs = await File.ReadAllTextAsync(backgroundFilePath, cancellationToken);
-                var InjectJs = await File.ReadAllTextAsync(injectFilePath, cancellationToken);
-                var ContentJs = await File.ReadAllTextAsync(contentFilePath, cancellationToken);
-                var ManifestJson = await File.ReadAllTextAsync(manifestFilePath, cancellationToken);
-                var SignalRPackage = await File.ReadAllTextAsync(signalRFilePath, cancellationToken);
-                var PopupHtml = await File.ReadAllTextAsync(popupHtmlFilePath, cancellationToken);
-                var PopupJs = await File.ReadAllTextAsync(popupJsFilePath, cancellationToken);
-
-                var ProxyBackgroundJs = await File.ReadAllTextAsync(proxyBackgroundFilePath, cancellationToken);
-                var PrxoyManifestJson = await File.ReadAllTextAsync(proxymanifestFilePath, cancellationToken);
-
                 var settings = await _dbContext.Settings.FirstOrDefaultAsync(cancellationToken);
-                var extensionVersion = settings?.Extension_Version;
 
-                // we only update settings if the request is from our portal => UpdateServer will only be true if the request is from our portal
-                if (request.UpdateServer)
-                {
-                    if (settings == null)
-                    {
-                        var newSettings = new Settings()
-                        {
-                            Extension_Version = Guid.NewGuid().ToString(),
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        await _dbContext.Settings.AddAsync(newSettings, cancellationToken);
-
-                        extensionVersion = newSettings.Extension_Version;
-                    }
-                    else
-                    {
-                        extensionVersion = settings.Extension_Version = Guid.NewGuid().ToString();
-                        settings.UpdatedAt = DateTime.UtcNow;
-                    }
-
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
-
-                var anonymousObj = new
-                {
-                    ExtensionVersion = extensionVersion,
-                    BackgroundJs = BackgroundJs,
-                    InjectJs = InjectJs,
-                    ContentJs = ContentJs,
-                    ManifestJson = ManifestJson,
-                    SignalRPackage = SignalRPackage,
-                    PopupHtml = PopupHtml,
-                    PopupJs = PopupJs,
-                    ProxyBackgroundJs = ProxyBackgroundJs,
-                    ProxyManifestJson = PrxoyManifestJson
-                };
-
-                string extensionFilesJson = JsonSerializer.Serialize(anonymousObj);
-
-                string encryptedExtensionFiles = _aesEncryptionHelper.Encrypt(extensionFilesJson);
+                string encryptedExtensionFiles = await _cache.GetAsync(settings?.Extension_Version, _aesEncryptionHelper);
 
                 var response = new GetEncExtensionContentModelResponse()
                 {
                     Css = encryptedExtensionFiles
                 };
-
-                //Only be true if the reqeust is from our portal.
-                if (request.UpdateServer)
-                {
-                    //Inform all local server that extension file has been changed.
-
-                    await _hubContext.Clients.Group("AllServers")
-                       .SendAsync("HandleExtensionFilesChanged", response, cancellationToken);
-                }
 
                 return BaseResponse<GetEncExtensionContentModelResponse>.Success("Successfully loaded bootstrap css", response);
             }

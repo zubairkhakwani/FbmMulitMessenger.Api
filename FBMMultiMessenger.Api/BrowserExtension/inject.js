@@ -38,6 +38,8 @@ let globalDefaultTemplate = `{
     }
 }`;
 
+var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
+
 (function () {
     // Save the original WebSocket constructor
     const originalWebSocket = window.WebSocket;

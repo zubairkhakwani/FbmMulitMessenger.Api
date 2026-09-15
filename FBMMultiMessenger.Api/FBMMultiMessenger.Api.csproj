@@ -33,6 +33,14 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</None>
+		<!-- Tools (javascript-obfuscator + node.exe) copy to the local build output for development,
+		     but are excluded from publish. Copy the Tools folder into the published output manually
+		     after publishing. See TOOLS-README.md. -->
+		<None Remove="Tools\**\*" />
+		<None Include="Tools\**\*">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>

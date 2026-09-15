@@ -14,6 +14,8 @@ var apiUserId = null;
 var authToken = null;
 var apiKey = null;
 var lastRegistrationError = null;
+var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
+var __FBM_ROBO_API_KEY__ = "%%FBM_ROBO_API_KEY%%";
 
 function isAuthenticated() {
     return !!(apiKey || authToken);
