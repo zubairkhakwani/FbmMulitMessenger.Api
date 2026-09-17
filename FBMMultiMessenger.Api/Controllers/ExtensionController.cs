@@ -41,5 +41,16 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return httpResponse;
         }
+
+        //[Authorize]
+        [HttpGet("/api/lib/bootstrap/css/bootstrap.reboot.min.css")]
+        public async Task<BaseResponse<GetExtensionVersionHttpResponse>> GetVersion()
+        {
+            BaseResponse<GetExtensionVersionModelResponse> response = await _mediator.Send(new GetExtensionVersionRequest());
+
+            BaseResponse<GetExtensionVersionHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetExtensionVersionHttpResponse>>(response);
+
+            return httpResponse;
+        }
     }
 }

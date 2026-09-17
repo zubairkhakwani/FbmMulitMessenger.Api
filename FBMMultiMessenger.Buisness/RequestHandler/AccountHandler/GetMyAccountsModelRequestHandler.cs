@@ -55,6 +55,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 query = query.Where(a => a.AuthStatus == status.Value);
             }
 
+            var totalCount = query.Count();
+            var connectedAccounts = query.Count(x => x.AuthStatus == AccountAuthStatus.LoggedIn);
+            var notConnectedAccounts = query.Count(x => x.AuthStatus != AccountAuthStatus.LoggedIn);
+
             var accounts = await query
                                 .Skip((request.PageNo - 1) * request.PageSize)
                                 .Take(request.PageSize)
@@ -81,10 +85,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                       .OrderBy(x => x.Id)
                                       .ToList();
 
-
-            var totalCount = accounts.Count();
-            var connectedAccounts = accounts.Count(x => x.AuthStatus == AccountAuthStatus.LoggedIn);
-            var notConnectedAccounts = accounts.Count(x => x.AuthStatus != AccountAuthStatus.LoggedIn);
 
             var pageableUserAccounts = new PageableResponse<UserAccountsModelResponse>(userAccounts, request.PageNo, request.PageSize, totalCount, totalCount/request.PageSize);
             var response = new UserAccountsOverviewModelResponse()
