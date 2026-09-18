@@ -18,6 +18,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? OtherUserProfilePicture { get; set; }
         public string? ListingTitle { get; set; }
         public string? ListingImage { get; set; }
+        public bool IsRead { get; set; } = true;
         public List<SyncMessagesModel> Messages { get; set; }
 
         //these three are not coming yet.
@@ -33,6 +34,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public string? Text { get; set; }
         public long Timestamp { get; set; }
         public bool IsReceived { get; set; }
+        public bool IsRead { get; set; } = true;
         public bool IsTextMessage { get; set; }
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }

@@ -76,6 +76,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                     OtherUserProfilePicture = c.OtherUserProfilePicture,
                     ListingTitle = c.ListingTitle,
                     ListingImage = c.ListingImage,
+                    IsRead = c.IsRead,
                     Messages = c.Messages.Select(m => new SyncMessagesModel
                     {
                         MessageId = m.MessageId,
@@ -83,6 +84,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                         Text = m.Text,
                         Timestamp = m.Timestamp,
                         IsReceived = m.IsReceived,
+                        IsRead = m.IsRead,
                         Attachments = m.Attachments,
                         IsTextMessage = m.Type == "text",
                         IsAudioMessage = m.Type == "audio",

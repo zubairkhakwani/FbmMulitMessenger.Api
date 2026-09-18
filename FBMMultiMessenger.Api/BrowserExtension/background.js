@@ -2,6 +2,86 @@
 
 importScripts("./signalr.min.js");
 
+// ==================== Debug log capture ====================
+// Anti-detect browsers (e.g. ixBrowser) disable the page console, and a service worker's logs/network are
+// not visible in the page DevTools anyway. So we mirror every background console.* call into a persistent
+// store (chrome.storage.local, survives service-worker restarts). To read them:
+//   • run  showLogs()      in the service-worker console, OR
+//   • run  fbmShowLogs()   in an open Facebook page's console
+// either shows the captured logs as a popup ON the Facebook page (works even when the console is muted).
+const __fbmLogBuffer = [];
+let __fbmLogWriteChain = Promise.resolve();
+
+function __fbmFmt(a) {
+    if (a instanceof Error) return (a.message || String(a)) + (a.stack ? ('\n' + a.stack) : '');
+    if (typeof a === 'string') return a;
+    try { return JSON.stringify(a); } catch (e) { return String(a); }
+}
+
+function __fbmStoreLog(level, args) {
+    let text;
+    try { text = Array.prototype.map.call(args, __fbmFmt).join(' '); }
+    catch (e) { text = String(args); }
+
+    const line = new Date().toISOString() + ' [' + level + '] ' + text;
+
+    __fbmLogBuffer.push(line);
+    if (__fbmLogBuffer.length > 1000) __fbmLogBuffer.shift();
+
+    // Persist (serialized to avoid read-modify-write races) so logs survive SW restarts.
+    __fbmLogWriteChain = __fbmLogWriteChain.then(async () => {
+        try {
+            const stored = await chrome.storage.local.get('fbmLogs');
+            const fbmLogs = stored.fbmLogs || [];
+            fbmLogs.push(line);
+            if (fbmLogs.length > 1000) fbmLogs.splice(0, fbmLogs.length - 1000);
+            await chrome.storage.local.set({ fbmLogs });
+        } catch (e) { }
+    });
+}
+
+// Wrap console so ALL existing background logs are captured without editing every call site.
+(function () {
+    const orig = { log: console.log, warn: console.warn, error: console.error };
+    console.log = function () { __fbmStoreLog('LOG', arguments); try { orig.log.apply(console, arguments); } catch (e) { } };
+    console.warn = function () { __fbmStoreLog('WARN', arguments); try { orig.warn.apply(console, arguments); } catch (e) { } };
+    console.error = function () { __fbmStoreLog('ERROR', arguments); try { orig.error.apply(console, arguments); } catch (e) { } };
+})();
+
+// Explicit helper (same sink as console.log): prints AND stores.
+function bgLog() { console.log.apply(console, arguments); }
+
+// Reads captured logs and shows them as a popup on an open Facebook tab. Call in the SW console: showLogs()
+self.showLogs = async function () {
+    let logs = [];
+    try {
+        const stored = await chrome.storage.local.get('fbmLogs');
+        logs = stored.fbmLogs || [];
+    } catch (e) { }
+    if (!logs.length) logs = __fbmLogBuffer.slice();
+
+    try {
+        const tabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });
+        const target = tabs.find(t => t.active) || tabs[0];
+        if (!target) {
+            console.log('showLogs: open a Facebook tab first so the logs can be shown there.');
+            return logs;
+        }
+        await chrome.tabs.sendMessage(target.id, { action: 'showFbmLogs', logs });
+    } catch (e) {
+        console.log('showLogs: could not reach the Facebook content script:', e && e.message);
+    }
+    return logs;
+};
+
+// Clears the captured logs. Call in the SW console: clearLogs()
+self.clearLogs = async function () {
+    __fbmLogBuffer.length = 0;
+    try { await chrome.storage.local.remove('fbmLogs'); } catch (e) { }
+    console.log('FBM logs cleared.');
+};
+// ==================== /Debug log capture ====================
+
 console.log('Scrapping Background script running.');
 
 //var remoteApiUrl = "https://api.fbmmessenger.com";
@@ -218,7 +298,7 @@ async function registerExtensionUser() {
             await signalRConnection.invoke("RegisterExtension", request);
             console.log("Extension registered with accountId:", accountId, "userId:", apiUserId);
         } else {
-            console.warn("Cannot register — not connected or no accountId.");
+            console.warn(`Cannot register — not connected or no accountId. isConnected: ${isConnected}, accountId: ${accountId}`);
         }
     } catch (error) {
         console.error("Error registering extension user:", error);
@@ -287,6 +367,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
 async function handleMessage(request, sender, sendResponse) {
+    if (request.key === 'getFbmLogs') {
+        let logs = [];
+        try {
+            const stored = await chrome.storage.local.get('fbmLogs');
+            logs = stored.fbmLogs || [];
+        } catch (e) { }
+        if (!logs.length) logs = __fbmLogBuffer.slice();
+        sendResponse({ logs });
+        return true;
+    }
+
     if (request.key === 'logout') {
         authToken = null;
         accountId = null;
@@ -376,6 +467,9 @@ async function handleMessage(request, sender, sendResponse) {
     }
 
     if (request.key === "notifyAccountAuthState") {
+
+        console.log('running notifyAccountAuthState');
+
         const { fbAccountId, isLoggedIn } = request.detail;
         var isInitialLogin = false;
 
@@ -434,7 +528,7 @@ async function handleMessage(request, sender, sendResponse) {
 
         } else {
             // FB logged out — clear stored accountId
-            console.log('FB logged out, clearing accountId.');
+            console.log(`FB logged out, clearing accountId. ${isLoggedIn}: isLoggedIn, fbAccountId ${fbAccountId}`);
             accountId = null;
             await chrome.storage.local.remove('accountId');
 
@@ -465,32 +559,56 @@ async function getBase64FromUrl(path) {
 
 
 chrome.runtime.onInstalled.addListener(async () => {
+    await OnInitialized();
+});
+
+// Service worker restarts — restore auth from storage / Robo inject
+(async () => {
+    console.log("Service worker restarts — restore auth from storage / Robo inject");
+
+    await OnInitialized();
+})();
+
+async function OnInitialized() {
     await loadAuth();
     await loadAccountId();
     chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });
+
+    if (!accountId) {
+        recheckFbAuth();
+        await delay(2000); //delay so if inject.js has time to callback.
+    }
 
     // If extension was reinstalled while FB was open, reconnect
     if (accountId) {
         await connectSignalR();
     }
-});
-
-// Service worker restarts — restore auth from storage / Robo inject
-(async () => {
-    await loadAuth();
-    await loadAccountId();
-})();
+}
 
 
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'keepAlive') {
-        console.log('Service worker kept alive.');
 
         // Only attempt reconnect if we have a FB tab and accountId
         // and connection dropped unintentionally
-        if (!isManuallyStopped && accountId && !isConnected) {
+
+        if (!accountId) {
+            recheckFbAuth(); //!accountId means fb not logged in, or yet we do not know recheckFbAuth will call inject.js to recheck
+            //that will give us a callback which will eventually run notifyAccountAuthState if fb is logged in notifyAccountAuthState
+            //will call connectSignalR, so we are returning.
+            return;
+        }
+
+        if (accountId && !isManuallyStopped && !isConnected) {
             const hasFbTab = await hasAnyFacebookTab();
+
+            if (!hasFbTab)
+            {
+                console.log('No Fb Tab');
+                return;
+            }
+
             if (hasFbTab) {
                 console.log('Alarm: FB tab open but disconnected, reconnecting...');
                 await connectSignalR();
@@ -623,6 +741,8 @@ async function loadAccountId() {
 
 async function registerAccount(fbAccountId) {
     try {
+        console.log('Registerering account.');
+
         const res = await apiFetch(`${remoteApiUrl}/api/account/register`, {
             method: 'POST',
             body: JSON.stringify({ fbAccountId }),
@@ -637,6 +757,8 @@ async function registerAccount(fbAccountId) {
             console.log('Account registered, accountId:', accountId);
             return { ok: true };
         }
+
+        console.log('Account registeration failed with message:', response.message);
 
         return {
             ok: false,
@@ -785,8 +907,14 @@ function updateBadge(isConnected) {
 
 
 async function recheckFbAuth() {
+    console.log('running recheckFbAuth in bj');
+
     const fbTabs = await chrome.tabs.query({ url: '*://*.facebook.com/*' });
     for (const tab of fbTabs) {
         chrome.tabs.sendMessage(tab.id, { action: 'recheckAuth' }).catch(() => { });
     }
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
