@@ -41,6 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 var user = await _dbContext.Users
                                        .Include(p => p.Proxies)
                                        .Include(a => a.Accounts)
+                                       .ThenInclude(dm => dm.DefaultMessage)
                                        .Include(p => p.VerificationTokens)
                                        .Include(s => s.Subscriptions)
                                        .FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken: cancellationToken);
@@ -141,12 +142,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     await _dbContext.Accounts.AddAsync(newAccount, cancellationToken);
                     await _dbContext.SaveChangesAsync(cancellationToken);
 
+                    var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(
+                        _dbContext, request.UserId, cancellationToken);
+
                     localServerAccountDTO = new LocalServerAccountDTO()
                     {
                         Id = newAccount.Id,
                         Name = newAccount.Name,
                         Cookie = newAccount.Cookie,
                         CreatedAt = newAccount.CreatedAt,
+                        DefaultMessage = upcomingMessage,
                         RestartReason = AccountRestartReason.None,
                         Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
                         {
@@ -171,12 +176,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     _dbContext.Accounts.Update(alreadyExistedAccount);
                     await _dbContext.SaveChangesAsync();
 
+                    var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(_dbContext, request.UserId, cancellationToken);
+
                     localServerAccountDTO = new LocalServerAccountDTO()
                     {
                         Id = alreadyExistedAccount.Id,
                         Name = alreadyExistedAccount.Name,
                         Cookie = alreadyExistedAccount.Cookie,
                         CreatedAt = alreadyExistedAccount.CreatedAt,
+                        DefaultMessage = UpcomingDefaultMessageHelper.ResolveMessage(alreadyExistedAccount, upcomingMessage),
                         RestartReason = AccountRestartReason.None,
                         Proxy = selectedProxy is null ? null : new LocalServerProxyDTO()
                         {

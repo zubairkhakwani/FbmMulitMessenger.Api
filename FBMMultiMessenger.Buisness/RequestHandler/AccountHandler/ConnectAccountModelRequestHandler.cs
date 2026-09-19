@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
@@ -57,12 +58,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 return BaseResponse<object>.Error("Unable to launch account. Please ensure your local server is running and has available capacity.");
             }
 
+            var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(
+                _dbContext, account.UserId, cancellationToken);
+
             var newAccountHttpResponse = new LocalServerAccountDTO()
             {
                 Id =  account.Id,
                 Name = account.Name,
                 Cookie = account.Cookie,
-                DefaultMessage = account.DefaultMessage?.Message,
+                DefaultMessage = UpcomingDefaultMessageHelper.ResolveMessage(account, upcomingMessage),
                 CreatedAt = account.CreatedAt
             };
 

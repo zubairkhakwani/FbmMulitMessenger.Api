@@ -98,6 +98,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     await _dbContext.Accounts.AddRangeAsync(newAccounts, cancellationToken);
                     await _dbContext.SaveChangesAsync(cancellationToken);
 
+                    // Pass upcoming text to local servers without linking accounts.
+                    var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(_dbContext, currentUserId, cancellationToken);
+
                     var eligibleServers = await _subscriptionServerProviderService.GetEligibleServersAsync(activeSubscription);
                     var powerfullEligibleServers = _localServerService.GetPowerfulServers(eligibleServers);
 
@@ -124,6 +127,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                     Name = newAccount.Name,
                                     Cookie = newAccount.Cookie,
                                     CreatedAt = newAccount.CreatedAt,
+                                    DefaultMessage = upcomingMessage,
                                 };
 
                                 if (!serverAccountAssignments.ContainsKey(leastLoadedServer.UniqueId))

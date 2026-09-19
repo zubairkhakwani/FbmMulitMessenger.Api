@@ -53,6 +53,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.DefaultMessage
                 Id = x.Id,
                 Message = x.Message,
                 CreatedAt = x.CreatedAt,
+                ApplyToUpcomingAccounts = x.ApplyToUpcomingAccounts,
                 Accounts = x.Accounts.Select(x => new UserAccountsModelResponse()
                 {
                     Id = x.Id,

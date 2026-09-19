@@ -10,6 +10,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(User))]
         public int UserId { get; set; }
 
+        /// <summary>
+        /// When true, free accounts (and newly created ones) pick up this message.
+        /// Accounts that already have a specific DefaultMessageId are never overwritten.
+        /// </summary>
+        public bool ApplyToUpcomingAccounts { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 

@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Request.Account;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
@@ -60,13 +61,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                 .Take(request.PageSize)
                                 .ToListAsync(cancellationToken);
 
+            var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(
+                _dbContext, currentUser.Id, cancellationToken);
+
             var userAccounts = accounts
                                      .Select(x => new UserAccountsModelResponse()
                                      {
                                          Id = x.Id,
                                          Name = x.Name,
                                          Cookie =  x.Cookie,
-                                         DefaultMessage = x.DefaultMessage != null ? x.DefaultMessage.Message : null,
+                                         DefaultMessage = UpcomingDefaultMessageHelper.ResolveMessage(x, upcomingMessage),
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
                                          AuthStatus = x.AuthStatus.GetInfo().Name,
                                          Reason = x.Reason.GetInfo().Name,

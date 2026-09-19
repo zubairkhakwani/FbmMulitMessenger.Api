@@ -13,6 +13,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.DefaultMessage
         public int Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public bool ApplyToUpcomingAccounts { get; set; }
         public List<UserAccountsHttpResponse> Accounts { get; set; } = new List<UserAccountsHttpResponse>();
     }
 }

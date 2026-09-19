@@ -9,6 +9,11 @@ namespace FBMMultiMessenger.Contracts.Contracts.DefaultMessage
 
         [Required(ErrorMessage = "Please select atleast one account ")]
         public List<int> SelectedAccounts { get; set; } = new List<int>();
+
+        /// <summary>
+        /// Apply to all free accounts now and to accounts added later.
+        /// </summary>
+        public bool ApplyToUpcomingAccounts { get; set; }
     }
 
     public class UpsertDefaultMessageHttpResponse

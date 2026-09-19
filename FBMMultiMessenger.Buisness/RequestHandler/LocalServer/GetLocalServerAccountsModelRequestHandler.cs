@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -131,21 +132,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             localServer.ActiveBrowserCount = accountsToAllocate.Count;
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            var responseData = accountsToAllocate.Select(a => new GetLocalServerAccountsModelResponse
-            {
-                Id = a.Id,
-                Name = a.Name,
-                Cookie = a.Cookie,
-                DefaultMessage = a.DefaultMessage?.Message,
-                CreatedAt = a.CreatedAt,
-                Proxy = a.Proxy == null ? null : new LocalServerAccountsProxyModelResponse()
-                {
-                    Id = a.Proxy.Id,
-                    Ip_Port = a.Proxy.Ip_Port,
-                    Name = a.Proxy.Name,
-                    Password = a.Proxy.Password
-                }
+            var userIds = accountsToAllocate.Select(a => a.UserId).Distinct().ToList();
+            var upcomingByUser = await _dbContext.DefaultMessages
+                .AsNoTracking()
+                .Where(x => userIds.Contains(x.UserId) && x.ApplyToUpcomingAccounts)
+                .ToDictionaryAsync(x => x.UserId, x => x.Message, cancellationToken);
 
+            var responseData = accountsToAllocate.Select(a =>
+            {
+                upcomingByUser.TryGetValue(a.UserId, out var upcoming);
+                return new GetLocalServerAccountsModelResponse
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    Cookie = a.Cookie,
+                    DefaultMessage = UpcomingDefaultMessageHelper.ResolveMessage(a, upcoming),
+                    CreatedAt = a.CreatedAt,
+                    Proxy = a.Proxy == null ? null : new LocalServerAccountsProxyModelResponse()
+                    {
+                        Id = a.Proxy.Id,
+                        Ip_Port = a.Proxy.Ip_Port,
+                        Name = a.Proxy.Name,
+                        Password = a.Proxy.Password
+                    }
+                };
             }).ToList();
 
             //Inform app about the accounts status

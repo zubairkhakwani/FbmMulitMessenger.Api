@@ -1,6 +1,4 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
-using FBMMultiMessenger.Contracts.Contracts.Account;
-using FBMMultiMessenger.Contracts.Contracts.DefaultMessage;
 using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
 
@@ -21,6 +19,7 @@ namespace FBMMultiMessenger.Buisness.Request.DefaultMessage
         public int Id { get; set; }
         public string Message { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public bool ApplyToUpcomingAccounts { get; set; }
         public List<UserAccountsModelResponse> Accounts { get; set; } = new List<UserAccountsModelResponse>();
     }
 }

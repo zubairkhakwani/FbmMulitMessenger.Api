@@ -11,13 +11,9 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Asn1.Ocsp;
-using System;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using System.Threading;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 {
@@ -45,7 +41,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         {
             var retriedCount = 0;
 
-            while(true)
+            while (true)
             {
                 try
                 {
@@ -164,7 +160,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             var alreadyMessage = await _dbContext.ChatMessages.FirstOrDefaultAsync(cm => cm.FbMessageId == request.FbMessageId && cm.ChatId == chatReference.Id);
 
-            if(alreadyMessage != null)
+            if (alreadyMessage != null)
             {
                 return BaseResponse<HandleChatModelResponse>.Success($"Message already exists.", new HandleChatModelResponse());
             }
@@ -216,7 +212,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, newChatMessage.FBTimestamp, dbMessage, cancellationToken);
             }
 
-            if(string.IsNullOrWhiteSpace(chatReference.FbListingId) || string.IsNullOrWhiteSpace(chatReference.FBListingImage) || string.IsNullOrWhiteSpace(chatReference.UserProfileImage) || string.IsNullOrWhiteSpace(chatReference.FbListingTitle))
+            if (string.IsNullOrWhiteSpace(chatReference.FbListingId) || string.IsNullOrWhiteSpace(chatReference.FBListingImage) || string.IsNullOrWhiteSpace(chatReference.UserProfileImage) || string.IsNullOrWhiteSpace(chatReference.FbListingTitle))
             {
                 await GetListingInfo(chatReference, cancellationToken);
             }
@@ -233,15 +229,22 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 await SendMobileNotificationAsync(request, chatReference.Id, unreadMessages, chatReference!.UserId, messageFrom, isSubscriptionExpired);
             }
 
-            if (request.IsNewChatStarted && request.IsReceived && chatReference.Account?.DefaultMessage != null)
+            if (request.IsNewChatStarted && request.IsReceived && chatReference.Account is not null)
             {
-                var defaultMessageRequest = new NotifyLocalServerModelRequest
-                {
-                    ChatId = chatReference.Id,
-                    Message = chatReference.Account.DefaultMessage.Message,
-                };
+                var upcomingMessage = await UpcomingDefaultMessageHelper.GetUpcomingMessageAsync(_dbContext, chatReference.Account.UserId, cancellationToken);
 
-                await mediator.Send(defaultMessageRequest);
+                var defaultMessageText = UpcomingDefaultMessageHelper.ResolveMessage(chatReference.Account, upcomingMessage);
+
+                if (defaultMessageText is not null)
+                {
+                    var defaultMessageRequest = new NotifyLocalServerModelRequest
+                    {
+                        ChatId = chatReference.Id,
+                        Message = defaultMessageText,
+                    };
+
+                    await mediator.Send(defaultMessageRequest, cancellationToken);
+                }
             }
 
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";

@@ -1,12 +1,5 @@
 ﻿using FBMMultiMessenger.Contracts.Shared;
 using MediatR;
-using OneSignal.RestAPIv3.Client.Resources;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.Request.DefaultMessage
 {
@@ -17,6 +10,7 @@ namespace FBMMultiMessenger.Buisness.Request.DefaultMessage
 
         public int CurrentUserId { get; set; }
         public List<int> SelectedAccounts { get; set; } = new List<int>();
+        public bool ApplyToUpcomingAccounts { get; set; }
     }
 
     public class UpsertDefaultMessageModelResponse { }
