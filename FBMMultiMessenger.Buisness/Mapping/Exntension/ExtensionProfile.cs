@@ -12,6 +12,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Exntension
             CreateMap<GetEncExtensionContentModelResponse, GetEncExntesionContentHttpResponse>();
             CreateMap<BaseResponse<GetEncExtensionContentModelResponse>, BaseResponse<GetEncExntesionContentHttpResponse>>();
 
+            CreateMap<GetExtensionVersionModelResponse, GetExtensionVersionHttpResponse>();
+            CreateMap<BaseResponse<GetExtensionVersionModelResponse>, BaseResponse<GetExtensionVersionHttpResponse>>();
         }
     }
 }

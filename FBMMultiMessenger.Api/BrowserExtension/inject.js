@@ -1,3 +1,10 @@
+// Debug helper: run  fbmShowLogs()  in this page's console to see the extension's captured background
+// logs as a popup (works even when the console output is muted, e.g. on ixBrowser). It asks content.js
+// (which asks the background service worker) for the logs and shows them on the page.
+window.fbmShowLogs = function () {
+    document.documentElement.dispatchEvent(new CustomEvent('fbmShowLogs'));
+};
+
 const accountConnectionStatus = {
     Online: 1,
     Offline: 2,
@@ -37,6 +44,8 @@ let globalDefaultTemplate = `{
         "version": 1
     }
 }`;
+
+var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
 
 (function () {
     // Save the original WebSocket constructor
@@ -465,7 +474,6 @@ async function NavigateToRequestedChat(fbChatId) {
         await waitForUrl(expectedUrl, 5000);
     }
     catch (ex) {
-        debugger;
     }
 
     return true;
@@ -613,6 +621,8 @@ function checkAccountAuth() {
     let previousLoginState = null;
 
     function checkAndNotify() {
+        console.log('running checkAndNotify');
+
         var isLoggedIn = isAccountLoggedIn(getCookie('c_user'), getEmailInput());
 
         // Notify if state changed OR first time check
@@ -752,14 +762,14 @@ async function SyncListingInfo(fbChatId, chatId) {
 }
 
 
-function CloseFbChatRecoverPopup() {
+async function CloseFbChatRecoverPopup() {
     const totalTriesToCloseFbChatRecoverPopup = 20;
     let attemptedTries = 0;
     let closeBtn;
     let dontRestoreButton;
     let timeoutId;
 
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
         attemptedTries++;
         if (attemptedTries >= totalTriesToCloseFbChatRecoverPopup) {
             clearInterval(intervalId);
@@ -769,11 +779,30 @@ function CloseFbChatRecoverPopup() {
             return;
         }
 
+        console.log('CloseFbChatRecoverPopup interval');
+
+        await CloseCreateAPinToAccessYourChats();
+
         if (!closeBtn) {
             closeBtn = document.querySelector(
                 'div[role="dialog"] div[aria-label="Close"][role="button"]'
             );
             // console.log("Close button found?", !!closeBtn);
+        }
+
+        if (!window.location.href.includes("facebook.com/messages")) {
+            console.log('not on messages');
+
+            clearInterval(intervalId);
+
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            return;
+        }
+        else {
+            console.log('On messages');
         }
 
         if (closeBtn) {
@@ -790,6 +819,7 @@ function CloseFbChatRecoverPopup() {
                         'div[role="button"][aria-label="Don\'t restore messages"]'
                     )[1];
                 }
+                console.log('closing do not restore button');
                 console.log(dontRestoreButton);
                 // console.log("Don't restore button found?", !!dontRestoreButton);
 
@@ -802,6 +832,46 @@ function CloseFbChatRecoverPopup() {
             }, 500);
         }
     }, 2000);
+}
+
+async function CloseCreateAPinToAccessYourChats()
+{
+    var btn = document.querySelector("[aria-label='Create PIN' i]");
+
+    if (!btn)
+    {
+        return;
+    }
+
+    TriggerClickEvent(btn);
+
+    await delay(1500);
+
+    var moreOptionsDiv = document.evaluate(
+        `//div[@role='button' and contains(., 'More options')]`,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+    ).singleNodeValue;
+
+    if (moreOptionsDiv) {
+        TriggerClickEvent(moreOptionsDiv);
+
+        await delay(1500);
+    }
+
+    var remindMeLater = document.evaluate(
+        `//div[@role='dialog' and @aria-modal='true']//span[contains(., 'Remind me later')]`,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+    ).singleNodeValue;
+
+    if (remindMeLater) {
+        TriggerClickEvent(remindMeLater);
+    }
 }
 
 
@@ -826,7 +896,7 @@ async function ScrollSideBarToLoadChats() {
         return;
     }
 
-    const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const fiveMinutes = 2 * 60 * 1000; // 5 minutes in milliseconds
     const startTime = Date.now();
 
     // This runs every 50ms and scrolls DOWN
@@ -868,13 +938,18 @@ function isElementScrollable(element) {
     return hasOverflowProperty;
 }
 
-setTimeout(() => {
-    CloseFbChatRecoverPopup();
+setTimeout(async () => {
     checkAccountAuth();
+    try {
+        await CloseFbChatRecoverPopup();
+    }
+    catch (err) {
+        console.log(err);
+    }
     // Robo injects __FBM_AUTO_OPEN_MESSENGER__ into this file when packing (Browser Launch only).
     console.log(`FBM AUTO OPEN MESSENGER ${__FBM_AUTO_OPEN_MESSENGER__}`)
     if (typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined' && __FBM_AUTO_OPEN_MESSENGER__) {
 
         ScrollSideBarToLoadChats();
     }
-}, 1100);
+}, 1500);

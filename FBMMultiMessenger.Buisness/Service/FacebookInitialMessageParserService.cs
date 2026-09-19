@@ -12,6 +12,7 @@ namespace FBMMultiMessenger.Buisness.Service
         public List<string> Attachments { get; set; } = new();
         public string Type { get; set; } // text, image, video, sticker, attachment, file
         public string FbMessageReplyId { get; set; }
+        public bool IsRead { get; set; } = true;
     }
 
     public class ParsedParticipant
@@ -32,6 +33,13 @@ namespace FBMMultiMessenger.Buisness.Service
         public string ListingImage { get; set; }
         public List<ParsedMessage> Messages { get; set; } = new();
         public List<ParsedParticipant> Participants { get; set; } = new();
+
+        // Read state (from the thread's deleteThenInsertThread op).
+        public bool IsRead { get; set; } = true;
+        // Last-read watermark timestamp: received messages newer than this are unread.
+        public long? ReadWatermarkTimestamp { get; set; }
+        // Thread unread count (last field of deleteThenInsertThread) — kept as a cross-check/fallback.
+        public int? UnreadCount { get; set; }
     }
 
     public class MessengerPayloadParser
@@ -77,6 +85,15 @@ namespace FBMMultiMessenger.Buisness.Service
             chats[threadId].ListingTitle = p[3].GetString();
             chats[threadId].ListingImage = p[4].ValueKind == JsonValueKind.String
                 ? p[4].GetString() : null;
+
+            // params[1] = last-read watermark timestamp (primary read signal: any received
+            // message newer than this is unread). Low, stable index.
+            if (p.Count > 1 && long.TryParse(ExtractValue(p[1]), out var watermark))
+                chats[threadId].ReadWatermarkTimestamp = watermark;
+
+            // Last field = thread unread count (secondary signal / fallback when no watermark).
+            if (int.TryParse(ExtractValue(p[p.Count - 1]), out var unreadCount))
+                chats[threadId].UnreadCount = unreadCount;
         }
 
         private void ProcessParticipant(List<JsonElement> p, Dictionary<string, ParsedChat> chats)
@@ -257,6 +274,19 @@ namespace FBMMultiMessenger.Buisness.Service
                 chat.OtherUserId = otherParticipantId;
                 chat.OtherUserName = otherContact?.Name;
                 chat.OtherUserProfilePicture = otherContact?.ProfileImage;
+
+                // Read state: outgoing messages are always "read"; an incoming message is unread
+                // only when it is newer than the last-read watermark. If no watermark was parsed,
+                // default to read so we never raise false unreads.
+                var watermark = chat.ReadWatermarkTimestamp;
+                foreach (var m in chat.Messages)
+                    m.IsRead = !m.IsReceived || !watermark.HasValue || m.Timestamp <= watermark.Value;
+
+                // Chat is read when no received message remains unread; fall back to the unread
+                // count when the watermark is missing.
+                chat.IsRead = watermark.HasValue
+                    ? !chat.Messages.Any(m => m.IsReceived && !m.IsRead)
+                    : (chat.UnreadCount ?? 0) == 0;
             }
 
             // mirrors: sort by most recent message timestamp descending

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Shared;
@@ -22,11 +22,33 @@ namespace FBMMultiMessenger.Api.Controllers
 
         //[Authorize]
         [HttpGet("/api/lib/bootstrap/css/bootstrap.min.css")]
-        public async Task<BaseResponse<GetEncExntesionContentHttpResponse>> Get([FromQuery] bool UpdateServer)
+        public async Task<BaseResponse<GetEncExntesionContentHttpResponse>> Get()
         {
-            BaseResponse<GetEncExtensionContentModelResponse> response = await _mediator.Send(new GetEncExtensionContentModelRequest() { UpdateServer = UpdateServer });
+            BaseResponse<GetEncExtensionContentModelResponse> response = await _mediator.Send(new GetEncExtensionContentModelRequest());
 
             BaseResponse<GetEncExntesionContentHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetEncExntesionContentHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        //[Authorize]
+        [HttpGet("/api/lib/bootstrap/js/bootstrap.bundle.min.js")]
+        public async Task<BaseResponse<GetEncExntesionContentHttpResponse>> Update()
+        {
+            BaseResponse<GetEncExtensionContentModelResponse> response = await _mediator.Send(new UpdateExtensionContentRequest());
+
+            BaseResponse<GetEncExntesionContentHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetEncExntesionContentHttpResponse>>(response);
+
+            return httpResponse;
+        }
+
+        //[Authorize]
+        [HttpGet("/api/lib/bootstrap/css/bootstrap.reboot.min.css")]
+        public async Task<BaseResponse<GetExtensionVersionHttpResponse>> GetVersion()
+        {
+            BaseResponse<GetExtensionVersionModelResponse> response = await _mediator.Send(new GetExtensionVersionRequest());
+
+            BaseResponse<GetExtensionVersionHttpResponse> httpResponse = _mapper.Map<BaseResponse<GetExtensionVersionHttpResponse>>(response);
 
             return httpResponse;
         }
