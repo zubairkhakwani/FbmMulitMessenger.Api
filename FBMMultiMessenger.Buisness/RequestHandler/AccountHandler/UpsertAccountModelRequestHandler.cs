@@ -79,6 +79,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                 if (isLimitReaced)
                 {
+                    response.IsLimitExceeded = true;
                     return BaseResponse<UpsertAccountModelResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan.", showSweetAlert: true, result: response);
                 }
 

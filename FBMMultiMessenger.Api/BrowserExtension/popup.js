@@ -15,8 +15,12 @@ const toggleApiKeyBtn = document.getElementById('toggleApiKeyBtn');
 let showApiKey = false;
 
 // ── Update the dot & label ────────────────────────────────
-function setStatus(isConnected) {
-    if (isConnected) {
+// limitExceeded → yellow; connected → green; else → red
+function setStatus(isConnected, isLimitExceeded) {
+    if (isLimitExceeded) {
+        statusDot.className = 'dot yellow';
+        statusText.textContent = 'Limit reached';
+    } else if (isConnected) {
         statusDot.className = 'dot green';
         statusText.textContent = 'Connected';
     } else {
@@ -30,7 +34,7 @@ function applyStatusResponse(response) {
         return;
     }
 
-    setStatus(response.isConnected);
+    setStatus(response.isConnected, !!response.isLimitExceeded);
     apiKeyInput.value = response.apiKey || '';
     accountIdLabel.textContent = response.accountId || 'Pending...';
     registrationErrorMsg.textContent = response.registrationError || '';
@@ -133,7 +137,7 @@ logoutBtn.addEventListener('click', () => {
     chrome.runtime.sendMessage({ key: 'logout' }, () => {
         chrome.runtime.sendMessage({ key: 'getStatus' }, (res) => {
             applyStatusResponse(res);
-            setStatus(false);
+            setStatus(false, false);
             showView(connectedView);
         });
     });
@@ -143,10 +147,13 @@ logoutBtn.addEventListener('click', () => {
 chrome.runtime.onMessage.addListener((request) => {
     if (request.key === 'registrationError') {
         registrationErrorMsg.textContent = request.message || '';
+        if (request.isLimitExceeded) {
+            setStatus(false, true);
+        }
     }
 
     if (request.key === 'statusChanged') {
-        setStatus(request.isConnected);
+        setStatus(request.isConnected, false);
 
         if (request.accountId) {
             accountIdLabel.textContent = request.accountId;

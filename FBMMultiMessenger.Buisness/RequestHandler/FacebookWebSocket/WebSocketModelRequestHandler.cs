@@ -511,8 +511,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                              ).Select(m => m.Value).Distinct().ToList();
 
             // mirrors: if (imageUrls.length > 1) filter out stp=
-            if (imageUrls.Count > 1)
+            if (imageUrls.Count > 1 && imageUrls.Where(u => !u.Contains("stp=")).Any())
                 imageUrls = imageUrls.Where(u => !u.Contains("stp=")).ToList();
+
+            if (imageUrls.Count > 1 && imageUrls.All(u => u.Contains("stp=")))
+            {
+                imageUrls = new string[] { imageUrls.FirstOrDefault()! }.ToList();
+            }
 
             // mirrors: video regex + dl=1 filter
             var videoUrls = Regex.Matches(

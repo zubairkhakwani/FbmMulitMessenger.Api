@@ -12,11 +12,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
     {
         private readonly ApplicationDbContext dbContext;
         private readonly CurrentUserService currentUserService;
+        private readonly OneSignalService oneSignalService;
 
-        public RegisterFacebookAccountFromExtensionRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService)
+        public RegisterFacebookAccountFromExtensionRequestHandler(
+            ApplicationDbContext dbContext,
+            CurrentUserService currentUserService,
+            OneSignalService oneSignalService)
         {
             this.dbContext = dbContext;
             this.currentUserService = currentUserService;
+            this.oneSignalService = oneSignalService;
         }
 
         public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> Handle(RegisterFacebookAccountFromExtensionRequest request, CancellationToken cancellationToken)
@@ -74,7 +79,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                     if (limitUsed >= maxLimit)
                     {
-                        return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error("You’ve reached the maximum limit of your subscription plan. Please upgrade your plan from the app.", showSweetAlert: true);
+                        const string limitMessage =
+                            "You’ve reached the maximum limit of your subscription plan. Please upgrade your plan from the app.";
+
+                        // Fire-and-forget push so the mobile app can open Packages + pitch.
+                        _ = oneSignalService.PushAccountLimitExceededNotificationAsync(
+                            currentUser!.Id.ToString(),
+                            limitMessage);
+
+                        return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error(
+                            limitMessage,
+                            showSweetAlert: true,
+                            result: new RegisterFacebookAccountFromExtensionResponse
+                            {
+                                IsLimitExceeded = true,
+                            });
                     }
 
                     activeSubscription.LimitUsed++;

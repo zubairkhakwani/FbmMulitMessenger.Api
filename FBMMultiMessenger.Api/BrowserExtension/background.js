@@ -94,6 +94,7 @@ var apiUserId = null;
 var authToken = null;
 var apiKey = null;
 var lastRegistrationError = null;
+var lastRegistrationLimitExceeded = false;
 var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
 var __FBM_ROBO_API_KEY__ = "%%FBM_ROBO_API_KEY%%";
 
@@ -401,6 +402,7 @@ async function handleMessage(request, sender, sendResponse) {
             hasApiKey: !!apiKey,
             apiKey: apiKey || null,
             registrationError: lastRegistrationError,
+            isLimitExceeded: lastRegistrationLimitExceeded,
         });
         return true;
     }
@@ -480,6 +482,7 @@ async function handleMessage(request, sender, sendResponse) {
                 if (!result.ok) {
                     console.error('Could not register account:', result.message);
                     lastRegistrationError = result.message;
+                    lastRegistrationLimitExceeded = !!result.isLimitExceeded;
                     notifyPopupRegistrationError();
 
                     // Only retry when the server was unreachable — not for validation errors
@@ -487,9 +490,12 @@ async function handleMessage(request, sender, sendResponse) {
                         enqueueFailedRequest('registerAccount', request.detail);
                     }
 
-                    sendResponse({ success: false, message: result.message });
+                    sendResponse({ success: false, message: result.message, isLimitExceeded: result.isLimitExceeded });
                     return true;
                 }
+
+                lastRegistrationError = null;
+                lastRegistrationLimitExceeded = false;
 
                 isInitialLogin = true;
             }
@@ -753,6 +759,7 @@ async function registerAccount(fbAccountId) {
         if (response.isSuccess && response.data && response.data.accountId) {
             accountId = response.data.accountId;
             lastRegistrationError = null;
+            lastRegistrationLimitExceeded = false;
             await chrome.storage.local.set({ accountId });
             console.log('Account registered, accountId:', accountId);
             return { ok: true };
@@ -760,9 +767,12 @@ async function registerAccount(fbAccountId) {
 
         console.log('Account registeration failed with message:', response.message);
 
+        const isLimitExceeded = !!(response.data && response.data.isLimitExceeded);
+
         return {
             ok: false,
             message: response.message || 'Account registration failed.',
+            isLimitExceeded,
             retryable: false,
         };
     } catch (err) {
@@ -770,15 +780,19 @@ async function registerAccount(fbAccountId) {
         return {
             ok: false,
             message: 'Could not reach Multi Messenger server.',
+            isLimitExceeded: false,
             retryable: true,
         };
     }
 }
 
 function notifyPopupRegistrationError() {
+    updateBadge(isConnected);
+
     chrome.runtime.sendMessage({
         key: 'registrationError',
         message: lastRegistrationError,
+        isLimitExceeded: lastRegistrationLimitExceeded,
     }).catch(() => {
         // Popup not open — ignore
     });
@@ -900,7 +914,7 @@ function notifyPopupStatusChange() {
 
 
 function updateBadge(isConnected) {
-    const color = isConnected ? '#42c96b' : '#ff4d4d';
+    const color = lastRegistrationLimitExceeded ? "#f5a623" : isConnected ? '#42c96b' : '#ff4d4d';
     chrome.action.setBadgeText({ text: ' ' });
     chrome.action.setBadgeBackgroundColor({ color });
 }

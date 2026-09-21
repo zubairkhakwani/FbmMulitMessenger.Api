@@ -19,6 +19,7 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
 
     public class UpsertAccountHttpResponse
     {
+        public bool IsLimitExceeded { get; set; }
         public bool IsSubscriptionExpired { get; set; }
         public bool IsEmailVerified { get; set; } = true;
         public string EmailSendTo { get; set; } = string.Empty;
