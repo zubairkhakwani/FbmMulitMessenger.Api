@@ -1,6 +1,7 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Request.AccountServer;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
+using FBMMultiMessenger.Buisness.Service.StatusBatching;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
@@ -14,11 +15,13 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IMediator _mediator;
+        private readonly IAccountStatusQueue _accountStatusQueue;
 
-        public MonitorLocalServerHeartbeatModelRequestHandler(ApplicationDbContext dbContext, IMediator mediator)
+        public MonitorLocalServerHeartbeatModelRequestHandler(ApplicationDbContext dbContext, IMediator mediator, IAccountStatusQueue accountStatusQueue)
         {
             this._dbContext=dbContext;
             this._mediator=mediator;
+            this._accountStatusQueue=accountStatusQueue;
         }
         public async Task<BaseResponse<MonitorLocalServerHearbeatModelResponse>> Handle(MonitorLocalServerHearbeatModelRequest request, CancellationToken cancellationToken)
         {
@@ -29,23 +32,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                     .Select(a => new { a.Id, a.UserId })
                     .ToDictionaryAsync(a => a.Id, a => a.UserId);
 
+                // Accounts marked connected in the DB but with no live SignalR connection (e.g. their
+                // extension never reconnected after an API restart).
                 var disconnectedAccounts = SingnalRConnectionManager.GetDisconnectedAccountsIds(accountsDict);
 
-                if (disconnectedAccounts.Any())
+                // Route the offline updates through the same queue so the flush service remains the single
+                // writer of account status — no direct DB write here, no race with the batched writes.
+                foreach (var accountId in disconnectedAccounts)
                 {
-                    var accountsToUpdate = await _dbContext.Accounts
-                        .Where(a => disconnectedAccounts.Contains(a.Id))
-                        .ToListAsync();
-
-                    foreach (var account in accountsToUpdate)
+                    _accountStatusQueue.Enqueue(new AccountStatusChange
                     {
-                        account.IsExtensionConnected = false;
-                    }
-
-                    await _dbContext.SaveChangesAsync();
+                        AccountId = accountId,
+                        UserId = accountsDict[accountId],
+                        ConnectionStatus = AccountConnectionStatus.Offline,
+                        IsExtensionConnected = false,
+                        AuthStatus = AccountAuthStatus.NotConnected,
+                        Reason = AccountReason.NotConnected,
+                        AtUtc = DateTime.UtcNow,
+                    });
                 }
 
-                return BaseResponse<MonitorLocalServerHearbeatModelResponse>.Success("disconnected accounts marked as offline", new MonitorLocalServerHearbeatModelResponse());
+                return BaseResponse<MonitorLocalServerHearbeatModelResponse>.Success("disconnected accounts queued to be marked offline", new MonitorLocalServerHearbeatModelResponse());
 
                 var localServers = await _dbContext.LocalServers
                                                        .Include(ls => ls.Accounts)

@@ -1,5 +1,6 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
-using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Buisness.Service.StatusBatching;
+using FBMMultiMessenger.Contracts.Enums;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
@@ -8,11 +9,11 @@ namespace FBMMultiMessenger.Buisness.SignalR
     public class ChatHub : Hub
     {
         public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
-        private readonly ILocalServerService _localServerService;
+        private readonly IAccountStatusQueue _accountStatusQueue;
 
-        public ChatHub(ILocalServerService localServerService)
+        public ChatHub(IAccountStatusQueue accountStatusQueue)
         {
-            this._localServerService = localServerService;
+            this._accountStatusQueue = accountStatusQueue;
         }
 
         public async Task RegisterLocalServer(string localServerId)
@@ -76,7 +77,17 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 await Groups.AddToGroupAsync(Context.ConnectionId, extensionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, "AllExtensinos");
 
-                await _localServerService.HandleServerOnlineAsync(accountId, apiUserId);
+                // Presence is owned by the hub: queue an "online" change (batched write).
+                _accountStatusQueue.Enqueue(new AccountStatusChange
+                {
+                    AccountId = accountId,
+                    UserId = apiUserId,
+                    ConnectionStatus = AccountConnectionStatus.Online,
+                    IsExtensionConnected = true,
+                    AuthStatus = AccountAuthStatus.LoggedIn,
+                    Reason = AccountReason.ConnectedWithExtension,
+                    AtUtc = DateTime.UtcNow,
+                });
 
                 Console.WriteLine($"Extension with id {extensionId} connected");
             }
@@ -96,9 +107,20 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 SingnalRConnectionManager._connections.TryRemove(Context.ConnectionId, out var _);
 
                 var userId = connectionMetadata.UserId;
-                if (connectionMetadata.AccountId != null)
+                //means it is the extension that is disconnecting
+                if (connectionMetadata.AccountId != null && connectionMetadata.APIUserId != null)
                 {
-                    await _localServerService.HandleServerOfflineAsync(connectionMetadata.AccountId.Value, connectionMetadata.APIUserId.Value);
+                    // A gone extension has no login state, so a disconnect owns both dimensions.
+                    _accountStatusQueue.Enqueue(new AccountStatusChange
+                    {
+                        AccountId = connectionMetadata.AccountId.Value,
+                        UserId = connectionMetadata.APIUserId.Value,
+                        ConnectionStatus = AccountConnectionStatus.Offline,
+                        IsExtensionConnected = false,
+                        AuthStatus = AccountAuthStatus.NotConnected,
+                        Reason = AccountReason.NotConnected,
+                        AtUtc = DateTime.UtcNow,
+                    });
                 }
 
                 Console.WriteLine($"User with id {userId} disconnected");

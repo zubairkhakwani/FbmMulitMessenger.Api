@@ -95,6 +95,9 @@ var authToken = null;
 var apiKey = null;
 var lastRegistrationError = null;
 var lastRegistrationLimitExceeded = false;
+// Set when registration fails with a non-retryable reason (e.g. account limit reached). While true,
+// the keepAlive alarm stops re-triggering registration; a page refresh or FB re-login still retries once.
+var registrationBlocked = false;
 var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
 var __FBM_ROBO_API_KEY__ = "%%FBM_ROBO_API_KEY%%";
 
@@ -483,6 +486,10 @@ async function handleMessage(request, sender, sendResponse) {
                     console.error('Could not register account:', result.message);
                     lastRegistrationError = result.message;
                     lastRegistrationLimitExceeded = !!result.isLimitExceeded;
+                    // Only the account-limit case silences the alarm. API-down and any other unexpected
+                    // failure keep retrying (server-unreachable is also re-queued below). Re-armed on every
+                    // attempt so a failed refresh keeps the alarm quiet only while still at the limit.
+                    registrationBlocked = !!result.isLimitExceeded;
                     notifyPopupRegistrationError();
 
                     // Only retry when the server was unreachable — not for validation errors
@@ -536,6 +543,7 @@ async function handleMessage(request, sender, sendResponse) {
             // FB logged out — clear stored accountId
             console.log(`FB logged out, clearing accountId. ${isLoggedIn}: isLoggedIn, fbAccountId ${fbAccountId}`);
             accountId = null;
+            registrationBlocked = false; // state changed — allow registration to retry on next login
             await chrome.storage.local.remove('accountId');
 
             // Task 3 will disconnect SignalR here
@@ -599,7 +607,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // Only attempt reconnect if we have a FB tab and accountId
         // and connection dropped unintentionally
 
-        if (!accountId) {
+        // Skip the periodic re-check when registration deterministically failed (e.g. account limit
+        // reached) — otherwise we'd hit /api/account/register every alarm tick. A page refresh or FB
+        // re-login still calls notifyAccountAuthState directly and gets one fresh attempt.
+        if (!accountId && !registrationBlocked) {
             recheckFbAuth(); //!accountId means fb not logged in, or yet we do not know recheckFbAuth will call inject.js to recheck
             //that will give us a callback which will eventually run notifyAccountAuthState if fb is logged in notifyAccountAuthState
             //will call connectSignalR, so we are returning.
@@ -760,6 +771,7 @@ async function registerAccount(fbAccountId) {
             accountId = response.data.accountId;
             lastRegistrationError = null;
             lastRegistrationLimitExceeded = false;
+            registrationBlocked = false;
             await chrome.storage.local.set({ accountId });
             console.log('Account registered, accountId:', accountId);
             return { ok: true };

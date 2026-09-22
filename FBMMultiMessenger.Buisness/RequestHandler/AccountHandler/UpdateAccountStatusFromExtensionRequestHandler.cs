@@ -1,61 +1,45 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.App;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
-using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Buisness.Service.StatusBatching;
 using FBMMultiMessenger.Contracts.Shared;
-using FBMMultiMessenger.Data.DB;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
     public class UpdateAccountStatusFromExtensionRequestHandler : IRequestHandler<UpdateAccountStatusFromExtensionRequest, BaseResponse<UpdateAccountStatusFromExtensionResponse>>
     {
-        private readonly ApplicationDbContext dbContext;
         private readonly CurrentUserService currentUserService;
-        private readonly ISignalRService signalRService;
+        private readonly IAccountStatusQueue accountStatusQueue;
 
-        public UpdateAccountStatusFromExtensionRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, ISignalRService signalRService)
+        public UpdateAccountStatusFromExtensionRequestHandler(CurrentUserService currentUserService, IAccountStatusQueue accountStatusQueue)
         {
-            this.dbContext = dbContext;
             this.currentUserService = currentUserService;
-            this.signalRService = signalRService;
+            this.accountStatusQueue = accountStatusQueue;
         }
 
-        public async Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Handle(UpdateAccountStatusFromExtensionRequest request, CancellationToken cancellationToken)
+        public Task<BaseResponse<UpdateAccountStatusFromExtensionResponse>> Handle(UpdateAccountStatusFromExtensionRequest request, CancellationToken cancellationToken)
         {
             var currentUser = currentUserService.GetCurrentUser();
 
-            var dbAccount = await dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == request.AccountId && a.UserId == currentUser.Id);
-
-            if (dbAccount != null)
+            if (currentUser is null)
             {
-                dbAccount.UpdatedAt = DateTime.UtcNow;
-                dbAccount.AuthStatus = request.AccountAuthStatus;
-                dbAccount.ConnectionStatus = request.AccountConnectionStatus;
-                dbAccount.Reason = request.Reason;
-                dbAccount.IsExtensionConnected = request.IsLoggedIn;
-
-                var signalrModel = new UserAccountSignalRModel
-                {
-                    AppId = currentUser.Id,
-                    AccountsStatus = new List<AccountStatusSignalRModel> { new(){
-                        AccountId = dbAccount.Id,
-                        ConnectionStatus = request.AccountConnectionStatus,
-                        AuthStatus = request.AccountAuthStatus,
-                        IsConnected = request.IsLoggedIn,
-                        Reason = request.Reason,
-                        
-                    } }
-                };
-
-                await signalRService.NotifyAppAccountStatus(new List<UserAccountSignalRModel>() { signalrModel }, cancellationToken);
-
-                await dbContext.SaveChangesAsync();
+                return Task.FromResult(BaseResponse<UpdateAccountStatusFromExtensionResponse>.Error("Please login again to continue"));
             }
 
-            return BaseResponse<UpdateAccountStatusFromExtensionResponse>.Success("", new());
+            // Auth path owns only the auth dimension (AuthStatus + Reason). Presence (ConnectionStatus /
+            // IsExtensionConnected) is intentionally left untouched so it can't clobber the hub-owned
+            // online/offline state. The change is batched and applied by AccountStatusFlushService, which
+            // also enforces that the account belongs to this user.
+            accountStatusQueue.Enqueue(new AccountStatusChange
+            {
+                AccountId = request.AccountId,
+                UserId = currentUser.Id,
+                AuthStatus = request.AccountAuthStatus,
+                Reason = request.Reason,
+                AtUtc = DateTime.UtcNow,
+            });
+
+            return Task.FromResult(BaseResponse<UpdateAccountStatusFromExtensionResponse>.Success("", new()));
         }
     }
 }

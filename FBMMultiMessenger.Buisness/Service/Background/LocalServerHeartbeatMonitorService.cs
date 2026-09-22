@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Buisness.Service.IServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -10,10 +10,14 @@ namespace FBMMultiMessenger.Buisness.Service.Background
 
         public LocalServerHeartbeatMonitorService(IServiceProvider serviceProvider)
         {
-            this._serviceProvider=serviceProvider;
+            this._serviceProvider = serviceProvider;
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            #if DEBUG
+                return;
+            #endif
+
             try
             {
                 await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);

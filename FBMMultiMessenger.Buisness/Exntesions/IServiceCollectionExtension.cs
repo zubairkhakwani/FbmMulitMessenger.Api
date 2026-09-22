@@ -2,6 +2,7 @@
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.Background;
+using FBMMultiMessenger.Buisness.Service.StatusBatching;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -149,6 +150,10 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<ILocalServerService, LocalServerService>();
             services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
             services.AddScoped<ISignalRService, SignalRService>();
+
+            //Batched account status updates (connect/disconnect/auth) to avoid per-event DB connections.
+            services.AddSingleton<IAccountStatusQueue, AccountStatusQueue>();
+            services.AddHostedService<AccountStatusFlushService>();
 
             //Background Services
             services.AddHostedService<LocalServerHeartbeatMonitorService>();
