@@ -34,7 +34,8 @@ namespace FBMMultiMessenger.Buisness.Request.FacebookWebSocket
 
     public class WebSocketModelResponse
     {
-
+        // True when the account was removed/deactivated — the extension should stop syncing & reconnecting.
+        public bool AccountDeactivated { get; set; }
     }
 
 }

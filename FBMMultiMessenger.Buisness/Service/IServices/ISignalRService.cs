@@ -19,6 +19,7 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
 
         //Extension
         Task NotifyExtensionMessageSent(NotifyLocalServer notifyLocalServer, int accountId, CancellationToken cancellationToken);
+        Task NotifyExtensionAccountDeactivated(IEnumerable<int> accountIds, CancellationToken cancellationToken);
 
 
         // App Account Notifications

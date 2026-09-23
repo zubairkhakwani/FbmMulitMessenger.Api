@@ -110,6 +110,7 @@ let isConnected = false;
 let reconnectTimeout = null;
 let isReconnecting = false;
 let isManuallyStopped = false; // NEW — prevents auto reconnect when we intentionally disconnect
+let accountDeactivated = false; // set when the server reports this account was removed — stop connecting & syncing
 
 let failedRequestQueue = [];
 
@@ -218,6 +219,10 @@ async function initializeSignalR() {
             GetListingInfoRequest(request);
         });
 
+        signalRConnection.on("HandleAccountDeactivated", () => {
+            handleAccountDeactivated();
+        });
+
         return true;
     } catch (error) {
         //console.error("Error initializing SignalR:", error);
@@ -307,6 +312,16 @@ async function registerExtensionUser() {
     } catch (error) {
         console.error("Error registering extension user:", error);
     }
+}
+
+// The server told us this account was removed/deactivated. Stop connecting and syncing.
+// We intentionally keep accountId so the extension does NOT auto re-register (which would
+// reactivate a deliberately removed account). disconnectSignalR() sets isManuallyStopped.
+function handleAccountDeactivated() {
+    console.log('Account removed on server — stopping extension for this account.');
+    accountDeactivated = true;
+    disconnectSignalR();
+    notifyPopupStatusChange();
 }
 
 
@@ -448,6 +463,11 @@ async function handleMessage(request, sender, sendResponse) {
     }
 
     if (request.key === "sendRawChunkToApi") {
+        // Account was removed on the server — don't sync its messages.
+        if (accountDeactivated) {
+            return true;
+        }
+
         console.log("sending sendRawChunkToApi: ", request.detail);
 
         const payload = {
@@ -462,6 +482,13 @@ async function handleMessage(request, sender, sendResponse) {
             });
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            // Server tells us the account was removed — stop syncing & reconnecting.
+            const body = await res.json().catch(() => null);
+            if (body?.data?.accountDeactivated) {
+                handleAccountDeactivated();
+                return true;
+            }
         }
         catch (err) {
             console.error('sendRawChunkToApi failed, queuing for retry:', err);

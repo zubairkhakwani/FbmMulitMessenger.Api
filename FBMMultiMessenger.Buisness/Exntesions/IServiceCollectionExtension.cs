@@ -155,6 +155,9 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddSingleton<IAccountStatusQueue, AccountStatusQueue>();
             services.AddHostedService<AccountStatusFlushService>();
 
+            //Cache of account active-status so extension register/sync don't hit the DB per request.
+            services.AddSingleton<AccountActiveStatusCache>();
+
             //Background Services
             services.AddHostedService<LocalServerHeartbeatMonitorService>();
             services.AddHostedService<ChatMediaCleanupService>();

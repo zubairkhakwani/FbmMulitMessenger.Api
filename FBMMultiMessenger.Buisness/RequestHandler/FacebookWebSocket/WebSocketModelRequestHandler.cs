@@ -3,7 +3,9 @@ using FBMMultiMessenger.Buisness.Request.FacebookWebSocket;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Shared;
+using FBMMultiMessenger.Data.DB;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,14 +19,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
     public class WebSocketModelRequestHandler : IRequestHandler<WebSocketModelRequest, BaseResponse<WebSocketModelResponse>>
     {
         private readonly IMediator mediator;
+        private readonly ApplicationDbContext dbContext;
+        private readonly AccountActiveStatusCache accountActiveStatusCache;
 
-        public WebSocketModelRequestHandler(IMediator mediator)
+        public WebSocketModelRequestHandler(IMediator mediator, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache)
         {
             this.mediator = mediator;
+            this.dbContext = dbContext;
+            this.accountActiveStatusCache = accountActiveStatusCache;
         }
 
         public async Task<BaseResponse<WebSocketModelResponse>> Handle(WebSocketModelRequest request, CancellationToken cancellationToken)
         {
+            // Ignore sync for accounts that were removed (soft-deleted) — don't store their messages.
+            // Cached (5-min TTL) so message bursts don't hit the DB per chunk; removal updates it immediately.
+            var isActiveAccount = await accountActiveStatusCache.IsActiveAsync(request.AccountId,
+                () => dbContext.Accounts.AnyAsync(a => a.Id == request.AccountId && a.IsActive, cancellationToken));
+
+            if (!isActiveAccount)
+            {
+                // Tell the extension it's been deactivated so it stops syncing/reconnecting.
+                return BaseResponse<WebSocketModelResponse>.Success("Account is inactive; sync ignored.",
+                    new WebSocketModelResponse { AccountDeactivated = true });
+            }
+
             var bytes = Convert.FromBase64String(request.Chunk);
             var text = Encoding.UTF8.GetString(bytes);
 

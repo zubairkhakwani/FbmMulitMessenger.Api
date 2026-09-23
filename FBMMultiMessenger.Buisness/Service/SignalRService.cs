@@ -68,6 +68,17 @@ namespace FBMMultiMessenger.Buisness.Service
             .SendAsync("SendMessage", notifyLocalServer, cancellationToken);
         }
 
+        // Tell the extension(s) for these accounts that the account was removed/deactivated, so they
+        // stop reconnecting and syncing.
+        public async Task NotifyExtensionAccountDeactivated(IEnumerable<int> accountIds, CancellationToken cancellationToken)
+        {
+            foreach (var accountId in accountIds)
+            {
+                await _hubContext.Clients.Group($"extension_{accountId}")
+                    .SendAsync("HandleAccountDeactivated", accountId, cancellationToken);
+            }
+        }
+
         public async Task AskExtensionForListingInfo(int accountId, GetListingInfoRequest request, CancellationToken cancellationToken)
         {
             await _hubContext.Clients.Group($"extension_{accountId}")

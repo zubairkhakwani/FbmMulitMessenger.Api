@@ -13,15 +13,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         private readonly ApplicationDbContext dbContext;
         private readonly CurrentUserService currentUserService;
         private readonly OneSignalService oneSignalService;
+        private readonly AccountActiveStatusCache accountActiveStatusCache;
 
         public RegisterFacebookAccountFromExtensionRequestHandler(
             ApplicationDbContext dbContext,
             CurrentUserService currentUserService,
-            OneSignalService oneSignalService)
+            OneSignalService oneSignalService,
+            AccountActiveStatusCache accountActiveStatusCache)
         {
             this.dbContext = dbContext;
             this.currentUserService = currentUserService;
             this.oneSignalService = oneSignalService;
+            this.accountActiveStatusCache = accountActiveStatusCache;
         }
 
         public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> Handle(RegisterFacebookAccountFromExtensionRequest request, CancellationToken cancellationToken)
@@ -55,6 +58,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                         }
                         else
                         {
+                            accountActiveStatusCache.Set(dbAccount.Id, true);
                             return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("Account already registered.", new() { AccountId = dbAccount.Id });
                         }
                     }
@@ -104,6 +108,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                         dbAccount.UpdatedAt = DateTime.UtcNow;
                         await dbContext.SaveChangesAsync(cancellationToken);
 
+                        accountActiveStatusCache.Set(dbAccount.Id, true);
                         return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("", new() { AccountId = dbAccount.Id });
                     }
 
@@ -122,6 +127,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     dbContext.Accounts.Add(accountToAdd);
                     await dbContext.SaveChangesAsync(cancellationToken);
 
+                    accountActiveStatusCache.Set(accountToAdd.Id, true);
                     return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("", new() { AccountId = accountToAdd.Id });
                 }
                 catch (DbUpdateConcurrencyException ex)

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
-    internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
+    internal class RemoveAccountModelRequestHandler(ApplicationDbContext _dbContext, CurrentUserService _currentUserService, IUserAccountService _userAccountService, ISignalRService _signalRService, AccountActiveStatusCache _accountActiveStatusCache) : IRequestHandler<RemoveAcountModelRequest, BaseResponse<ToggleAcountStatusModelResponse>>
     {
         public async Task<BaseResponse<ToggleAcountStatusModelResponse>> Handle(RemoveAcountModelRequest request, CancellationToken cancellationToken)
         {
@@ -60,6 +60,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             {
                 account.IsActive = false;
 
+                // Reflect the removal in the active-status cache immediately so register/sync enforce it
+                // without waiting for the TTL and without a DB read.
+                _accountActiveStatusCache.Set(account.Id, false);
+
                 var accountLocalServer = account.LocalServer;
 
                 if (accountLocalServer is not null && accountLocalServer.ActiveBrowserCount > 0)
@@ -69,6 +73,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Tell any connected extensions (incl. self-run browsers with no local server) to stop
+            // reconnecting/syncing for these now-deactivated accounts.
+            await _signalRService.NotifyExtensionAccountDeactivated(accounts.Select(a => a.Id), cancellationToken);
 
             // Group accounts by their assigned server
             var accountsByServer = accounts

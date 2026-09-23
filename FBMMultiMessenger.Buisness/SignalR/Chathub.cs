@@ -1,7 +1,10 @@
 ﻿using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
+using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.StatusBatching;
 using FBMMultiMessenger.Contracts.Enums;
+using FBMMultiMessenger.Data.DB;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
 namespace FBMMultiMessenger.Buisness.SignalR
@@ -10,10 +13,14 @@ namespace FBMMultiMessenger.Buisness.SignalR
     {
         public static ConcurrentDictionary<string, string> _devices = new ConcurrentDictionary<string, string>();
         private readonly IAccountStatusQueue _accountStatusQueue;
+        private readonly ApplicationDbContext _dbContext;
+        private readonly AccountActiveStatusCache _accountActiveStatusCache;
 
-        public ChatHub(IAccountStatusQueue accountStatusQueue)
+        public ChatHub(IAccountStatusQueue accountStatusQueue, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache)
         {
             this._accountStatusQueue = accountStatusQueue;
+            this._dbContext = dbContext;
+            this._accountActiveStatusCache = accountActiveStatusCache;
         }
 
         public async Task RegisterLocalServer(string localServerId)
@@ -70,6 +77,19 @@ namespace FBMMultiMessenger.Buisness.SignalR
 
             try
             {
+                // Reject accounts that were removed (soft-deleted): don't register, and tell the caller
+                // to stop so it stops reconnecting/syncing. Cached (5-min TTL) so connect bursts don't
+                // hit the DB per connection; removal updates the cache immediately.
+                var isActiveAccount = await _accountActiveStatusCache.IsActiveAsync(accountId,
+                    () => _dbContext.Accounts.AnyAsync(a => a.Id == accountId && a.IsActive));
+
+                if (!isActiveAccount)
+                {
+                    await Clients.Caller.SendAsync("HandleAccountDeactivated", accountId);
+                    Console.WriteLine($"Extension register rejected — account {accountId} is not active.");
+                    return;
+                }
+
                 var extensionId = $"extension_{accountId}";
 
                 SingnalRConnectionManager._connections[Context.ConnectionId] = new ConnectionMetadata() { ExtensionId = extensionId, AccountId = accountId, APIUserId = apiUserId };
