@@ -87,9 +87,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                             "You’ve reached the maximum limit of your subscription plan. Please upgrade your plan from the app.";
 
                         // Fire-and-forget push so the mobile app can open Packages + pitch.
-                        _ = oneSignalService.PushAccountLimitExceededNotificationAsync(
-                            currentUser!.Id.ToString(),
-                            limitMessage);
+                        // keeps sending notifications so currenlty commented
+                        //_ = oneSignalService.PushAccountLimitExceededNotificationAsync(
+                        //    currentUser!.Id.ToString(),
+                        //    limitMessage);
 
                         return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error(
                             limitMessage,
