@@ -317,9 +317,13 @@ async function registerExtensionUser() {
 // The server told us this account was removed/deactivated. Stop connecting and syncing.
 // We intentionally keep accountId so the extension does NOT auto re-register (which would
 // reactivate a deliberately removed account). disconnectSignalR() sets isManuallyStopped.
-function handleAccountDeactivated() {
+async function handleAccountDeactivated() {
     console.log('Account removed on server — stopping extension for this account.');
     accountDeactivated = true;
+    accountId = null;
+
+    await chrome.storage.local.remove('accountId');
+
     disconnectSignalR();
     notifyPopupStatusChange();
 }
@@ -486,7 +490,7 @@ async function handleMessage(request, sender, sendResponse) {
             // Server tells us the account was removed — stop syncing & reconnecting.
             const body = await res.json().catch(() => null);
             if (body?.data?.accountDeactivated) {
-                handleAccountDeactivated();
+                await handleAccountDeactivated();
                 return true;
             }
         }
@@ -637,7 +641,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // Skip the periodic re-check when registration deterministically failed (e.g. account limit
         // reached) — otherwise we'd hit /api/account/register every alarm tick. A page refresh or FB
         // re-login still calls notifyAccountAuthState directly and gets one fresh attempt.
-        if (!accountId && !registrationBlocked) {
+        if (!accountId && !registrationBlocked && !accountDeactivated) {
             recheckFbAuth(); //!accountId means fb not logged in, or yet we do not know recheckFbAuth will call inject.js to recheck
             //that will give us a callback which will eventually run notifyAccountAuthState if fb is logged in notifyAccountAuthState
             //will call connectSignalR, so we are returning.
