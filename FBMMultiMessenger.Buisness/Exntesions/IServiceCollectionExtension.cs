@@ -3,6 +3,7 @@ using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.Background;
 using FBMMultiMessenger.Buisness.Service.StatusBatching;
+using FBMMultiMessenger.Buisness.Service.SyncBatching;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -157,6 +158,11 @@ namespace FBMMultiMessenger.Buisness.Exntesions
 
             //Cache of account active-status so extension register/sync don't hit the DB per request.
             services.AddSingleton<AccountActiveStatusCache>();
+
+            //Batched history-sync (insertNewMessageRange) to avoid a DB connection/transaction per chunk.
+            services.AddSingleton<ISyncMessageQueue, SyncMessageQueue>();
+            services.AddScoped<SyncMessagesProcessor>();
+            services.AddHostedService<SyncFlushService>();
 
             //Background Services
             services.AddHostedService<LocalServerHeartbeatMonitorService>();

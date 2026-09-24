@@ -6,6 +6,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Sentry;
 
 namespace FBMMultiMessenger.Buisness.Service.StatusBatching
 {
@@ -56,7 +57,7 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                 catch (Exception ex)
                 {
                     // Never let a bad flush kill the loop; the next event / heartbeat reconciles.
-                    Console.Error.WriteLine($"AccountStatusFlushService error: {ex.Message}");
+                    SentrySdk.CaptureException(ex);
                 }
             }
         }

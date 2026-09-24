@@ -2,6 +2,7 @@
 using FBMMultiMessenger.Buisness.Request.FacebookWebSocket;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.SyncBatching;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
@@ -21,12 +22,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
         private readonly IMediator mediator;
         private readonly ApplicationDbContext dbContext;
         private readonly AccountActiveStatusCache accountActiveStatusCache;
+        private readonly CurrentUserService currentUserService;
+        private readonly ISyncMessageQueue syncMessageQueue;
 
-        public WebSocketModelRequestHandler(IMediator mediator, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache)
+        public WebSocketModelRequestHandler(IMediator mediator, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache, CurrentUserService currentUserService, ISyncMessageQueue syncMessageQueue)
         {
             this.mediator = mediator;
             this.dbContext = dbContext;
             this.accountActiveStatusCache = accountActiveStatusCache;
+            this.currentUserService = currentUserService;
+            this.syncMessageQueue = syncMessageQueue;
         }
 
         public async Task<BaseResponse<WebSocketModelResponse>> Handle(WebSocketModelRequest request, CancellationToken cancellationToken)
@@ -111,14 +116,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                     }).ToList(),
                 }).ToList();
 
-                var mediatRRequest = new SyncInitialMessagesModelRequest()
+                // Old history in bursts — queue it for batched persistence instead of a DB write per chunk.
+                var currentUser = currentUserService.GetCurrentUser();
+                if (currentUser is not null)
                 {
-                    Chats = messages,
-                    AccountId = request.AccountId,
-                    FbAccountId = request.FbAccountId
-                };
-
-                await mediator.Send(mediatRRequest);
+                    syncMessageQueue.Enqueue(new SyncBatchItem
+                    {
+                        UserId = currentUser.Id,
+                        AccountId = request.AccountId,
+                        FbAccountId = request.FbAccountId,
+                        Chats = messages,
+                    });
+                }
             }
 
 
