@@ -1,12 +1,15 @@
 using FBMMultiMessenger.Buisness.Models.SignalR.App;
+using FBMMultiMessenger.Buisness.Request.Chat;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Extensions;
+using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Sentry;
+using System.Text.Json;
 
 namespace FBMMultiMessenger.Buisness.Service.StatusBatching
 {
@@ -104,89 +107,139 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
 
         private async Task FlushAsync(List<AccountStatusChange> batch, CancellationToken cancellationToken)
         {
-            // Coalesce per account, per field: apply in time order so the latest non-null value wins.
-            var merged = new Dictionary<int, AccountStatusChange>();
-            foreach (var change in batch.OrderBy(c => c.AtUtc))
+            try
             {
-                if (!merged.TryGetValue(change.AccountId, out var current))
+                // Coalesce per account, per field: apply in time order so the latest non-null value wins.
+                var merged = new Dictionary<int, AccountStatusChange>();
+                foreach (var change in batch.OrderBy(c => c.AtUtc))
                 {
-                    merged[change.AccountId] = change;
-                    continue;
+                    if (!merged.TryGetValue(change.AccountId, out var current))
+                    {
+                        merged[change.AccountId] = change;
+                        continue;
+                    }
+
+                    merged[change.AccountId] = current with
+                    {
+                        UserId = change.UserId != 0 ? change.UserId : current.UserId,
+                        ConnectionStatus = change.ConnectionStatus ?? current.ConnectionStatus,
+                        IsExtensionConnected = change.IsExtensionConnected ?? current.IsExtensionConnected,
+                        AuthStatus = change.AuthStatus ?? current.AuthStatus,
+                        Reason = change.Reason ?? current.Reason,
+                        AtUtc = change.AtUtc,
+                    };
                 }
 
-                merged[change.AccountId] = current with
+                var ids = merged.Keys.ToList();
+
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var signalRService = scope.ServiceProvider.GetRequiredService<ISignalRService>();
+
+                var accounts = await dbContext.Accounts
+                                              .Where(a => ids.Contains(a.Id))
+                                              .ToListAsync(cancellationToken);
+
+                if (accounts.Count == 0)
                 {
-                    UserId = change.UserId != 0 ? change.UserId : current.UserId,
-                    ConnectionStatus = change.ConnectionStatus ?? current.ConnectionStatus,
-                    IsExtensionConnected = change.IsExtensionConnected ?? current.IsExtensionConnected,
-                    AuthStatus = change.AuthStatus ?? current.AuthStatus,
-                    Reason = change.Reason ?? current.Reason,
-                    AtUtc = change.AtUtc,
+                    return;
+                }
+
+                var now = DateTime.UtcNow;
+                var notificationsByUser = new Dictionary<int, UserAccountSignalRModel>();
+
+                foreach (var account in accounts)
+                {
+                    var change = merged[account.Id];
+
+                    // Ownership guard: only apply when the change came from the account's own user.
+                    if (change.UserId != 0 && change.UserId != account.UserId)
+                    {
+                        // A dropped change here means a cross-user AccountId reference reached the queue
+                        // (typically a stale cached AccountId after an API-key swap). The entry-point checks
+                        // should reject it first; surface it to Sentry so a bypass is still visible.
+                        SentrySdk.CaptureMessage(
+                            $"Dropped status change: account {account.Id} owned by {account.UserId} but change stamped user {change.UserId}.",
+                            SentryLevel.Warning);
+                        continue;
+                    }
+
+                    if (change.ConnectionStatus.HasValue) account.ConnectionStatus = change.ConnectionStatus.Value;
+                    if (change.IsExtensionConnected.HasValue) account.IsExtensionConnected = change.IsExtensionConnected.Value;
+                    if (change.AuthStatus.HasValue) account.AuthStatus = change.AuthStatus.Value;
+                    if (change.Reason.HasValue) account.Reason = change.Reason.Value;
+                    account.UpdatedAt = now;
+
+                    // Build the app notification from the account's resulting (full) state.
+                    var statusModel = new AccountStatusSignalRModel
+                    {
+                        AccountId = account.Id,
+                        AccountName = account.Name,
+                        ConnectionStatus = account.ConnectionStatus,
+                        ConnectionStatusText = account.ConnectionStatus.GetInfo().Name,
+                        AuthStatus = account.AuthStatus,
+                        AuthStatusText = account.AuthStatus.GetInfo().Name,
+                        Reason = account.Reason,
+                        ReasonText = account.Reason.GetInfo().Name,
+                        IsConnected = account.ConnectionStatus == AccountConnectionStatus.Online,
+                    };
+
+                    if (!notificationsByUser.TryGetValue(account.UserId, out var userModel))
+                    {
+                        userModel = new UserAccountSignalRModel { AppId = account.UserId };
+                        notificationsByUser[account.UserId] = userModel;
+                    }
+
+                    userModel.AccountsStatus.Add(statusModel);
+                }
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                if (notificationsByUser.Count > 0)
+                {
+                    await signalRService.NotifyAppAccountStatus(notificationsByUser.Values.ToList(), cancellationToken);
+                }
+            }
+            catch(Exception ex)
+            {
+                var dataFile = WriteConflictDataToFile(batch, ex);
+
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("dataFile", dataFile);
+                });
+            }
+        }
+
+        private static string WriteConflictDataToFile(List<AccountStatusChange> statuses, Exception ex)
+        {
+            try
+            {
+                const string dir = "Logs";
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                var fileName = $"account-status-flush-exception-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.json";
+
+                var payload = new
+                {
+                    TimestampUtc = DateTime.UtcNow,
+                    Error = ex.Message,
+                    InnerError = ex.InnerException?.Message,
+                    Statuses = statuses,
                 };
+
+                File.WriteAllText(
+                    Path.Combine(dir, fileName),
+                    JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+
+                return fileName;
             }
-
-            var ids = merged.Keys.ToList();
-
-            using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var signalRService = scope.ServiceProvider.GetRequiredService<ISignalRService>();
-
-            var accounts = await dbContext.Accounts
-                                          .Where(a => ids.Contains(a.Id))
-                                          .ToListAsync(cancellationToken);
-
-            if (accounts.Count == 0)
+            catch (Exception writeEx)
             {
-                return;
-            }
-
-            var now = DateTime.UtcNow;
-            var notificationsByUser = new Dictionary<int, UserAccountSignalRModel>();
-
-            foreach (var account in accounts)
-            {
-                var change = merged[account.Id];
-
-                // Ownership guard: only apply when the change came from the account's own user.
-                if (change.UserId != 0 && change.UserId != account.UserId)
-                {
-                    continue;
-                }
-
-                if (change.ConnectionStatus.HasValue) account.ConnectionStatus = change.ConnectionStatus.Value;
-                if (change.IsExtensionConnected.HasValue) account.IsExtensionConnected = change.IsExtensionConnected.Value;
-                if (change.AuthStatus.HasValue) account.AuthStatus = change.AuthStatus.Value;
-                if (change.Reason.HasValue) account.Reason = change.Reason.Value;
-                account.UpdatedAt = now;
-
-                // Build the app notification from the account's resulting (full) state.
-                var statusModel = new AccountStatusSignalRModel
-                {
-                    AccountId = account.Id,
-                    AccountName = account.Name,
-                    ConnectionStatus = account.ConnectionStatus,
-                    ConnectionStatusText = account.ConnectionStatus.GetInfo().Name,
-                    AuthStatus = account.AuthStatus,
-                    AuthStatusText = account.AuthStatus.GetInfo().Name,
-                    Reason = account.Reason,
-                    ReasonText = account.Reason.GetInfo().Name,
-                    IsConnected = account.ConnectionStatus == AccountConnectionStatus.Online,
-                };
-
-                if (!notificationsByUser.TryGetValue(account.UserId, out var userModel))
-                {
-                    userModel = new UserAccountSignalRModel { AppId = account.UserId };
-                    notificationsByUser[account.UserId] = userModel;
-                }
-
-                userModel.AccountsStatus.Add(statusModel);
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            if (notificationsByUser.Count > 0)
-            {
-                await signalRService.NotifyAppAccountStatus(notificationsByUser.Values.ToList(), cancellationToken);
+                return $"(failed to write data file: {writeEx.Message})";
             }
         }
     }

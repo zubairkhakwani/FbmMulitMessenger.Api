@@ -14,6 +14,10 @@ namespace FBMMultiMessenger.Buisness.Service
     /// </summary>
     public class SyncMessagesProcessor
     {
+        // Concurrent chat creation (real-time handler / other requests) can collide on the
+        // FBChatId+FbAccountId+UserId unique index; reload-and-retry converges once the other insert commits.
+        private const int MaxRetries = 5;
+
         private readonly ApplicationDbContext dbContext;
         private readonly OneSignalService oneSignalService;
 
@@ -233,21 +237,73 @@ namespace FBMMultiMessenger.Buisness.Service
                 }
                 catch (DbUpdateException ex)
                 {
-                    if (retriedCount >= 2)
+                    // A concurrent path (real-time message handler / another request) inserted a chat between
+                    // our load and save. Clear + reload so the retry's find-or-create picks up the existing
+                    // chat instead of trying to insert a duplicate.
+                    if (retriedCount >= MaxRetries)
                     {
-                        SentrySdk.CaptureException(ex, scope => scope.SetTag("accountId", accountId.ToString()));
+                        // Dump the exact payload to a unique file and reference it in Sentry so we can debug
+                        // (e.g. a duplicate Account row sharing FbAccountId+UserId from the import path).
+                        var dataFile = WriteConflictDataToFile(userId, accountId, fbAccountId, chats, ex);
+                        SentrySdk.CaptureException(ex, scope =>
+                        {
+                            scope.SetTag("accountId", accountId.ToString());
+                            scope.SetTag("dataFile", dataFile);
+                        });
                         return;
                     }
 
                     retriedCount++;
                     dbContext.ChangeTracker.Clear();
-                    await Task.Delay(3000, cancellationToken);
+                    await Task.Delay(Random.Shared.Next(300, 900), cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    SentrySdk.CaptureException(ex, scope => scope.SetTag("accountId", accountId.ToString()));
+                    var dataFile = WriteConflictDataToFile(userId, accountId, fbAccountId, chats, ex);
+                    SentrySdk.CaptureException(ex, scope =>
+                    {
+                        scope.SetTag("accountId", accountId.ToString());
+                        scope.SetTag("dataFile", dataFile);
+                    });
                     return;
                 }
+            }
+        }
+
+        // Writes the failing sync payload to a unique file under Logs/ and returns the file name so it can
+        // be attached to the Sentry event for later debugging. Never throws.
+        private static string WriteConflictDataToFile(int userId, int accountId, string fbAccountId, List<SyncChatsModel> chats, Exception ex)
+        {
+            try
+            {
+                const string dir = "Logs";
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                var fileName = $"sync-conflict-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Guid.NewGuid():N}.json";
+
+                var payload = new
+                {
+                    TimestampUtc = DateTime.UtcNow,
+                    UserId = userId,
+                    AccountId = accountId,
+                    FbAccountId = fbAccountId,
+                    Error = ex.Message,
+                    InnerError = ex.InnerException?.Message,
+                    Chats = chats,
+                };
+
+                File.WriteAllText(
+                    Path.Combine(dir, fileName),
+                    JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+
+                return fileName;
+            }
+            catch (Exception writeEx)
+            {
+                return $"(failed to write data file: {writeEx.Message})";
             }
         }
 

@@ -20,6 +20,9 @@ namespace FBMMultiMessenger.Buisness.Request.Account
 
     public class UpdateAccountStatusFromExtensionResponse
     {
-
+        // Set when the posted AccountId does not belong to the authenticated user (e.g. the API key was
+        // swapped but the extension still holds a cached AccountId from the previous user). The extension
+        // should clear its cached identity and re-register under the current key.
+        public bool RequiresReRegistration { get; set; }
     }
 }

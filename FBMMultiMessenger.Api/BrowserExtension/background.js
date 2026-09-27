@@ -223,6 +223,10 @@ async function initializeSignalR() {
             handleAccountDeactivated();
         });
 
+        signalRConnection.on("HandleReRegister", () => {
+            handleReRegisterRequired();
+        });
+
         return true;
     } catch (error) {
         //console.error("Error initializing SignalR:", error);
@@ -325,6 +329,39 @@ async function handleAccountDeactivated() {
     await chrome.storage.local.remove('accountId');
 
     disconnectSignalR();
+    notifyPopupStatusChange();
+}
+
+// Clears the cached identity (accountId + apiUserId) and tears down the socket so nothing keeps
+// running under a previous user. Used on an API-key swap and when the server asks us to re-register.
+async function resetCachedIdentity() {
+    accountId = null;
+    apiUserId = null;
+    registrationBlocked = false;
+    accountDeactivated = false;
+
+    await chrome.storage.local.remove(['accountId', 'apiUserId']);
+
+    try {
+        if (signalRConnection) {
+            await signalRConnection.stop();
+        }
+    } catch (err) {
+        console.error('Error stopping socket during identity reset:', err);
+    }
+
+    signalRConnection = null;
+    isConnected = false;
+    isManuallyStopped = false; // allow reconnect under the new identity
+}
+
+// The server rejected our AccountId as not belonging to the current user (stale cached AccountId after an
+// API-key swap). Clear the cached identity, then re-resolve the user and re-check FB auth to re-register.
+async function handleReRegisterRequired() {
+    console.warn('Server requested re-registration — clearing cached identity and re-registering.');
+    await resetCachedIdentity();
+    await resolveApiUserId();
+    recheckFbAuth();
     notifyPopupStatusChange();
 }
 
@@ -560,10 +597,20 @@ async function handleMessage(request, sender, sendResponse) {
             };
 
             // Notify your API that this account is now online
-            await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
+            const statusRes = await apiFetch(`${remoteApiUrl}/api/account/${accountId}/status`, {
                 method: 'POST',
                 body: JSON.stringify(statusRequest),
             });
+
+            // Server rejected the AccountId as not ours (stale cache after a key swap) — re-register.
+            try {
+                const statusData = await statusRes.json();
+                if (statusData?.data?.requiresReRegistration) {
+                    await handleReRegisterRequired();
+                    sendResponse({ success: true });
+                    return;
+                }
+            } catch (e) { /* non-JSON / empty body — ignore */ }
 
             console.log('Account is logged in and registered:', accountId);
 
@@ -670,6 +717,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 async function loadAuth() {
     // Robo injects __FBM_ROBO_API_KEY__ at the top of this file when packing the extension
     if (typeof __FBM_ROBO_API_KEY__ !== 'undefined' && __FBM_ROBO_API_KEY__) {
+        // Detect an API-key swap: Robo relaunched the browser with a different key while the extension
+        // still holds the previous user's cached apiUserId/accountId. Wipe that stale identity so we
+        // re-register cleanly under the new user (otherwise status is reported for the wrong account).
+        const stored = await chrome.storage.local.get(['apiKey']);
+        if (stored.apiKey && stored.apiKey !== __FBM_ROBO_API_KEY__) {
+            console.warn('API key changed — clearing cached identity to re-register under the new user.');
+            await resetCachedIdentity();
+        }
+
         apiKey = __FBM_ROBO_API_KEY__;
         await chrome.storage.local.set({ apiKey });
     }
