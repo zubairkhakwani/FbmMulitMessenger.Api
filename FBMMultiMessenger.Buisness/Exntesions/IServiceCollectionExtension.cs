@@ -145,6 +145,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<CurrentUserService>();
             services.AddScoped<AesEncryptionHelper>();
             services.AddSingleton<ExtensionContentCache>();
+            services.AddSingleton<ExtensionZipCache>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
             services.AddScoped<IUserAccountService, UserAccountService>();

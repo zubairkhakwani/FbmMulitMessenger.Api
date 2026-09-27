@@ -689,6 +689,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // reached) — otherwise we'd hit /api/account/register every alarm tick. A page refresh or FB
         // re-login still calls notifyAccountAuthState directly and gets one fresh attempt.
         if (!accountId && !registrationBlocked && !accountDeactivated) {
+            console.log('retring from keep alive');
             recheckFbAuth(); //!accountId means fb not logged in, or yet we do not know recheckFbAuth will call inject.js to recheck
             //that will give us a callback which will eventually run notifyAccountAuthState if fb is logged in notifyAccountAuthState
             //will call connectSignalR, so we are returning.
@@ -696,6 +697,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         }
 
         if (accountId && !isManuallyStopped && !isConnected) {
+            console.log('retring from keep alive 2');
+
             const hasFbTab = await hasAnyFacebookTab();
 
             if (!hasFbTab)
