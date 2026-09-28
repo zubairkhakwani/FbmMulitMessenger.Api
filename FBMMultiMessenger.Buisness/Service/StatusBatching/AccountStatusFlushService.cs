@@ -200,7 +200,11 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                     await signalRService.NotifyAppAccountStatus(notificationsByUser.Values.ToList(), cancellationToken);
                 }
             }
-            catch(Exception ex)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
             {
                 var dataFile = WriteConflictDataToFile(batch, ex);
 
