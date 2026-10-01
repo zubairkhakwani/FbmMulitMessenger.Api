@@ -2,6 +2,8 @@
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.Background;
+using FBMMultiMessenger.Buisness.Service.StatusBatching;
+using FBMMultiMessenger.Buisness.Service.SyncBatching;
 using FBMMultiMessenger.Buisness.Service.IServices;
 using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Data.DB;
@@ -143,12 +145,25 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<CurrentUserService>();
             services.AddScoped<AesEncryptionHelper>();
             services.AddSingleton<ExtensionContentCache>();
+            services.AddSingleton<ExtensionZipCache>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
             services.AddScoped<IUserAccountService, UserAccountService>();
             services.AddScoped<ILocalServerService, LocalServerService>();
             services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
             services.AddScoped<ISignalRService, SignalRService>();
+
+            //Batched account status updates (connect/disconnect/auth) to avoid per-event DB connections.
+            services.AddSingleton<IAccountStatusQueue, AccountStatusQueue>();
+            services.AddHostedService<AccountStatusFlushService>();
+
+            //Cache of account active-status so extension register/sync don't hit the DB per request.
+            services.AddSingleton<AccountActiveStatusCache>();
+
+            //Batched history-sync (insertNewMessageRange) to avoid a DB connection/transaction per chunk.
+            services.AddSingleton<ISyncMessageQueue, SyncMessageQueue>();
+            services.AddScoped<SyncMessagesProcessor>();
+            services.AddHostedService<SyncFlushService>();
 
             //Background Services
             services.AddHostedService<LocalServerHeartbeatMonitorService>();

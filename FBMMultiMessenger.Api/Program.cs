@@ -43,7 +43,7 @@ namespace FBMMultiMessenger.Api
                 builder.WebHost.UseSentry(options =>
                 {
                     options.SendDefaultPii = true;
-                    options.Dsn = "https://98afa456f374308636952910286563a4@o4510596251385856.ingest.us.sentry.io/4510596260757504";
+                    options.Dsn = "https://9daac8c77e88a733a9b35957b2a9e096@o4512135138574336.ingest.us.sentry.io/4512135140212736";
                     options.MaxRequestBodySize = Sentry.Extensibility.RequestSize.Always;
                     options.MinimumBreadcrumbLevel = LogLevel.Debug;
                     options.MinimumEventLevel = LogLevel.Warning;

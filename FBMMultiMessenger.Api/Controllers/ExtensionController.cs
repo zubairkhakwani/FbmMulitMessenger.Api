@@ -1,4 +1,5 @@
 using AutoMapper;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Extension;
 using FBMMultiMessenger.Contracts.Contracts.Extension;
 using FBMMultiMessenger.Contracts.Shared;
@@ -13,11 +14,26 @@ namespace FBMMultiMessenger.Api.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IMediator _mediator;
+        private readonly ExtensionZipCache _extensionZipCache;
+        private readonly IConfiguration _configuration;
 
-        public ExtensionController(IMapper mapper, IMediator mediator)
+        public ExtensionController(IMapper mapper, IMediator mediator, ExtensionZipCache extensionZipCache, IConfiguration configuration)
         {
             _mapper=mapper;
             _mediator=mediator;
+            _extensionZipCache = extensionZipCache;
+            _configuration = configuration;
+        }
+
+        // Public download of the unpacked extension as a ZIP, for users who install manually
+        // (chrome://extensions → Developer mode → Load unpacked) without FBM Robo.
+        [HttpGet("/api/extension/download")]
+        public async Task<IActionResult> Download()
+        {
+            var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"];
+            var zipBytes = await _extensionZipCache.GetAsync(publicApiUrl);
+
+            return File(zipBytes, "application/zip", "fbm-messenger-extension.zip");
         }
 
         //[Authorize]

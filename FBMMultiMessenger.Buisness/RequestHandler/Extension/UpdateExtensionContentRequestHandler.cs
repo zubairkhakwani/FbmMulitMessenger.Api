@@ -7,15 +7,18 @@ using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
 {
-    internal class UpdateExtensionContentRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext, ExtensionContentCache cache) : IRequestHandler<UpdateExtensionContentRequest, BaseResponse<GetEncExtensionContentModelResponse>>
+    internal class UpdateExtensionContentRequestHandler(AesEncryptionHelper aesEncryptionHelper, IHubContext<ChatHub> hubContext, ApplicationDbContext dbContext, ExtensionContentCache cache, ExtensionZipCache zipCache, IConfiguration configuration) : IRequestHandler<UpdateExtensionContentRequest, BaseResponse<GetEncExtensionContentModelResponse>>
     {
         private readonly AesEncryptionHelper _aesEncryptionHelper = aesEncryptionHelper;
         private readonly IHubContext<ChatHub> _hubContext = hubContext;
         private readonly ApplicationDbContext _dbContext = dbContext;
         private readonly ExtensionContentCache _cache = cache;
+        private readonly ExtensionZipCache _zipCache = zipCache;
+        private readonly IConfiguration _configuration = configuration;
 
         public async Task<BaseResponse<GetEncExtensionContentModelResponse>> Handle(UpdateExtensionContentRequest request, CancellationToken cancellationToken)
         {
@@ -46,6 +49,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 // Re-obfuscate the latest extension files and refresh the cache so the next
                 // GET returns the newest content.
                 string encryptedExtensionFiles = await _cache.RebuildAsync(extensionVersion, _aesEncryptionHelper);
+
+                // Rebuild the public download ZIP too, so the manual-install package stays in sync.
+                var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"];
+                await _zipCache.RebuildAsync(publicApiUrl);
 
                 var response = new GetEncExtensionContentModelResponse()
                 {

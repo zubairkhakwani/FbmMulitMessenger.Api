@@ -19,6 +19,9 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
 
         //Extension
         Task NotifyExtensionMessageSent(NotifyLocalServer notifyLocalServer, int accountId, CancellationToken cancellationToken);
+        Task NotifyExtensionAccountDeactivated(IEnumerable<int> accountIds, CancellationToken cancellationToken);
+        // Tell the currently-connected extension(s) for this account to disconnect (a newer session took over).
+        Task NotifyExtensionForceDisconnect(int accountId, CancellationToken cancellationToken);
 
 
         // App Account Notifications

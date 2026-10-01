@@ -1,10 +1,13 @@
 ﻿using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
+using FBMMultiMessenger.Buisness.Service.IServices;
+using FBMMultiMessenger.Buisness.SignalR;
 using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.Database.DbModels;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Sentry;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 {
@@ -13,15 +16,21 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         private readonly ApplicationDbContext dbContext;
         private readonly CurrentUserService currentUserService;
         private readonly OneSignalService oneSignalService;
+        private readonly AccountActiveStatusCache accountActiveStatusCache;
+        private readonly ISignalRService signalRService;
 
         public RegisterFacebookAccountFromExtensionRequestHandler(
             ApplicationDbContext dbContext,
             CurrentUserService currentUserService,
-            OneSignalService oneSignalService)
+            OneSignalService oneSignalService,
+            AccountActiveStatusCache accountActiveStatusCache,
+            ISignalRService signalRService)
         {
             this.dbContext = dbContext;
             this.currentUserService = currentUserService;
             this.oneSignalService = oneSignalService;
+            this.accountActiveStatusCache = accountActiveStatusCache;
+            this.signalRService = signalRService;
         }
 
         public async Task<BaseResponse<RegisterFacebookAccountFromExtensionResponse>> Handle(RegisterFacebookAccountFromExtensionRequest request, CancellationToken cancellationToken)
@@ -49,14 +58,30 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
 
                     if (dbAccount != null && dbAccount.IsActive)
                     {
+                        // The DB says this account already has an extension connected. Don't trust that flag
+                        // blindly — reconcile it against the actual live SignalR connections. A stale "true"
+                        // (no live socket) typically comes from an ungraceful shutdown that never cleared it,
+                        // and would otherwise lock the user out of ever reconnecting.
                         if (dbAccount.IsExtensionConnected)
                         {
-                            return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error("Account is already connected, can not connect twice.", showSweetAlert: true);
+                            if (SingnalRConnectionManager.HasLiveExtensionConnection(dbAccount.Id))
+                            {
+                                // A genuine live session exists — last-writer-wins: drop the old socket(s) so the
+                                // new extension takes over, instead of rejecting the new one.
+                                await signalRService.NotifyExtensionForceDisconnect(dbAccount.Id, cancellationToken);
+                            }
+                            else
+                            {
+                                // Stale flag: DB marked connected but no live socket. Admit the new extension and
+                                // record it so we can trace how often this happens and fix the root cause.
+                                SentrySdk.CaptureMessage(
+                                    $"Stale IsExtensionConnected: account {dbAccount.Id} (user {currentUser!.Id}) marked connected but has no live SignalR connection at register; admitting new extension.",
+                                    SentryLevel.Warning);
+                            }
                         }
-                        else
-                        {
-                            return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("Account already registered.", new() { AccountId = dbAccount.Id });
-                        }
+
+                        accountActiveStatusCache.Set(dbAccount.Id, true);
+                        return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("Account already registered.", new() { AccountId = dbAccount.Id });
                     }
 
                     var now = DateTime.UtcNow;
@@ -83,9 +108,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                             "You’ve reached the maximum limit of your subscription plan. Please upgrade your plan from the app.";
 
                         // Fire-and-forget push so the mobile app can open Packages + pitch.
-                        _ = oneSignalService.PushAccountLimitExceededNotificationAsync(
-                            currentUser!.Id.ToString(),
-                            limitMessage);
+                        // keeps sending notifications so currenlty commented
+                        //_ = oneSignalService.PushAccountLimitExceededNotificationAsync(
+                        //    currentUser!.Id.ToString(),
+                        //    limitMessage);
 
                         return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Error(
                             limitMessage,
@@ -104,6 +130,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                         dbAccount.UpdatedAt = DateTime.UtcNow;
                         await dbContext.SaveChangesAsync(cancellationToken);
 
+                        accountActiveStatusCache.Set(dbAccount.Id, true);
                         return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("", new() { AccountId = dbAccount.Id });
                     }
 
@@ -122,6 +149,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                     dbContext.Accounts.Add(accountToAdd);
                     await dbContext.SaveChangesAsync(cancellationToken);
 
+                    accountActiveStatusCache.Set(accountToAdd.Id, true);
                     return BaseResponse<RegisterFacebookAccountFromExtensionResponse>.Success("", new() { AccountId = accountToAdd.Id });
                 }
                 catch (DbUpdateConcurrencyException ex)

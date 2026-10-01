@@ -619,23 +619,34 @@ function delay(ms) {
 
 function checkAccountAuth() {
     let previousLoginState = null;
+    let previousAccountId = null;
 
     function checkAndNotify() {
         console.log('running checkAndNotify');
 
-        var isLoggedIn = isAccountLoggedIn(getCookie('c_user'), getEmailInput());
+        // c_user is the currently logged-in FB account id, straight from the cookie — always current,
+        // even when the user switches FB accounts without a full page reload.
+        var currentAccountId = getCookie('c_user') || null;
+        var isLoggedIn = isAccountLoggedIn(currentAccountId, getEmailInput());
 
-        // Notify if state changed OR first time check
-        if (previousLoginState !== isLoggedIn) {
+        // Notify on first check, when the login state flips, OR when the logged-in FB account changed
+        // (account switch) — so the background re-registers for the new account instead of keeping the old one.
+        var accountChanged = isLoggedIn && currentAccountId && currentAccountId !== previousAccountId;
+
+        if (previousLoginState !== isLoggedIn || accountChanged) {
+            if (accountChanged) {
+                userId = null; // clear cached USER_ID so extractUserId() re-reads the new account
+            }
             NotifyAccountAuthStatus(isLoggedIn);
             previousLoginState = isLoggedIn;
+            previousAccountId = currentAccountId;
         }
     }
 
     // first run
     setTimeout(checkAndNotify, 1000);
-    // then every 5 minutes
-    setInterval(checkAndNotify, 20 * 60 * 1000);
+    // then every 18 seconds
+    setInterval(checkAndNotify, .3 * 60 * 1000);
 
     //cleans pendingMessages every 5 minutes..
     setInterval(() => {
@@ -672,6 +683,16 @@ function isAccountLoggedIn(cUser, emailInput) {
 var userId;
 
 function extractUserId() {
+    // Prefer the c_user cookie: it's authoritative and always current, so it stays correct across FB
+    // account switches (unlike the page-parsed USER_ID, which can be stale or missing before the page
+    // fully loads). Read it fresh every call and keep it as the cache.
+    var cUser = getCookie('c_user');
+    if (cUser) {
+        userId = cUser;
+        return userId;
+    }
+
+    // No cookie (e.g. logged out / not yet available): use the last known value, else parse the page.
     if (userId) {
         return userId; // Return cached userId if already extracted
     }
@@ -875,7 +896,7 @@ async function CloseCreateAPinToAccessYourChats()
 }
 
 
-async function ScrollSideBarToLoadChats() {
+async function ScrollSideBarToLoadChats(timeToScrollInMilliseconds) {
 
     await waitForElement('div[aria-label="Chats"][role="grid"] [data-virtualized] div[role="button"]', 10000);
 
@@ -896,13 +917,12 @@ async function ScrollSideBarToLoadChats() {
         return;
     }
 
-    const fiveMinutes = 2 * 60 * 1000; // 5 minutes in milliseconds
     const startTime = Date.now();
 
     // This runs every 50ms and scrolls DOWN
     const interval = setInterval(() => {
         // Check if 5 minutes passed
-        if (Date.now() - startTime >= fiveMinutes) {
+        if (Date.now() - startTime >= timeToScrollInMilliseconds) {
             clearInterval(interval);
             console.log('5 minutes completed!');
             scrollableDiv.scrollTop = 0;
@@ -950,6 +970,8 @@ setTimeout(async () => {
     console.log(`FBM AUTO OPEN MESSENGER ${__FBM_AUTO_OPEN_MESSENGER__}`)
     if (typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined' && __FBM_AUTO_OPEN_MESSENGER__) {
 
-        ScrollSideBarToLoadChats();
+        const timeToScroll = .2 * 60 * 1000; // 12 seconds
+
+        ScrollSideBarToLoadChats(timeToScroll);
     }
-}, 1500);
+}, 2500);
