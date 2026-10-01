@@ -27,6 +27,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }
         public DbSet<TrialConfiguration> TrialConfigurations { get; set; }
+        public DbSet<UserChatListPreference> UserChatListPreferences { get; set; }
 
 
 
@@ -45,6 +46,18 @@ namespace FBMMultiMessenger.Data.DB
             modelBuilder.Entity<User>()
                         .HasIndex(x => x.ApiKey)
                         .IsUnique();
+
+            modelBuilder.Entity<UserChatListPreference>()
+                        .HasOne(x => x.Chat)
+                        .WithMany()
+                        .HasForeignKey(x => x.ChatId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserChatListPreference>()
+                        .HasOne(x => x.User)
+                        .WithMany(u => u.ChatListPreferences)
+                        .HasForeignKey(x => x.UserId)
+                        .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Role>().HasData(
                new Role() { Id = 1, Name="Customer", CreatedAt = DateTime.SpecifyKind(new DateTime(2025, 9, 20), DateTimeKind.Utc) },

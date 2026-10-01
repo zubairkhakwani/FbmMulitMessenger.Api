@@ -31,6 +31,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<LocalServer> LocalServers { get; set; } = new List<LocalServer>();
         public List<Proxy> Proxies { get; set; } = new List<Proxy>();
         public List<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+        public List<UserChatListPreference> ChatListPreferences { get; set; } = new List<UserChatListPreference>();
 
         public Role Role { get; set; } = null!;
 
