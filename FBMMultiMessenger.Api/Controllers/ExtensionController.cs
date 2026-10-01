@@ -30,7 +30,7 @@ namespace FBMMultiMessenger.Api.Controllers
         [HttpGet("/api/extension/download")]
         public async Task<IActionResult> Download()
         {
-            var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"] ?? "https://api.fbmmessenger.com";
+            var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"];
             var zipBytes = await _extensionZipCache.GetAsync(publicApiUrl);
 
             return File(zipBytes, "application/zip", "fbm-messenger-extension.zip");

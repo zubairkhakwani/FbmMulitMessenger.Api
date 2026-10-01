@@ -51,7 +51,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
                 string encryptedExtensionFiles = await _cache.RebuildAsync(extensionVersion, _aesEncryptionHelper);
 
                 // Rebuild the public download ZIP too, so the manual-install package stays in sync.
-                var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"] ?? "https://api.fbmmessenger.com";
+                var publicApiUrl = _configuration["ApiSettings:ExtensionPublicApiUrl"];
                 await _zipCache.RebuildAsync(publicApiUrl);
 
                 var response = new GetEncExtensionContentModelResponse()

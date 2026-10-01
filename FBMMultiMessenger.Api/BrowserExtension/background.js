@@ -88,6 +88,7 @@ console.log('Scrapping Background script running.');
 var remoteApiUrl = "https://localhost:7095";
 var remoteAPISignalRUrl = `${remoteApiUrl}/chathub`;
 var accountId = null;
+var currentFbAccountId = null; // the FB account id we're currently registered for — used to detect account switches
 var apiUserId = null;
 
 // Add near the top with other variables
@@ -110,7 +111,7 @@ let isConnected = false;
 let reconnectTimeout = null;
 let isReconnecting = false;
 let isManuallyStopped = false; // NEW — prevents auto reconnect when we intentionally disconnect
-let accountDeactivated = false; // set when the server reports this account was removed — stop connecting & syncing
+let connectionStopped = false; // set when the server tells this extension to stand down for this account (removed, or a newer session took over) — stop auto-connecting & syncing until a deliberate re-trigger (refresh / FB re-login)
 
 let failedRequestQueue = [];
 
@@ -227,6 +228,10 @@ async function initializeSignalR() {
             handleReRegisterRequired();
         });
 
+        signalRConnection.on("HandleForceDisconnect", () => {
+            handleForceDisconnect();
+        });
+
         return true;
     } catch (error) {
         //console.error("Error initializing SignalR:", error);
@@ -283,7 +288,7 @@ async function startSignalRConnection() {
         notifyPopupStatusChange();
         await retryFailedRequests();
     } catch (error) {
-        //console.error("Failed to start SignalR connection:", error);
+        console.error("Failed to start SignalR connection:", error);
         isConnected = false;
         isReconnecting = false;
 
@@ -318,29 +323,37 @@ async function registerExtensionUser() {
     }
 }
 
-// The server told us this account was removed/deactivated. Stop connecting and syncing.
-// We intentionally keep accountId so the extension does NOT auto re-register (which would
-// reactivate a deliberately removed account). disconnectSignalR() sets isManuallyStopped.
-async function handleAccountDeactivated() {
-    console.log('Account removed on server — stopping extension for this account.');
-    accountDeactivated = true;
+// Stop this extension's session for the current account. Used for both cases where the server tells us
+// to stand down: the account was removed (deactivated), or a newer extension took it over (force
+// disconnect). Clears local state and disconnects. The keepAlive alarm won't auto-reconnect while
+// connectionStopped is set; a deliberate page refresh / FB re-login re-registers via notifyAccountAuthState.
+async function stopExtensionForAccount(logMessage) {
+    console.warn(logMessage);
+    connectionStopped = true;
     accountId = null;
+    currentFbAccountId = null;
 
-    await chrome.storage.local.remove('accountId');
+    await chrome.storage.local.remove(['accountId', 'fbAccountId']);
 
-    disconnectSignalR();
+    await disconnectSignalR();
     notifyPopupStatusChange();
+}
+
+// The server told us this account was removed/deactivated. Stop connecting and syncing.
+async function handleAccountDeactivated() {
+    await stopExtensionForAccount('Account removed on server — stopping extension for this account.');
 }
 
 // Clears the cached identity (accountId + apiUserId) and tears down the socket so nothing keeps
 // running under a previous user. Used on an API-key swap and when the server asks us to re-register.
 async function resetCachedIdentity() {
     accountId = null;
+    currentFbAccountId = null;
     apiUserId = null;
     registrationBlocked = false;
-    accountDeactivated = false;
+    connectionStopped = false;
 
-    await chrome.storage.local.remove(['accountId', 'apiUserId']);
+    await chrome.storage.local.remove(['accountId', 'fbAccountId', 'apiUserId']);
 
     try {
         if (signalRConnection) {
@@ -363,6 +376,13 @@ async function handleReRegisterRequired() {
     await resolveApiUserId();
     recheckFbAuth();
     notifyPopupStatusChange();
+}
+
+// The server admitted a newer extension for this account (last-writer-wins) and asked this older session
+// to stop. Disconnect and DON'T auto-reconnect, so the two sessions don't fight/flap. A page refresh or
+// re-login can reconnect if the user actually wants this session back.
+async function handleForceDisconnect() {
+    await stopExtensionForAccount('Account connected in another session — disconnecting this extension to avoid a conflict.');
 }
 
 
@@ -441,8 +461,9 @@ async function handleMessage(request, sender, sendResponse) {
     if (request.key === 'logout') {
         authToken = null;
         accountId = null;
+        currentFbAccountId = null; // keep accountId + fbAccountId paired
         // Keep apiKey + apiUserId when Robo-injected key remains
-        const keysToRemove = ['authToken', 'accountId'];
+        const keysToRemove = ['authToken', 'accountId', 'fbAccountId'];
         if (!apiKey) {
             apiUserId = null;
             keysToRemove.push('apiUserId');
@@ -504,8 +525,8 @@ async function handleMessage(request, sender, sendResponse) {
     }
 
     if (request.key === "sendRawChunkToApi") {
-        // Account was removed on the server — don't sync its messages.
-        if (accountDeactivated) {
+        // Server told us to stand down for this account (removed or taken over) — don't sync its messages.
+        if (connectionStopped) {
             return true;
         }
 
@@ -547,6 +568,17 @@ async function handleMessage(request, sender, sendResponse) {
         var isInitialLogin = false;
 
         if (isLoggedIn && fbAccountId) {
+            // The user switched FB accounts under us: the incoming account differs from the one we're
+            // registered for. Drop the stale registration + socket so we re-register for the new account
+            // below, instead of reporting status for the previous account.
+            if (currentFbAccountId && currentFbAccountId !== fbAccountId) {
+                console.warn(`FB account changed (${currentFbAccountId} -> ${fbAccountId}) — re-registering for the new account.`);
+                accountId = null;
+                currentFbAccountId = null;
+                await chrome.storage.local.remove(['accountId', 'fbAccountId']);
+                await disconnectSignalR();
+            }
+
             // Register account if not already registered
             if (!accountId) {
                 const result = await registerAccount(fbAccountId);
@@ -621,8 +653,9 @@ async function handleMessage(request, sender, sendResponse) {
             // FB logged out — clear stored accountId
             console.log(`FB logged out, clearing accountId. ${isLoggedIn}: isLoggedIn, fbAccountId ${fbAccountId}`);
             accountId = null;
+            currentFbAccountId = null;
             registrationBlocked = false; // state changed — allow registration to retry on next login
-            await chrome.storage.local.remove('accountId');
+            await chrome.storage.local.remove(['accountId', 'fbAccountId']);
 
             // Task 3 will disconnect SignalR here
             await disconnectSignalR();
@@ -688,7 +721,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // Skip the periodic re-check when registration deterministically failed (e.g. account limit
         // reached) — otherwise we'd hit /api/account/register every alarm tick. A page refresh or FB
         // re-login still calls notifyAccountAuthState directly and gets one fresh attempt.
-        if (!accountId && !registrationBlocked && !accountDeactivated) {
+        if (!accountId && !registrationBlocked && !connectionStopped) {
             console.log('retring from keep alive');
             recheckFbAuth(); //!accountId means fb not logged in, or yet we do not know recheckFbAuth will call inject.js to recheck
             //that will give us a callback which will eventually run notifyAccountAuthState if fb is logged in notifyAccountAuthState
@@ -778,6 +811,12 @@ async function resolveApiUserId() {
 async function loginToApi(usernameOrKey, password = null) {
     // Prefer storing a Multi Messenger API key directly (no JWT login)
     if (!password && usernameOrKey) {
+        // A different key means a different user — clear the previous user's cached identity
+        // (accountId/fbAccountId/apiUserId) so we don't carry it over. Mirrors the Robo key-swap path.
+        if (apiKey && apiKey !== usernameOrKey) {
+            await resetCachedIdentity();
+        }
+
         apiKey = usernameOrKey;
         await chrome.storage.local.set({ apiKey });
         console.log('API key saved.');
@@ -839,9 +878,10 @@ async function apiFetch(url, options = {}) {
 
 
 async function loadAccountId() {
-    const result = await chrome.storage.local.get('accountId');
+    const result = await chrome.storage.local.get(['accountId', 'fbAccountId']);
     accountId = result.accountId || null;
-    console.log('Loaded accountId from storage:', accountId);
+    currentFbAccountId = result.fbAccountId || null;
+    console.log('Loaded accountId from storage:', accountId, 'fbAccountId:', currentFbAccountId);
 }
 
 
@@ -859,10 +899,12 @@ async function registerAccount(fbAccountId) {
 
         if (response.isSuccess && response.data && response.data.accountId) {
             accountId = response.data.accountId;
+            currentFbAccountId = fbAccountId; // remember which FB account this registration is for
             lastRegistrationError = null;
             lastRegistrationLimitExceeded = false;
             registrationBlocked = false;
-            await chrome.storage.local.set({ accountId });
+            connectionStopped = false; // a successful (re)register means we're no longer standing down — re-enable sync
+            await chrome.storage.local.set({ accountId, fbAccountId });
             console.log('Account registered, accountId:', accountId);
             return { ok: true };
         }

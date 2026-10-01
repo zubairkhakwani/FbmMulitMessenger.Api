@@ -149,7 +149,7 @@ namespace FBMMultiMessenger.Contracts.Enums
         [DisplayInfoAttribute("Connected With Extension", "Connected With Extension")]
         ConnectedWithExtension = 7,
 
-        [DisplayInfoAttribute("Connected With Extension", "Connected With Extension")]
+        [DisplayInfoAttribute("Not Connected With Extension", "Not Connected With Extension")]
         NotConnected = 8
     }
 

@@ -8,6 +8,14 @@ namespace FBMMultiMessenger.Buisness.SignalR
         public static readonly ConcurrentDictionary<string, ConnectionMetadata> _connections = new ConcurrentDictionary<string, ConnectionMetadata>();
 
 
+        // Whether any live extension socket is currently registered for this account. False means the DB's
+        // IsExtensionConnected flag is stale (no real socket) — e.g. an ungraceful shutdown left it set.
+        // Note: this reflects only THIS server instance's in-memory state.
+        public static bool HasLiveExtensionConnection(int accountId)
+        {
+            return _connections.Values.Any(m => m.AccountId == accountId && !string.IsNullOrEmpty(m.ExtensionId));
+        }
+
         public static List<int> GetDisconnectedAccountsIds(Dictionary<int, int> accountsIdsToCheck)
         {
             var connected = _connections.Values

@@ -1,4 +1,5 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
+﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Models.SignalR.Extension;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.StatusBatching;
 using FBMMultiMessenger.Contracts.Enums;
@@ -90,9 +91,22 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     return;
                 }
 
+                // Ownership backstop: the socket's apiUserId is client-supplied, so a swapped API key can
+                // register with a stale AccountId owned by the previous user — presence would then be written
+                // under the wrong user and dropped by the flusher's ownership guard (stuck-offline). Reject the
+                // mismatch and tell the caller to re-register under the current identity.
+                //var ownsAccount = await _dbContext.Accounts.AnyAsync(a => a.Id == accountId && a.UserId == apiUserId);
+
+                //if (!ownsAccount)
+                //{
+                //    await Clients.Caller.SendAsync("HandleReRegister", accountId);
+                //    Console.WriteLine($"Extension register rejected — account {accountId} not owned by user {apiUserId}.");
+                //    return;
+                //}
+
                 var extensionId = $"extension_{accountId}";
 
-                SingnalRConnectionManager._connections[Context.ConnectionId] = new ConnectionMetadata() { ExtensionId = extensionId, AccountId = accountId, APIUserId = apiUserId };
+                SingnalRConnectionManager._connections[Context.ConnectionId] = new ConnectionMetadata() { ExtensionId = extensionId, AccountId = accountId, APIUserId = apiUserId, ConnectedAt = DateTime.UtcNow };
 
                 await Groups.AddToGroupAsync(Context.ConnectionId, extensionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, "AllExtensinos");
@@ -108,6 +122,11 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     Reason = AccountReason.ConnectedWithExtension,
                     AtUtc = DateTime.UtcNow,
                 });
+
+                // Diagnostic: log the connect into the same file as disconnects, so the connect/disconnect
+                // timeline per account can be read together (spot flapping, hold durations, etc.).
+                DiagnosticFileLogger.Append("extension-disconnects.log",
+                    $"CONNECTED    account={accountId} user={apiUserId} conn={Context.ConnectionId}");
 
                 Console.WriteLine($"Extension with id {extensionId} connected");
             }
@@ -141,9 +160,22 @@ namespace FBMMultiMessenger.Buisness.SignalR
                         Reason = AccountReason.NotConnected,
                         AtUtc = DateTime.UtcNow,
                     });
+
+                    // Diagnostic: record WHY this extension socket closed, so per-account flapping can be
+                    // classified — a clean close (exception == null: page reload / client stop) vs an error
+                    // close (timeout / transport failure carries an exception). Connection duration helps spot
+                    // a regular timeout cadence. Written to Logs/ (viewable via the diagnostics endpoint).
+                    var heldSeconds = connectionMetadata.ConnectedAt == default
+                        ? (double?)null
+                        : (DateTime.UtcNow - connectionMetadata.ConnectedAt).TotalSeconds;
+
+                    var closeKind = exception == null ? "clean (no exception)" : $"error: {exception.GetType().Name}: {exception.Message}";
+
+                    DiagnosticFileLogger.Append("extension-disconnects.log",
+                        $"DISCONNECTED account={connectionMetadata.AccountId.Value} user={connectionMetadata.APIUserId.Value} " +
+                        $"conn={Context.ConnectionId} held={heldSeconds?.ToString("0.0") ?? "?"}s close=[{closeKind}]");
                 }
 
-                Console.WriteLine($"User with id {userId} disconnected");
             }
             await base.OnDisconnectedAsync(exception);
         }

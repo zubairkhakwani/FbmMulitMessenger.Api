@@ -8,6 +8,7 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Sentry;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 {
@@ -86,8 +87,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 return BaseResponse<MonitorLocalServerHearbeatModelResponse>.Success("local server monitoring successfull", new MonitorLocalServerHearbeatModelResponse());
             }
 
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Previously swallowed silently — capture so a failed reconciliation (e.g. a cold-connect
+                // timeout on the first query ~2 min after restart) is visible instead of leaving stale flags.
+                SentrySdk.CaptureException(ex);
                 return BaseResponse<MonitorLocalServerHearbeatModelResponse>.Error("Unexpected error while monitoring local server");
             }
         }
