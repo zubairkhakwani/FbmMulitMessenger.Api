@@ -23,6 +23,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         // Current / active API key. ApiKeys table holds the full generate/revoke audit history.
         public string? ApiKey { get; set; }
 
+        /// <summary>Max number of chats this user may pin (list organization). Default 5.</summary>
+        public int MaxPinnedChats { get; set; } = 5;
+
+        /// <summary>Max number of chats this user may mark as favorite. Default 50.</summary>
+        public int MaxFavoriteChats { get; set; } = 50;
+
         //Navigation Property
         public List<Subscription> Subscriptions { get; set; } = new List<Subscription>();
         public List<Account> Accounts { get; set; } = new List<Account>();
@@ -31,7 +37,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public List<LocalServer> LocalServers { get; set; } = new List<LocalServer>();
         public List<Proxy> Proxies { get; set; } = new List<Proxy>();
         public List<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
-        public List<UserChatListPreference> ChatListPreferences { get; set; } = new List<UserChatListPreference>();
+        public List<AccountGroup> AccountGroups { get; set; } = new List<AccountGroup>();
 
         public Role Role { get; set; } = null!;
 

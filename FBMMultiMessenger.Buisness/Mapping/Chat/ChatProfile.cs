@@ -43,6 +43,10 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
             CreateMap<SendChatMessageModelResponse, SendChatMessagesHttpResponse>();
             CreateMap<BaseResponse<SendChatMessageModelResponse>, BaseResponse<SendChatMessagesHttpResponse>>();
 
+            CreateMap<UpsertChatListOrganizationHttpRequest, UpsertChatListOrganizationModelRequest>();
+            CreateMap<UpsertChatListOrganizationModelResponse, UpsertChatListOrganizationHttpResponse>();
+            CreateMap<BaseResponse<UpsertChatListOrganizationModelResponse>, BaseResponse<UpsertChatListOrganizationHttpResponse>>();
+
         }
     }
 }

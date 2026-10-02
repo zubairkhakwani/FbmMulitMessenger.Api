@@ -41,14 +41,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             var query = _dbContext.Accounts
                                   .Include(p => p.Proxy)
                                   .Include(dm => dm.DefaultMessage)
+                                  .Include(g => g.AccountGroup)
                                   .AsNoTracking()
                                   .Where(a => a.UserId == currentUser.Id && a.IsActive);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 keyword = keyword.Trim().ToLower();
+                var idParsed = int.TryParse(keyword, out var exactId);
 
-                query = query.Where(a => a.Name.ToLower().Contains(keyword));
+                query = query.Where(a =>
+                    a.Name.ToLower().Contains(keyword)
+                    || (a.CustomName != null && a.CustomName.ToLower().Contains(keyword))
+                    || a.Id.ToString().Contains(keyword)
+                    || (idParsed && a.Id == exactId));
             }
 
             if (status.HasValue)
@@ -73,12 +79,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                      {
                                          Id = x.Id,
                                          Name = x.Name,
+                                         CustomName = x.CustomName,
                                          Cookie =  x.Cookie,
                                          DefaultMessage = UpcomingDefaultMessageHelper.ResolveMessage(x, upcomingMessage),
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
                                          AuthStatus = x.AuthStatus.GetInfo().Name,
                                          Reason = x.Reason.GetInfo().Name,
+                                         IsExtensionConnected = x.IsExtensionConnected,
                                          CreatedAt = x.CreatedAt,
+                                         AccountGroupId = x.AccountGroupId,
+                                         AccountGroupName = x.AccountGroup?.Name,
                                          Proxy = x.Proxy == null ? null : new AccountProxyModelResponse()
                                          {
                                              Id = x.Proxy.Id,

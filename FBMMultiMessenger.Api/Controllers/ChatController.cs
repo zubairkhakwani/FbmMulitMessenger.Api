@@ -83,5 +83,21 @@ namespace FBMMultiMessenger.Api.Controllers
 
             return response;
         }
+
+        /// <summary>
+        /// Updates pin/favorite flags on a chat and bumps Chat.UpdatedAt so other devices
+        /// receive the change via get-unsynced-messages.
+        /// </summary>
+        [Authorize]
+        [HttpPost("{chatId}/list-organization")]
+        public async Task<BaseResponse<UpsertChatListOrganizationHttpResponse>> UpsertListOrganization(
+            [FromRoute] int chatId,
+            [FromBody] UpsertChatListOrganizationHttpRequest httpRequest)
+        {
+            var request = _mapper.Map<UpsertChatListOrganizationModelRequest>(httpRequest);
+            request.ChatId = chatId;
+            var response = await _mediator.Send(request);
+            return _mapper.Map<BaseResponse<UpsertChatListOrganizationHttpResponse>>(response);
+        }
     }
 }

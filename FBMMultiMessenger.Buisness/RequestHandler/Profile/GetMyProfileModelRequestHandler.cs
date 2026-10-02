@@ -92,7 +92,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 HasActiveSubscription = hasActiveSubscription,
                 RemainingTimeText = message,
                 RemainingDaysCount = days,
-                IsCurrentTrialSubscription = activeSubscription?.IsTrial ?? false
+                IsCurrentTrialSubscription = activeSubscription?.IsTrial ?? false,
+                MaxPinnedChats = user.MaxPinnedChats > 0 ? user.MaxPinnedChats : 5,
+                MaxFavoriteChats = user.MaxFavoriteChats > 0 ? user.MaxFavoriteChats : 50,
             };
 
             return BaseResponse<GetMyProfileModelResponse>.Success("Operation performed successfully", response);

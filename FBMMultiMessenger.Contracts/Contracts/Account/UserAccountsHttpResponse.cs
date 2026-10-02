@@ -18,12 +18,17 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
     {
         public int Id { get; set; }
         public required string Name { get; set; }
+        public string? CustomName { get; set; }
         public required string Cookie { get; set; }
         public string? DefaultMessage { get; set; }
         public string AuthStatus { get; set; } = string.Empty;
         public string ConnectionStatus { get; set; } = string.Empty;
         public string Reason { get; set; } = string.Empty;
+        public bool IsExtensionConnected { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public int? AccountGroupId { get; set; }
+        public string? AccountGroupName { get; set; }
 
         public AccountProxyHttpResponse? Proxy { get; set; }
     }

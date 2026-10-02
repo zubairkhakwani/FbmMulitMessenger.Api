@@ -8,6 +8,7 @@ namespace FBMMultiMessenger.Buisness.Request.Account
         public int? AccountId { get; set; }
         public int UserId { get; set; } //Current User Id
         public string Name { get; set; } = null!;
+        public string? CustomName { get; set; }
         public string Cookie { get; set; } = null!;
         public string? ProxyId { get; set; }
     }

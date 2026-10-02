@@ -30,6 +30,19 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public decimal? FbListingPrice { get; set; }
 
         public bool IsRead { get; set; }
+
+        /// <summary>When true, chat stays at top of the user's list (ordered by PinOrder).</summary>
+        public bool IsPinned { get; set; }
+
+        /// <summary>When true, chat appears in the Favorites filter (ordered by FavoriteOrder).</summary>
+        public bool IsFavorite { get; set; }
+
+        /// <summary>Lower = higher among pinned chats. Null when not pinned.</summary>
+        public int? PinOrder { get; set; }
+
+        /// <summary>Lower = higher among favorite chats. Null when not favorited.</summary>
+        public int? FavoriteOrder { get; set; }
+
         public DateTime StartedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 

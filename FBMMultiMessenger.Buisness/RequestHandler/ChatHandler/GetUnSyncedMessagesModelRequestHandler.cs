@@ -56,6 +56,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                                         .ToListAsync(cancellationToken);
 
                 var accounts = await _dbContext.Accounts
+                                        .Include(a => a.AccountGroup)
                                         .AsNoTracking()
                                         .Where(c => c.UserId == currentUser.Id && (request.LastSyncedMessageAt == null || c.CreatedAt >= request.LastSyncedMessageAt || c.UpdatedAt >= request.LastSyncedMessageAt))
                                         .ToListAsync(cancellationToken);
@@ -64,8 +65,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 {
                     Id = a.Id,
                     Name = a.Name,
+                    CustomName = a.CustomName,
                     FbAccountId = a.FbAccountId,
                     IsActive = a.IsActive,
+                    AccountGroupId = a.AccountGroupId,
+                    AccountGroupName = a.AccountGroup?.Name,
                     CreatedAt = a.CreatedAt,
                     UpdatedAt = a.UpdatedAt
                 }).ToList();
@@ -92,6 +96,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     OtherUserId = c.OtherUserId,
                     FbListingPrice = c.FbListingPrice,
                     IsRead = c.IsRead,
+                    IsPinned = c.IsPinned,
+                    IsFavorite = c.IsFavorite,
+                    PinOrder = c.PinOrder,
+                    FavoriteOrder = c.FavoriteOrder,
                     StartedAt = c.StartedAt,
                     UpdatedAt = c.UpdatedAt,
                     ChatMessages = c.ChatMessages.Select(cm => new SyncChatMessages()

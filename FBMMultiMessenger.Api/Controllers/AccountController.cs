@@ -102,6 +102,36 @@ namespace FBMMultiMessenger.Api.Controllers
             return httpResponse;
         }
 
+        /// <summary>
+        /// Updates only the account display name (CustomName). Does not touch cookie, Name, or proxy.
+        /// </summary>
+        [Authorize]
+        [HttpPost("{accountId}/custom-name")]
+        public async Task<BaseResponse<UpdateAccountCustomNameHttpResponse>> UpdateCustomName(
+            [FromRoute] int accountId,
+            [FromBody] UpdateAccountCustomNameHttpRequest httpRequest)
+        {
+            var response = await _mediator.Send(new UpdateAccountCustomNameModelRequest
+            {
+                AccountId = accountId,
+                CustomName = httpRequest.CustomName,
+            });
+
+            if (!response.IsSuccess)
+            {
+                return BaseResponse<UpdateAccountCustomNameHttpResponse>.Error(
+                    response.Message ?? "Unable to update display name.");
+            }
+
+            return BaseResponse<UpdateAccountCustomNameHttpResponse>.Success(
+                response.Message,
+                new UpdateAccountCustomNameHttpResponse
+                {
+                    AccountId = response.Data!.AccountId,
+                    CustomName = response.Data.CustomName,
+                });
+        }
+
         [Authorize]
         [HttpGet("me/chats")]
         public async Task<BaseResponse<GetAllMyAccountsChatsHttpResponse>> GetAllMyAccountChats(CancellationToken cancellationToken = default)

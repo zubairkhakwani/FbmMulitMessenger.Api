@@ -3,6 +3,7 @@ using System;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FBMMultiMessenger.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001102611_MovePinFavoriteOntoChat")]
+    partial class MovePinFavoriteOntoChat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,9 +33,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AccountGroupId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("AuthStatus")
                         .HasColumnType("integer");
 
@@ -44,9 +44,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CustomName")
-                        .HasColumnType("text");
 
                     b.Property<int?>("DefaultMessageId")
                         .HasColumnType("integer");
@@ -82,8 +79,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AccountGroupId");
-
                     b.HasIndex("DefaultMessageId");
 
                     b.HasIndex("LocalServerId");
@@ -96,34 +91,6 @@ namespace FBMMultiMessenger.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Accounts");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AccountGroup", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("AccountGroups");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ApiKey", b =>
@@ -1057,11 +1024,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
                 {
-                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.AccountGroup", "AccountGroup")
-                        .WithMany("Accounts")
-                        .HasForeignKey("AccountGroupId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.DefaultMessage", "DefaultMessage")
                         .WithMany("Accounts")
                         .HasForeignKey("DefaultMessageId");
@@ -1080,24 +1042,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AccountGroup");
-
                     b.Navigation("DefaultMessage");
 
                     b.Navigation("LocalServer");
 
                     b.Navigation("Proxy");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AccountGroup", b =>
-                {
-                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
-                        .WithMany("AccountGroups")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -1246,11 +1195,6 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("Chats");
                 });
 
-            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AccountGroup", b =>
-                {
-                    b.Navigation("Accounts");
-                });
-
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
                 {
                     b.Navigation("ChatMessages");
@@ -1283,8 +1227,6 @@ namespace FBMMultiMessenger.Data.Migrations
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.User", b =>
                 {
-                    b.Navigation("AccountGroups");
-
                     b.Navigation("Accounts");
 
                     b.Navigation("ApiKeys");

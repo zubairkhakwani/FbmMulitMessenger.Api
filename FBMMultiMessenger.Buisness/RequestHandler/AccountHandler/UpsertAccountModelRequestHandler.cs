@@ -125,11 +125,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 //one account can not exist more than once for same user. so this check is important..
                 if (alreadyExistedAccount == null)
                 {
+                    if (!TryNormalizeCustomName(request.CustomName, out var customName, out var createNameError))
+                    {
+                        return BaseResponse<UpsertAccountModelResponse>.Error(createNameError!);
+                    }
+
                     var newAccount = new Account()
                     {
                         UserId = request.UserId,
                         Cookie = request.Cookie,
                         Name = request.Name,
+                        CustomName = customName,
                         FbAccountId = fbAccountId,
                         ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting,
                         AuthStatus = AccountAuthStatus.Idle,
@@ -165,9 +171,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                 }
                 else
                 {
+                    if (!TryNormalizeCustomName(request.CustomName, out var customName, out var reactivateNameError))
+                    {
+                        return BaseResponse<UpsertAccountModelResponse>.Error(reactivateNameError!);
+                    }
+
                     alreadyExistedAccount.IsActive = true;
                     alreadyExistedAccount.Cookie = request.Cookie;
                     alreadyExistedAccount.Name = request.Name;
+                    if (request.CustomName != null)
+                    {
+                        alreadyExistedAccount.CustomName = customName;
+                    }
                     alreadyExistedAccount.ConnectionStatus = assignedServer is null ? AccountConnectionStatus.Offline : AccountConnectionStatus.Starting;
                     alreadyExistedAccount.AuthStatus = AccountAuthStatus.Idle;
                     alreadyExistedAccount.LocalServerId = assignedServer?.Id;
@@ -318,7 +333,16 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             // Update account details
+            if (!TryNormalizeCustomName(request.CustomName, out var updateCustomName, out var updateNameError))
+            {
+                return BaseResponse<UpsertAccountModelResponse>.Error(updateNameError!);
+            }
+
             account.Name = request.Name;
+            if (request.CustomName != null)
+            {
+                account.CustomName = updateCustomName;
+            }
             account.Cookie = request.Cookie;
             account.FbAccountId = fbAccountId;
             account.ProxyId = selectedProxy?.Id;
@@ -387,6 +411,39 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
             }
 
             return (true, currentUser.Id, fbAccountId, "Validation Successful");
+        }
+
+        /// <summary>
+        /// When <paramref name="raw"/> is null, leave custom name unchanged (omit).
+        /// When sent, it must be non-empty after trim.
+        /// </summary>
+        private static bool TryNormalizeCustomName(
+            string? raw,
+            out string? customName,
+            out string? error)
+        {
+            customName = null;
+            error = null;
+            if (raw is null)
+            {
+                return true;
+            }
+
+            var trimmed = raw.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                error = "Display name is required when provided.";
+                return false;
+            }
+
+            if (trimmed.Length > 120)
+            {
+                error = "Display name must be 120 characters or fewer.";
+                return false;
+            }
+
+            customName = trimmed;
+            return true;
         }
 
         #endregion

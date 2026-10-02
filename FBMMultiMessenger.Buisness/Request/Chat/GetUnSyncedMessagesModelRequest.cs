@@ -46,6 +46,10 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public decimal? FbListingPrice { get; set; }
 
         public bool IsRead { get; set; }
+        public bool IsPinned { get; set; }
+        public bool IsFavorite { get; set; }
+        public int? PinOrder { get; set; }
+        public int? FavoriteOrder { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
@@ -82,8 +86,12 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string? CustomName { get; set; }
         public string FbAccountId { get; set; }
         public bool IsActive { get; set; }
+
+        public int? AccountGroupId { get; set; }
+        public string? AccountGroupName { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

@@ -12,6 +12,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Account
         [Required]
         public string Name { get; set; } = null!;
 
+        /// Optional display name. Required (non-empty) when the client sends it.
+        public string? CustomName { get; set; }
+
         [Required]
         public string Cookie { get; set; } = null!;
         public string? ProxyId { get; set; } = null!;

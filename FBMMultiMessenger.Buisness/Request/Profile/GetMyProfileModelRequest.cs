@@ -21,5 +21,11 @@ namespace FBMMultiMessenger.Buisness.Request.Profile
 
         public bool IsCurrentTrialSubscription { get; set; }
         public DateTime JoinedAt { get; set; }
+
+        /// <summary>Max chats this user may pin (list organization).</summary>
+        public int MaxPinnedChats { get; set; }
+
+        /// <summary>Max chats this user may mark as favorite.</summary>
+        public int MaxFavoriteChats { get; set; }
     }
 }
