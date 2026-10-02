@@ -1,3 +1,4 @@
+using FBMMultiMessenger.Buisness.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FBMMultiMessenger.Api.Controllers
@@ -103,6 +104,28 @@ namespace FBMMultiMessenger.Api.Controllers
             return Ok(new { name = safeName, size, truncated, text });
         }
 
+        // Empties one file in Logs/ (keeps the file so logging continues appending).
+        [HttpPost("/api/sys/{key}/clear")]
+        public IActionResult Clear(string key, [FromQuery] string? file)
+        {
+            if (!KeyValid(key)) return NotFound();
+
+            var safeName = Path.GetFileName(file ?? string.Empty);
+            if (string.IsNullOrEmpty(safeName) || safeName != file)
+            {
+                return BadRequest("Invalid file name.");
+            }
+
+            var fullPath = Path.Combine(LogsDir, safeName);
+            if (!System.IO.File.Exists(fullPath))
+            {
+                return NotFound();
+            }
+
+            DiagnosticFileLogger.Clear(fullPath);
+            return Ok(new { cleared = safeName });
+        }
+
         private const string HtmlPage =
 """
 <!DOCTYPE html>
@@ -149,6 +172,7 @@ namespace FBMMultiMessenger.Api.Controllers
     <label>tail <input type="number" id="tail" value="0" min="0" title="0 = all" /></label>
     <label>ctx &plusmn; <input type="number" id="context" value="0" min="0" title="lines before/after each match (only when searching)" /></label>
     <a class="dl" id="download" href="#">download</a>
+    <button id="clear" class="secondary" title="Empty this log file" style="background:#9b2c2c">Clear</button>
   </div>
   <div class="meta" id="meta"></div>
 </header>
@@ -192,7 +216,7 @@ namespace FBMMultiMessenger.Api.Controllers
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       raw = data.text || '';
-      $('download').href = BASE + '/content?file=' + encodeURIComponent(name) + '&download=1';
+      $('download').href = BASE + '/content?file=' + encodeURIComponent(name) + '&download=true';
       const kb = (data.size / 1024).toFixed(1);
       sizeMeta = kb + ' KB' + (data.truncated ? ' <span class="warn">(showing last 5 MB)</span>' : '');
       render();
@@ -261,6 +285,19 @@ namespace FBMMultiMessenger.Api.Controllers
     $('meta').innerHTML = sizeMeta + ' — ' + counts;
   }
 
+  async function clearFile() {
+    const name = $('file').value;
+    if (!name) return;
+    if (!confirm('Clear (empty) "' + name + '"? This cannot be undone.')) return;
+    try {
+      const res = await fetch(BASE + '/clear?file=' + encodeURIComponent(name), { method: 'POST' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      await loadContent();
+    } catch (e) {
+      $('meta').textContent = 'Failed to clear: ' + e.message;
+    }
+  }
+
   function setupAuto() {
     if (timer) { clearInterval(timer); timer = null; }
     if ($('auto').checked) {
@@ -271,6 +308,7 @@ namespace FBMMultiMessenger.Api.Controllers
 
   $('file').addEventListener('change', loadContent);
   $('refresh').addEventListener('click', () => { loadFiles(); loadContent(); });
+  $('clear').addEventListener('click', clearFile);
   $('search').addEventListener('input', render);
   $('wrap').addEventListener('change', render);
   $('newest').addEventListener('change', render);

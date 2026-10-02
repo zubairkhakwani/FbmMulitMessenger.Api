@@ -23,33 +23,31 @@ namespace FBMMultiMessenger.Buisness.Helpers
         private static readonly string[] PassthroughFiles = { "manifest.json", "popup.html", "signalR.min.js" };
 
         /// <summary>Returns the cached ZIP, building it on first use.</summary>
-        public async Task<byte[]> GetAsync(string publicApiUrl)
+        public async Task<byte[]> GetAsync()
         {
             if (_zip != null) return _zip;
 
             await _gate.WaitAsync();
             try
             {
-                return _zip ??= await BuildAsync(publicApiUrl);
+                return _zip ??= await BuildAsync();
             }
             finally { _gate.Release(); }
         }
 
         /// <summary>Rebuilds and replaces the cached ZIP (called on extension update).</summary>
-        public async Task<byte[]> RebuildAsync(string publicApiUrl)
+        public async Task<byte[]> RebuildAsync()
         {
             await _gate.WaitAsync();
             try
             {
-                return _zip = await BuildAsync(publicApiUrl);
+                return _zip = await BuildAsync();
             }
             finally { _gate.Release(); }
         }
 
-        private static async Task<byte[]> BuildAsync(string publicApiUrl)
+        private static async Task<byte[]> BuildAsync()
         {
-            publicApiUrl = publicApiUrl.TrimEnd('/');
-
             string baseDir = AppContext.BaseDirectory;
             string extensionFolder = Path.Combine(baseDir, "BrowserExtension");
 
@@ -72,8 +70,7 @@ namespace FBMMultiMessenger.Buisness.Helpers
                 {
                     content = content
                         .Replace("%%FBM_AUTO_OPEN_MESSENGER%%", "false")
-                        .Replace("%%FBM_ROBO_API_KEY%%", "")
-                        .Replace("https://localhost:7095", publicApiUrl);
+                        .Replace("%%FBM_ROBO_API_KEY%%", "");
                 }
 
                 if(file == "inject.js")

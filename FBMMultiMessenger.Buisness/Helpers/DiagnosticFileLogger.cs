@@ -12,6 +12,22 @@ namespace FBMMultiMessenger.Buisness.Helpers
         /// <summary>The shared Logs directory (same location the conflict-data writers use).</summary>
         public static string LogsDirectory => Path.Combine(Directory.GetCurrentDirectory(), "Logs");
 
+        /// <summary>Empties the given log file (keeps the file so appends continue). Never throws.</summary>
+        public static void Clear(string fullPath)
+        {
+            try
+            {
+                lock (_lock)
+                {
+                    File.WriteAllText(fullPath, string.Empty);
+                }
+            }
+            catch
+            {
+                // Diagnostics must never throw.
+            }
+        }
+
         /// <summary>Appends a single timestamped line to the given log file (created if missing).</summary>
         public static void Append(string fileName, string line)
         {

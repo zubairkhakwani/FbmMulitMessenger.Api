@@ -695,6 +695,10 @@ chrome.runtime.onInstalled.addListener(async () => {
 })();
 
 async function OnInitialized() {
+    if (remoteApiUrl.endsWith('/')) {
+        remoteApiUrl = remoteApiUrl.slice(0, -1);
+    }
+
     await loadAuth();
     await loadAccountId();
     chrome.alarms.create('keepAlive', { periodInMinutes: 0.2 });

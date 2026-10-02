@@ -1,4 +1,5 @@
 using FBMMultiMessenger.Buisness.Exntesions;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Models;
 using FBMMultiMessenger.Buisness.SignalR;
 using Microsoft.AspNetCore.Diagnostics;
@@ -124,6 +125,17 @@ namespace FBMMultiMessenger.Api
                 app.UseStaticFiles();
                 app.MapHub<ChatHub>("/chathub");
                 app.MapControllers();
+
+                // Lifetime logging: reveals how often the process restarts and whether each stop was graceful
+                // (recycle/idle/deploy → STOPPING+STOPPED logged) or a crash (only a fresh STARTED after a gap,
+                // no STOPPING). Correlate with the mass connect/disconnect events. Viewable via the log viewer.
+                app.Lifetime.ApplicationStarted.Register(() =>
+                    DiagnosticFileLogger.Append("app-lifetime.log", $"APP STARTED   pid={Environment.ProcessId}"));
+                app.Lifetime.ApplicationStopping.Register(() =>
+                    DiagnosticFileLogger.Append("app-lifetime.log", $"APP STOPPING  pid={Environment.ProcessId} (graceful shutdown begun)"));
+                app.Lifetime.ApplicationStopped.Register(() =>
+                    DiagnosticFileLogger.Append("app-lifetime.log", $"APP STOPPED   pid={Environment.ProcessId}"));
+
                 app.Run();
             }
             catch (Exception ex)

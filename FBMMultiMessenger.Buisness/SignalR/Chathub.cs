@@ -6,6 +6,7 @@ using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Data.DB;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Concurrent;
 
 namespace FBMMultiMessenger.Buisness.SignalR
@@ -16,13 +17,18 @@ namespace FBMMultiMessenger.Buisness.SignalR
         private readonly IAccountStatusQueue _accountStatusQueue;
         private readonly ApplicationDbContext _dbContext;
         private readonly AccountActiveStatusCache _accountActiveStatusCache;
+        private readonly IConfiguration _configuration;
 
-        public ChatHub(IAccountStatusQueue accountStatusQueue, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache)
+        public ChatHub(IAccountStatusQueue accountStatusQueue, ApplicationDbContext dbContext, AccountActiveStatusCache accountActiveStatusCache, IConfiguration configuration)
         {
             this._accountStatusQueue = accountStatusQueue;
             this._dbContext = dbContext;
             this._accountActiveStatusCache = accountActiveStatusCache;
+            this._configuration = configuration;
         }
+
+        // Per-day connectivity log file so no single file grows unbounded.
+        private static string ConnectivityLogFile => $"extension-connectivity-{DateTime.UtcNow:yyyy-MM-dd}.log";
 
         public async Task RegisterLocalServer(string localServerId)
         {
@@ -123,10 +129,13 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     AtUtc = DateTime.UtcNow,
                 });
 
-                // Diagnostic: log the connect into the same file as disconnects, so the connect/disconnect
+                // Diagnostic: log the connect into the per-day connectivity file, so the connect/disconnect
                 // timeline per account can be read together (spot flapping, hold durations, etc.).
-                DiagnosticFileLogger.Append("extension-disconnects.log",
-                    $"CONNECTED    account={accountId} user={apiUserId} conn={Context.ConnectionId}");
+                if (_configuration.GetValue("Diagnostics:LogSignalRConnect", true))
+                {
+                    DiagnosticFileLogger.Append(ConnectivityLogFile,
+                        $"CONNECTED    account={accountId} user={apiUserId} conn={Context.ConnectionId}");
+                }
 
                 Console.WriteLine($"Extension with id {extensionId} connected");
             }
@@ -164,16 +173,20 @@ namespace FBMMultiMessenger.Buisness.SignalR
                     // Diagnostic: record WHY this extension socket closed, so per-account flapping can be
                     // classified — a clean close (exception == null: page reload / client stop) vs an error
                     // close (timeout / transport failure carries an exception). Connection duration helps spot
-                    // a regular timeout cadence. Written to Logs/ (viewable via the diagnostics endpoint).
-                    var heldSeconds = connectionMetadata.ConnectedAt == default
-                        ? (double?)null
-                        : (DateTime.UtcNow - connectionMetadata.ConnectedAt).TotalSeconds;
+                    // a regular timeout cadence. Written to the per-day connectivity file (viewable via the
+                    // diagnostics endpoint).
+                    if (_configuration.GetValue("Diagnostics:LogSignalRDisconnect", true))
+                    {
+                        var heldSeconds = connectionMetadata.ConnectedAt == default
+                            ? (double?)null
+                            : (DateTime.UtcNow - connectionMetadata.ConnectedAt).TotalSeconds;
 
-                    var closeKind = exception == null ? "clean (no exception)" : $"error: {exception.GetType().Name}: {exception.Message}";
+                        var closeKind = exception == null ? "clean (no exception)" : $"error: {exception.GetType().Name}: {exception.Message}";
 
-                    DiagnosticFileLogger.Append("extension-disconnects.log",
-                        $"DISCONNECTED account={connectionMetadata.AccountId.Value} user={connectionMetadata.APIUserId.Value} " +
-                        $"conn={Context.ConnectionId} held={heldSeconds?.ToString("0.0") ?? "?"}s close=[{closeKind}]");
+                        DiagnosticFileLogger.Append(ConnectivityLogFile,
+                            $"DISCONNECTED account={connectionMetadata.AccountId.Value} user={connectionMetadata.APIUserId.Value} " +
+                            $"conn={Context.ConnectionId} held={heldSeconds?.ToString("0.0") ?? "?"}s close=[{closeKind}]");
+                    }
                 }
 
             }
