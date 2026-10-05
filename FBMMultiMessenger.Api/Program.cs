@@ -55,6 +55,7 @@ namespace FBMMultiMessenger.Api
                 });
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+                builder.Services.Configure<FirebaseSettings>(builder.Configuration.GetSection("Firebase"));
 
                 var app = builder.Build();
 

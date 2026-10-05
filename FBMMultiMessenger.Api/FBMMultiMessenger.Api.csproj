@@ -44,6 +44,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="Secrets\fbm-multi-messenger-firebase-adminsdk.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
 	  <None Update="app_offline.htm">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </None>
