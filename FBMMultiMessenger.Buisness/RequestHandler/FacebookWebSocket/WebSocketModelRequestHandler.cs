@@ -587,12 +587,50 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
             // mirrors: general audio formats
             var generalAudioUrls = Regex.Matches(
                 innerPayload,
-                @"https://[^"" ]+\.(?:mp3|wav|m4a|aac|ogg|flac)[^"" ]*",
+                @"https://[^"" ]+\.(?:mp3|wav|m4a|aac|ogg|flac|opus)[^"" ]*",
                 RegexOptions.IgnoreCase
             ).Select(m => m.Value).ToList();
 
-            // mirrors: allAudioUrls = [...audioUrls, ...generalAudioUrls]
-            var allAudio = fbAudioUrls.Concat(generalAudioUrls).Distinct().ToList();
+            // Voice notes: insertBlobAttachment with audio/* mime. CDN paths often
+            // contain .jpg (image regex hit) even though the blob is Opus/audio.
+            var blobAudioUrls = new List<string>();
+            var insertMatches = Regex.Matches(innerPayload, @"insertBlobAttachment", RegexOptions.IgnoreCase);
+            for (var i = 0; i < insertMatches.Count; i++)
+            {
+                var start = insertMatches[i].Index;
+                var end = i + 1 < insertMatches.Count
+                    ? insertMatches[i + 1].Index
+                    : Math.Min(innerPayload.Length, start + 4000);
+                var chunk = innerPayload.Substring(start, end - start);
+
+                if (!Regex.IsMatch(chunk, @"""audio/[^""]+""", RegexOptions.IgnoreCase))
+                    continue;
+
+                var urlMatch = Regex.Match(
+                    chunk,
+                    @"https://cdn\.fbsbx\.com[^""\s]+",
+                    RegexOptions.IgnoreCase);
+                if (urlMatch.Success)
+                    blobAudioUrls.Add(urlMatch.Value);
+            }
+
+            blobAudioUrls = blobAudioUrls.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+            // Reclassify: strip blob-audio URLs out of images so IsAudioMessage can win.
+            if (blobAudioUrls.Count > 0)
+            {
+                imageUrls = imageUrls
+                    .Where(u => !blobAudioUrls.Any(a =>
+                        string.Equals(u, a, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+
+            // mirrors: allAudioUrls = [...audioUrls, ...generalAudioUrls] + blob audio
+            var allAudio = fbAudioUrls
+                .Concat(generalAudioUrls)
+                .Concat(blobAudioUrls)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             return new MediaResult
             {
