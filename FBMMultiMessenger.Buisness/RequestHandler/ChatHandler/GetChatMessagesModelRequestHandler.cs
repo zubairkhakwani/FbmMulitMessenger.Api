@@ -81,7 +81,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     IsSent = x.IsSent,
                     MessageReply = messageReply,
                     CreatedAt = x.CreatedAt,
-                    FbTimeStamp = x.FBTimestamp
+                    FbTimeStamp = x.FBTimestamp,
+                    SeenAt = x.SeenAt
                 };
             }).ToList();
 

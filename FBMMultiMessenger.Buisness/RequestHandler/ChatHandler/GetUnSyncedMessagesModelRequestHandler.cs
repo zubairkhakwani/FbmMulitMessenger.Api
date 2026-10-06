@@ -117,6 +117,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                         IsImageMessage = cm.IsImageMessage,
                         IsVideoMessage = cm.IsVideoMessage,
                         IsAudioMessage = cm.IsAudioMessage,
+                        SeenAt = cm.SeenAt,
                         CreatedAt = cm.CreatedAt,
                         UpdatedAt = cm.UpdatedAt,
                     }).ToList()

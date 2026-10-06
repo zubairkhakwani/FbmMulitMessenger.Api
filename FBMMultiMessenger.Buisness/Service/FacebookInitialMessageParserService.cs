@@ -124,14 +124,23 @@ namespace FBMMultiMessenger.Buisness.Service
         private void ProcessMessage(List<JsonElement> p, Dictionary<string, ParsedChat> chats,
         string currentUserId)
         {
-            if (p.Count < 9) return;
+            if (p.Count < 9)
+            {
+                return;
+            }
 
             // mirrors: if (params[12] === true) return — system message
-            if (p.Count > 12 && p[12].ValueKind == JsonValueKind.True) return;
+            if (p.Count > 12 && p[12].ValueKind == JsonValueKind.True)
+            {
+                return;
+            }
 
             var threadId = ExtractValue(p[3]);
             var messageId = p[8].ValueKind == JsonValueKind.String ? p[8].GetString() : null;
-            if (threadId == null || messageId == null) return;
+            if (threadId == null || messageId == null)
+            {
+                return;
+            }
 
             var tsStr = ExtractValue(p[5]);
             long.TryParse(tsStr, out var timestamp);
@@ -148,7 +157,10 @@ namespace FBMMultiMessenger.Buisness.Service
             var chat = chats[threadId];
 
             // mirrors: if (chat.messages.some(m => m.messageId === messageId)) return
-            if (chat.Messages.Any(m => m.MessageId == messageId)) return;
+            if (chat.Messages.Any(m => m.MessageId == messageId))
+            {
+                return;
+            }
 
             var text = p[0].ValueKind == JsonValueKind.String ? p[0].GetString() : null;
 

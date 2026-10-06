@@ -122,6 +122,14 @@ namespace FBMMultiMessenger.Buisness.Service
             await _hubContext.Clients.Group(sendMessageToUserId)
                 .SendAsync("HandleChatInfoUpdated", request, cancellationToken);
         }
+
+        public async Task NotifyAppMessagesSeen(int userId, ChatMessagesSeenSignalRModel request, CancellationToken cancellationToken)
+        {
+            var sendMessageToUserId = $"App_{userId}";
+
+            await _hubContext.Clients.Group(sendMessageToUserId)
+                .SendAsync("HandleMessagesSeen", request, cancellationToken);
+        }
         #endregion
     }
 }
