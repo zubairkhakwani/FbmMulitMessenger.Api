@@ -28,12 +28,15 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<Role> Roles { get; set; }
         public DbSet<Settings> Settings { get; set; }
         public DbSet<TrialConfiguration> TrialConfigurations { get; set; }
-
-
+        public DbSet<AdminFcmToken> AdminFcmTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<AdminFcmToken>()
+                        .HasIndex(x => x.Token)
+                        .IsUnique();
 
             // Many audit rows per user; only Users.ApiKey holds the live key.
             modelBuilder.Entity<ApiKey>()

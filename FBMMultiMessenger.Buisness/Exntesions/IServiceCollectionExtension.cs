@@ -147,6 +147,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddSingleton<ExtensionContentCache>();
             services.AddSingleton<ExtensionZipCache>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IAdminPushNotificationService, FirebaseAdminPushService>();
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
             services.AddScoped<IUserAccountService, UserAccountService>();
             services.AddScoped<ILocalServerService, LocalServerService>();

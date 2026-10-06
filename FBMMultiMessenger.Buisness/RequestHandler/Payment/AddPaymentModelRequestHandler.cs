@@ -18,13 +18,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
         private readonly CurrentUserService _currentUserService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IEmailService _emailService;
+        private readonly IAdminPushNotificationService _adminPushNotificationService;
 
-        public AddPaymentModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IWebHostEnvironment webHostEnvironment, IEmailService emailService)
+        public AddPaymentModelRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, IWebHostEnvironment webHostEnvironment, IEmailService emailService, IAdminPushNotificationService adminPushNotificationService)
         {
             this._dbContext=dbContext;
             this._currentUserService=currentUserService;
             this._webHostEnvironment=webHostEnvironment;
             this._emailService=emailService;
+            this._adminPushNotificationService=adminPushNotificationService;
         }
         public async Task<BaseResponse<AddPaymentProofModelResponse>> Handle(AddPaymentProofModelRequest request, CancellationToken cancellationToken)
         {
@@ -164,8 +166,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 
 
                     _ = _emailService.SendPaymentVerificationEmail(userName, email, phoneNumber, billingCycle, userPurchasedPrice);
+                    _ = _adminPushNotificationService.NotifyPaymentProofSubmittedAsync(
+                        userName, email, billingCycle, userPurchasedPrice, CancellationToken.None);
                 }
-               
+
             }
             catch (Exception ex)
             {
