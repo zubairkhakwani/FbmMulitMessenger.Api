@@ -78,6 +78,10 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+
+        /// <summary>When the other participant saw this sent message. Null = not seen.</summary>
+        public DateTime? SeenAt { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

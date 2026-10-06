@@ -26,6 +26,9 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
 
         public DateTime CreatedAt { get; set; }
         public long? FbTimeStamp { get; set; }
+
+        /// <summary>When the other participant saw this sent message. Null = not seen.</summary>
+        public DateTime? SeenAt { get; set; }
     }
     public class MessageReplyModelResponse
     {

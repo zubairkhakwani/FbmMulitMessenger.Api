@@ -51,6 +51,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
             var bytes = Convert.FromBase64String(request.Chunk);
             var text = Encoding.UTF8.GetString(bytes);
 
+            var currentUser = currentUserService.GetCurrentUser();
+
             if (text.Contains("insertMessage"))
             {
                 var message = HandleInsertMessage(text, request);
@@ -117,7 +119,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                 }).ToList();
 
                 // Old history in bursts — queue it for batched persistence instead of a DB write per chunk.
-                var currentUser = currentUserService.GetCurrentUser();
                 if (currentUser is not null)
                 {
                     syncMessageQueue.Enqueue(new SyncBatchItem
@@ -127,6 +128,27 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
                         FbAccountId = request.FbAccountId,
                         Chats = messages,
                     });
+                }
+            }
+            else if (text.Contains("updateReadReceipt"))
+            {
+                // A standalone read receipt (no insertMessage) = the other participant saw our messages.
+                var receipt = ParseReadReceipt(text);
+                if (receipt != null)
+                {
+                    if (currentUser is not null)
+                    {
+                        await mediator.Send(new MarkMessagesSeenModelRequest
+                        {
+                            AccountId = request.AccountId,
+                            FbAccountId = request.FbAccountId,
+                            FbChatId = receipt.ThreadId,
+                            ReaderUserId = receipt.ReaderUserId,
+                            WatermarkMs = receipt.WatermarkMs,
+                            ReadActionMs = receipt.ReadActionMs,
+                            CurrentUserId = currentUser.Id
+                        });
+                    }
                 }
             }
 
@@ -635,6 +657,125 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
             if (index == -1)
                 throw new Exception("No JSON payload found in message");
             return rawMessage.Substring(index);
+        }
+
+        private class ReadReceiptResult
+        {
+            public long WatermarkMs { get; set; }
+            public string ThreadId { get; set; } = string.Empty;
+            public string ReaderUserId { get; set; } = string.Empty;
+            public long ReadActionMs { get; set; }
+        }
+
+        // Parses a standalone read-receipt payload. The op is:
+        // [5,"updateReadReceipt", <readWatermarkTs>, <threadId>, <readerUserId>, <readActionTs>]
+        // where each arg is a [19,"<number>"] token. Returns null if it isn't a genuine read receipt.
+        private ReadReceiptResult? ParseReadReceipt(string rawText)
+        {
+            try
+            {
+                var messageData = ExtractJsonPayload(rawText);
+                using var doc = JsonDocument.Parse(messageData);
+
+                var payloadStr = doc.RootElement.GetProperty("payload").GetString();
+                if (string.IsNullOrEmpty(payloadStr))
+                    return null;
+
+                using var payloadDoc = JsonDocument.Parse(payloadStr);
+                var op = FindReadReceiptOp(payloadDoc.RootElement);
+                if (op is null)
+                    return null;
+
+                var arr = op.Value.EnumerateArray().ToList();
+                if (arr.Count < 6)
+                    return null;
+
+                var watermark = ReadNumberToken(arr[2]);
+                var threadId = ReadStringToken(arr[3]);
+                var readerUserId = ReadStringToken(arr[4]);
+                var readAction = ReadNumberToken(arr[5]);
+
+                // A genuine "seen" event has a real read-action time; the updateReadReceipt inside a normal
+                // message carries 0 there (and never reaches here — insertMessage is handled first anyway).
+                if (readAction <= 0 || string.IsNullOrEmpty(threadId) || string.IsNullOrEmpty(readerUserId))
+                    return null;
+
+                return new ReadReceiptResult
+                {
+                    WatermarkMs = watermark,
+                    ThreadId = threadId,
+                    ReaderUserId = readerUserId,
+                    ReadActionMs = readAction,
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"ParseReadReceipt error: {ex.Message}");
+                return null;
+            }
+        }
+
+        private JsonElement? FindReadReceiptOp(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Array)
+            {
+                var arr = element.EnumerateArray().ToList();
+
+                if (arr.Count >= 6 &&
+                    arr[0].ValueKind == JsonValueKind.Number && arr[0].GetInt32() == 5 &&
+                    arr[1].ValueKind == JsonValueKind.String && arr[1].GetString() == "updateReadReceipt")
+                {
+                    return element;
+                }
+
+                foreach (var item in arr)
+                {
+                    var r = FindReadReceiptOp(item);
+                    if (r is not null) return r;
+                }
+            }
+            else if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var prop in element.EnumerateObject())
+                {
+                    var r = FindReadReceiptOp(prop.Value);
+                    if (r is not null) return r;
+                }
+            }
+
+            return null;
+        }
+
+        // Tokens are usually [19,"<number>"]; tolerate a bare number/string too.
+        private static long ReadNumberToken(JsonElement token)
+        {
+            if (token.ValueKind == JsonValueKind.Array)
+            {
+                var a = token.EnumerateArray().ToList();
+                if (a.Count >= 2)
+                {
+                    if (a[1].ValueKind == JsonValueKind.String && long.TryParse(a[1].GetString(), out var v)) return v;
+                    if (a[1].ValueKind == JsonValueKind.Number) return a[1].GetInt64();
+                }
+            }
+            else if (token.ValueKind == JsonValueKind.Number) return token.GetInt64();
+            else if (token.ValueKind == JsonValueKind.String && long.TryParse(token.GetString(), out var s)) return s;
+
+            return 0;
+        }
+
+        private static string ReadStringToken(JsonElement token)
+        {
+            if (token.ValueKind == JsonValueKind.Array)
+            {
+                var a = token.EnumerateArray().ToList();
+                if (a.Count >= 2)
+                    return a[1].ValueKind == JsonValueKind.String ? a[1].GetString() ?? string.Empty : a[1].GetRawText();
+            }
+            else if (token.ValueKind == JsonValueKind.String) return token.GetString() ?? string.Empty;
+            else if (token.ValueKind == JsonValueKind.Number) return token.GetRawText();
+
+            return string.Empty;
         }
     }
 }

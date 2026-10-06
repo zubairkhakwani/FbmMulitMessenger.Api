@@ -28,6 +28,7 @@ namespace FBMMultiMessenger.Buisness.Service.IServices
         Task NotifyAppAccountStatus(List<UserAccountSignalRModel> accountSignalRModels, CancellationToken cancellationToken);
         Task NotifyAppForMessage(int userId, HandleChatHttpResponse receivedChat, CancellationToken cancellationToken);
         Task NotifyAppChatInfoUpdated(int userId, ChatInfoUpdatedSignalRModel request, CancellationToken cancellationToken);
+        Task NotifyAppMessagesSeen(int userId, ChatMessagesSeenSignalRModel request, CancellationToken cancellationToken);
 
         Task AskExtensionForListingInfo(int accountId, GetListingInfoRequest request, CancellationToken cancellationToken);
 

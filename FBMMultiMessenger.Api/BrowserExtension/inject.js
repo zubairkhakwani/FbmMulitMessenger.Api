@@ -91,8 +91,10 @@ var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
 
                     const hasInsertMessage = text.includes("insertMessage");
                     const hasSyncMessages = text.includes("insertNewMessageRange");
+                    // Standalone read receipt (no insertMessage) = the other person saw our messages.
+                    const hasReadReceipt = text.includes("updateReadReceipt") && !hasInsertMessage;
 
-                    if (hasInsertMessage || hasSyncMessages) {
+                    if (hasInsertMessage || hasSyncMessages || hasReadReceipt) {
                         // Convert raw bytes to base64 — never decoded on client side
                         const base64Chunk = btoa(
                             bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')

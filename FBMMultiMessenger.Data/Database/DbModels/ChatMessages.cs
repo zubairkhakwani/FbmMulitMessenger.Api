@@ -28,6 +28,10 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+
+        /// <summary>When the other participant read this (sent) message. Null = not seen yet.</summary>
+        public DateTime? SeenAt { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
