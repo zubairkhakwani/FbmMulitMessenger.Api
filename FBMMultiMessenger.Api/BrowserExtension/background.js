@@ -85,7 +85,7 @@ self.clearLogs = async function () {
 console.log('Scrapping Background script running.');
 
 //var remoteApiUrl = "https://api.fbmmessenger.com";
-var remoteApiUrl = "https://messenger.ekarobar360.com";
+var remoteApiUrl = "https://dev.fbmmessenger.com";
 var remoteAPISignalRUrl = `${remoteApiUrl}/chathub`;
 var accountId = null;
 var currentFbAccountId = null; // the FB account id we're currently registered for — used to detect account switches

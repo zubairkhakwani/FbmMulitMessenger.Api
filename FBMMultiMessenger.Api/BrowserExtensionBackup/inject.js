@@ -232,13 +232,40 @@ async function processMessage(messageData, fbChatId) {
                 const mediaBase64s = messageData.mediaBase64;
                 mediaBase64s.forEach((mediaBase64) => {
                     const blob = Base64T0Blob(mediaBase64);
-                    const isVideo = mediaBase64.startsWith('data:video');
+                    const mimeMatch = typeof mediaBase64 === "string"
+                        ? mediaBase64.match(/^data:([^;]+);/i)
+                        : null;
+                    const mime = mimeMatch ? mimeMatch[1].toLowerCase() : "";
+                    const isVideo =
+                        mime.startsWith("video/") ||
+                        (typeof mediaBase64 === "string" &&
+                            mediaBase64.startsWith("data:video"));
+                    const isAudio =
+                        mime.startsWith("audio/") ||
+                        (typeof mediaBase64 === "string" &&
+                            mediaBase64.startsWith("data:audio"));
 
                     let mediaFile;
                     if (isVideo) {
                         // Create video file with appropriate extension and MIME type
                         mediaFile = new File([blob], "video.mp4", {
                             type: "video/mp4", // or "video/webm", "video/quicktime" for MOV
+                        });
+                    } else if (isAudio) {
+                        // Voice notes from the app — keep MIME so Messenger accepts audio.
+                        const audioType = mime.startsWith("audio/")
+                            ? mime
+                            : "audio/mp4";
+                        const audioName = audioType.includes("mpeg") ||
+                            audioType.includes("mp3")
+                            ? "voice.mp3"
+                            : audioType.includes("ogg")
+                                ? "voice.ogg"
+                                : audioType.includes("wav")
+                                    ? "voice.wav"
+                                    : "voice.m4a";
+                        mediaFile = new File([blob], audioName, {
+                            type: audioType,
                         });
                     } else {
                         // Create image file
@@ -337,13 +364,19 @@ function AddLineBreak() {
 }
 
 function Base64T0Blob(base64) {
-    var byteCharacters = atob(base64.split(",")[1]);
+    var parts = base64.split(",");
+    var mime = "application/octet-stream";
+    if (parts[0] && parts[0].indexOf("data:") === 0) {
+        var match = parts[0].match(/data:([^;]+);/i);
+        if (match) mime = match[1];
+    }
+    var byteCharacters = atob(parts[1] || "");
     var byteNumbers = new Array(byteCharacters.length);
     for (var i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     var byteArray = new Uint8Array(byteNumbers);
-    var blob = new Blob([byteArray], { type: "image/png" });
+    var blob = new Blob([byteArray], { type: mime });
 
     return blob;
 }
