@@ -55,7 +55,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
             {
                 var message = HandleInsertMessage(text, request);
 
-                if(message != null)
+                if(message != null && message.Messages.Any() && message.Messages.Any(m => !string.IsNullOrWhiteSpace(m)))
                 {
                     var mediatRRequest = new HandleChatModelRequest
                     {
