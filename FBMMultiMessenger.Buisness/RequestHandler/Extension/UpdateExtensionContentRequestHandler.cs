@@ -66,6 +66,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Extension
             }
             catch (Exception ex)
             {
+                SentrySdk.CaptureException(ex);
                 return BaseResponse<GetEncExtensionContentModelResponse>.Error("Something went wrong while updating extension content.");
             }
         }
