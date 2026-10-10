@@ -85,7 +85,7 @@ self.clearLogs = async function () {
 console.log('Scrapping Background script running.');
 
 //var remoteApiUrl = "https://api.fbmmessenger.com";
-var remoteApiUrl = "https://dev.fbmmessenger.com";
+var remoteApiUrl = "https://messenger.ekarobar360.com";
 var remoteAPISignalRUrl = `${remoteApiUrl}/chathub`;
 var accountId = null;
 var currentFbAccountId = null; // the FB account id we're currently registered for — used to detect account switches
@@ -545,10 +545,18 @@ async function handleMessage(request, sender, sendResponse) {
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            // Server tells us the account was removed — stop syncing & reconnecting.
             const body = await res.json().catch(() => null);
+
+            // Server tells us the account was removed — stop syncing & reconnecting.
             if (body?.data?.accountDeactivated) {
                 await handleAccountDeactivated();
+                return true;
+            }
+
+            // Server says our accountId doesn't belong to the current user / FB account (stale cached id) —
+            // clear the cached identity and re-register on the spot so the next sync uses the correct account.
+            if (body?.data?.requiresReRegistration) {
+                await handleReRegisterRequired();
                 return true;
             }
         }

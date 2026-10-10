@@ -94,7 +94,7 @@ namespace FBMMultiMessenger.Buisness.Helpers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ExtensionZipCache] Obfuscation failed, packaging staged files as-is: {ex.Message}");
+                SentrySdk.CaptureException(ex);
             }
 
             using var ms = new MemoryStream();

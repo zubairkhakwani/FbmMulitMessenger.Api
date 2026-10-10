@@ -36,6 +36,10 @@ namespace FBMMultiMessenger.Buisness.Request.FacebookWebSocket
     {
         // True when the account was removed/deactivated — the extension should stop syncing & reconnecting.
         public bool AccountDeactivated { get; set; }
+
+        // True when the request's accountId doesn't belong to the current user / FB account (a stale cached
+        // accountId). The extension should clear its cached identity and re-register on the spot.
+        public bool RequiresReRegistration { get; set; }
     }
 
 }

@@ -84,13 +84,23 @@ namespace FBMMultiMessenger.Buisness.SignalR
 
             try
             {
-                // Reject accounts that were removed (soft-deleted): don't register, and tell the caller
-                // to stop so it stops reconnecting/syncing. Cached (5-min TTL) so connect bursts don't
-                // hit the DB per connection; removal updates the cache immediately.
-                var isActiveAccount = await _accountActiveStatusCache.IsActiveAsync(accountId,
-                    () => _dbContext.Accounts.AnyAsync(a => a.Id == accountId && a.IsActive));
+                // Load active status + identity from the cache (5-min TTL; one DB read on miss so connect
+                // bursts hit memory). Removal/reactivation updates the cache immediately.
+                var cachedAccount = await _accountActiveStatusCache.GetAsync(accountId, async () =>
+                {
+                    var a = await _dbContext.Accounts
+                        .Where(x => x.Id == accountId)
+                        .Select(x => new { x.IsActive, x.UserId, x.FbAccountId })
+                        .FirstOrDefaultAsync();
 
-                if (!isActiveAccount)
+                    return a is null
+                        ? (AccountActiveStatusCache.CachedAccount?)null
+                        : new AccountActiveStatusCache.CachedAccount(a.IsActive, a.UserId, a.FbAccountId);
+                });
+
+                // Removed (soft-deleted) or unknown account: don't register, and tell the caller to stop so
+                // it stops reconnecting/syncing.
+                if (cachedAccount is null || !cachedAccount.Value.IsActive)
                 {
                     await Clients.Caller.SendAsync("HandleAccountDeactivated", accountId);
                     Console.WriteLine($"Extension register rejected — account {accountId} is not active.");
@@ -101,14 +111,12 @@ namespace FBMMultiMessenger.Buisness.SignalR
                 // register with a stale AccountId owned by the previous user — presence would then be written
                 // under the wrong user and dropped by the flusher's ownership guard (stuck-offline). Reject the
                 // mismatch and tell the caller to re-register under the current identity.
-                //var ownsAccount = await _dbContext.Accounts.AnyAsync(a => a.Id == accountId && a.UserId == apiUserId);
-
-                //if (!ownsAccount)
-                //{
-                //    await Clients.Caller.SendAsync("HandleReRegister", accountId);
-                //    Console.WriteLine($"Extension register rejected — account {accountId} not owned by user {apiUserId}.");
-                //    return;
-                //}
+                if (cachedAccount.Value.UserId != apiUserId)
+                {
+                    await Clients.Caller.SendAsync("HandleReRegister", accountId);
+                    Console.WriteLine($"Extension register rejected — account {accountId} not owned by user {apiUserId}.");
+                    return;
+                }
 
                 var extensionId = $"extension_{accountId}";
 

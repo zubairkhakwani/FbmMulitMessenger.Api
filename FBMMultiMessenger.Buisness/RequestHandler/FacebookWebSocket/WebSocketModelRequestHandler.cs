@@ -36,22 +36,44 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.FacebookWebSocket
 
         public async Task<BaseResponse<WebSocketModelResponse>> Handle(WebSocketModelRequest request, CancellationToken cancellationToken)
         {
-            // Ignore sync for accounts that were removed (soft-deleted) — don't store their messages.
-            // Cached (5-min TTL) so message bursts don't hit the DB per chunk; removal updates it immediately.
-            var isActiveAccount = await accountActiveStatusCache.IsActiveAsync(request.AccountId,
-                () => dbContext.Accounts.AnyAsync(a => a.Id == request.AccountId && a.IsActive, cancellationToken));
-
-            if (!isActiveAccount)
+            // Load the account's active status + identity (cached 5-min TTL so bursts don't hit the DB per chunk).
+            var cachedAccount = await accountActiveStatusCache.GetAsync(request.AccountId, async () =>
             {
-                // Tell the extension it's been deactivated so it stops syncing/reconnecting.
+                var a = await dbContext.Accounts
+                    .Where(x => x.Id == request.AccountId)
+                    .Select(x => new { x.IsActive, x.UserId, x.FbAccountId })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                return a is null
+                    ? (AccountActiveStatusCache.CachedAccount?)null
+                    : new AccountActiveStatusCache.CachedAccount(a.IsActive, a.UserId, a.FbAccountId);
+            });
+
+            // Removed (soft-deleted) or unknown account → tell the extension to stop syncing/reconnecting.
+            if (cachedAccount is null || !cachedAccount.Value.IsActive)
+            {
                 return BaseResponse<WebSocketModelResponse>.Success("Account is inactive; sync ignored.",
                     new WebSocketModelResponse { AccountDeactivated = true });
+            }
+
+            var currentUser = currentUserService.GetCurrentUser();
+
+            // Identity guard: the accountId is client-supplied, so a stale cached id (e.g. after an API-key
+            // swap where another user's accountId lingered) can point at an account that belongs to a
+            // different user or FB account. Persisting under it mis-links chats across users/accounts and
+            // later causes deterministic 23505s. Reject and make the extension re-register on the spot.
+            var currentUserId = currentUser.Id;
+
+            if (cachedAccount.Value.UserId != currentUserId ||
+                !string.Equals(cachedAccount.Value.FbAccountId, request.FbAccountId, StringComparison.Ordinal))
+            {
+                return BaseResponse<WebSocketModelResponse>.Success("Account identity mismatch; please re-register.",
+                    new WebSocketModelResponse { RequiresReRegistration = true });
             }
 
             var bytes = Convert.FromBase64String(request.Chunk);
             var text = Encoding.UTF8.GetString(bytes);
 
-            var currentUser = currentUserService.GetCurrentUser();
 
             if (text.Contains("insertMessage"))
             {

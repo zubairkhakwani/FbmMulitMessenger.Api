@@ -53,8 +53,12 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                         await FlushAsync(batch, stoppingToken);
                     }
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (stoppingToken.IsCancellationRequested)
                 {
+                    SentrySdk.CaptureException(ex, scope =>
+                    {
+                        scope.SetTag("applicationStopped", "applicationStopped");
+                    });
                     break;
                 }
                 catch (Exception ex)
@@ -96,7 +100,7 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                         break;
                     }
                 }
-                catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (!stoppingToken.IsCancellationRequested)
                 {
                     break; // flush window elapsed
                 }
