@@ -1,3 +1,4 @@
+using FBMMultiMessenger.Api.Middleware;
 using FBMMultiMessenger.Buisness.Exntesions;
 using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Models;
@@ -122,6 +123,7 @@ namespace FBMMultiMessenger.Api
 
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.UseHttpRequestAudit();
                 app.UseCors("AllowedOrigins");
                 app.UseStaticFiles();
                 app.MapHub<ChatHub>("/chathub");

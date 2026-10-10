@@ -52,5 +52,28 @@ namespace FBMMultiMessenger.Buisness.Helpers
                 // Diagnostics must never throw.
             }
         }
+
+        /// <summary>Appends a line as-is (no logger prefix). Used for http-request-audit JSONL.</summary>
+        public static void AppendRawLine(string fileName, string line)
+        {
+            try
+            {
+                var dir = LogsDirectory;
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                var path = Path.Combine(dir, fileName);
+                lock (_lock)
+                {
+                    File.AppendAllText(path, line + Environment.NewLine);
+                }
+            }
+            catch
+            {
+                // Diagnostics must never throw.
+            }
+        }
     }
 }
