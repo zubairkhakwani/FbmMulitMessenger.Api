@@ -1,5 +1,7 @@
 using FBMMultiMessenger.Buisness.Helpers;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 
 namespace FBMMultiMessenger.Api.Controllers
@@ -150,7 +152,9 @@ namespace FBMMultiMessenger.Api.Controllers
             [FromQuery] string? toUtc = null,
             [FromQuery] string? search = null,
             [FromQuery] bool newestFirst = true,
-            [FromQuery] int tail = 0)
+            [FromQuery] int tail = 0,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] string? sortDir = null)
         {
             if (!KeyValid(key)) return NotFound();
 
@@ -188,14 +192,30 @@ namespace FBMMultiMessenger.Api.Controllers
                 "requestBodyTruncated", "responseBodyTruncated", "requestBody", "responseBody"
             };
 
-            var matched = new List<Dictionary<string, object?>>();
+            List<Dictionary<string, object?>> matched;
 
-            using (var fs = System.IO.File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(fs))
+            if (string.IsNullOrEmpty(searchFilter))
             {
+                // Fast path: the common filter/sort/page operations never look inside bodies, so serve them
+                // from a per-file metadata cache (parsed once per file state, bodies skipped). Repeated
+                // filtering, sorting and paging on the same file then cost nothing but an in-memory scan.
+                var all = GetCachedMetadataRows(fullPath, safeName);
+                matched = all
+                    .Where(r => MetaRowMatches(r, userId, emailFilter, methodFilter, pathFilter, statusCode, from, to))
+                    .ToList();
+            }
+            else
+            {
+                // Body search can't use the cache (bodies aren't cached), so read the file for this case and
+                // parse full rows including bodies.
+                matched = new List<Dictionary<string, object?>>();
+                using var fs = System.IO.File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(fs);
                 string? line;
+                var lineIndex = -1;
                 while ((line = reader.ReadLine()) != null)
                 {
+                    lineIndex++;
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
                     JsonElement row;
@@ -213,13 +233,25 @@ namespace FBMMultiMessenger.Api.Controllers
                         continue;
                     }
 
-                    matched.Add(JsonRowToDictionary(row));
+                    var dict = JsonRowToDictionary(row);
+                    dict["__line"] = lineIndex;
+                    matched.Add(dict);
                 }
             }
 
-            IEnumerable<Dictionary<string, object?>> ordered = newestFirst
-                ? matched.OrderByDescending(r => RowTimeUtc(r))
-                : matched.OrderBy(r => RowTimeUtc(r));
+            var sortCol = sortBy?.Trim();
+            IEnumerable<Dictionary<string, object?>> ordered;
+            if (!string.IsNullOrEmpty(sortCol) && columns.Contains(sortCol))
+            {
+                var desc = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
+                ordered = SortRows(matched, sortCol, desc);
+            }
+            else
+            {
+                ordered = newestFirst
+                    ? matched.OrderByDescending(r => RowTimeUtc(r))
+                    : matched.OrderBy(r => RowTimeUtc(r));
+            }
 
             var list = ordered.ToList();
             tail = Math.Max(0, tail);
@@ -231,10 +263,252 @@ namespace FBMMultiMessenger.Api.Controllers
             }
 
             var total = list.Count;
+
+            // Totals over the full filtered (+tail) set, so the UI can show aggregate sizes for the
+            // current filters regardless of which page is visible.
+            long totalRequestBytes = list.Sum(r => r.TryGetValue("requestSizeBytes", out var rv) && rv is int rvi ? rvi : 0);
+            long totalResponseBytes = list.Sum(r => r.TryGetValue("responseSizeBytes", out var sv) && sv is int svi ? svi : 0);
+
             var skip = (page - 1) * pageSize;
             var pageRows = list.Skip(skip).Take(pageSize).ToList();
 
-            return Ok(new { columns, rows = pageRows, total, page, pageSize, file = safeName, newestFirst, tail });
+            return Ok(new { columns, rows = pageRows, total, totalRequestBytes, totalResponseBytes, page, pageSize, file = safeName, newestFirst, tail, sortBy = sortCol, sortDir });
+        }
+
+        // Returns one request/response body on demand (by physical line number), so the grid itself never
+        // ships large bodies. `which` = "request" or "response".
+        [HttpGet("/api/sys/{key}/http-request-audit/body")]
+        public IActionResult HttpRequestAuditBody(string key, [FromQuery] string? file, [FromQuery] int line, [FromQuery] string? which)
+        {
+            if (!KeyValid(key)) return NotFound();
+
+            var safeName = Path.GetFileName(file ?? string.Empty);
+            if (string.IsNullOrEmpty(safeName) || safeName != file
+                || !safeName.StartsWith("http-request-audit-", StringComparison.Ordinal)
+                || !safeName.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Invalid audit file name.");
+            }
+
+            var fullPath = Path.Combine(LogsDir, safeName);
+            if (!System.IO.File.Exists(fullPath) || line < 0)
+            {
+                return NotFound();
+            }
+
+            string? target = null;
+            using (var fs = System.IO.File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fs))
+            {
+                var idx = -1;
+                string? l;
+                while ((l = reader.ReadLine()) != null)
+                {
+                    idx++;
+                    if (idx == line) { target = l; break; }
+                }
+            }
+
+            if (target is null)
+            {
+                return NotFound();
+            }
+
+            JsonElement row;
+            try { row = JsonSerializer.Deserialize<JsonElement>(target); }
+            catch { return NotFound(); }
+
+            var isResponse = string.Equals(which, "response", StringComparison.OrdinalIgnoreCase);
+            var field = isResponse ? "responseBody" : "requestBody";
+            var truncField = isResponse ? "responseBodyTruncated" : "requestBodyTruncated";
+
+            return Ok(new
+            {
+                which = field,
+                body = GetString(row, field),
+                truncated = GetBool(row, truncField),
+            });
+        }
+
+        // Parsed metadata rows (bodies excluded) per audit file, invalidated when the file's size or
+        // last-write time changes. The active file still re-parses whenever a new request is appended, but
+        // every filter/sort/page on an unchanged file state is served from memory, and the parse itself is
+        // body-skipping (see ParseMetadataLine) so even the active-file re-parse is cheap.
+        private static readonly ConcurrentDictionary<string, AuditMetaCacheEntry> _auditMetaCache = new();
+
+        private sealed class AuditMetaCacheEntry
+        {
+            public long Length;
+            public long WriteTicks;
+            public List<Dictionary<string, object?>> Rows = new();
+        }
+
+        private static List<Dictionary<string, object?>> GetCachedMetadataRows(string fullPath, string fileName)
+        {
+            var fi = new FileInfo(fullPath);
+            var len = fi.Length;
+            var ticks = fi.LastWriteTimeUtc.Ticks;
+
+            if (_auditMetaCache.TryGetValue(fileName, out var hit) && hit.Length == len && hit.WriteTicks == ticks)
+            {
+                return hit.Rows;
+            }
+
+            var rows = new List<Dictionary<string, object?>>();
+            using (var fs = System.IO.File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fs))
+            {
+                string? line;
+                var lineIndex = -1;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    lineIndex++;
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    var dict = ParseMetadataLine(line);
+                    if (dict == null) continue;
+                    dict["__line"] = lineIndex;
+                    rows.Add(dict);
+                }
+            }
+
+            // Bound memory — this is a diagnostics tool, not a hot service. A handful of day-files is plenty.
+            if (_auditMetaCache.Count > 6) _auditMetaCache.Clear();
+            _auditMetaCache[fileName] = new AuditMetaCacheEntry { Length = len, WriteTicks = ticks, Rows = rows };
+            return rows;
+        }
+
+        // Reads only the metadata fields from one JSONL line and skips the (potentially huge) body strings
+        // without materializing them — much cheaper than deserializing the whole line into a JsonElement.
+        private static Dictionary<string, object?>? ParseMetadataLine(string line)
+        {
+            try
+            {
+                var bytes = Encoding.UTF8.GetBytes(line);
+                var reader = new Utf8JsonReader(bytes);
+                if (!reader.Read() || reader.TokenType != JsonTokenType.StartObject) return null;
+
+                var d = new Dictionary<string, object?>();
+                while (reader.Read() && reader.TokenType == JsonTokenType.PropertyName)
+                {
+                    var name = reader.GetString();
+                    if (!reader.Read()) break;
+
+                    switch (name)
+                    {
+                        case "timeUtc":
+                        case "timeLocal":
+                        case "userEmail":
+                        case "method":
+                        case "path":
+                        case "queryString":
+                            d[name] = reader.TokenType == JsonTokenType.String ? reader.GetString() : null;
+                            break;
+                        case "userId":
+                            d[name] = reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var ui) ? ui : (int?)null;
+                            break;
+                        case "statusCode":
+                        case "requestSizeBytes":
+                        case "responseSizeBytes":
+                            d[name] = reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var iv) ? iv : 0;
+                            break;
+                        case "durationMs":
+                            d[name] = reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out var lv) ? lv : 0L;
+                            break;
+                        case "requestBodyTruncated":
+                        case "responseBodyTruncated":
+                            d[name] = reader.TokenType == JsonTokenType.True;
+                            break;
+                        default:
+                            // requestBody / responseBody / anything else: skip the value without reading it.
+                            reader.Skip();
+                            break;
+                    }
+                }
+
+                return d;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Same predicate as RowMatchesFilters but over a pre-parsed metadata dictionary (no body search).
+        private static bool MetaRowMatches(
+            Dictionary<string, object?> r,
+            int? userId,
+            string? userEmail,
+            string? method,
+            string? pathContains,
+            int? statusCode,
+            DateTimeOffset? fromUtc,
+            DateTimeOffset? toUtc)
+        {
+            if (userId.HasValue)
+            {
+                var u = r.TryGetValue("userId", out var uv) ? uv as int? : null;
+                if (u != userId.Value) return false;
+            }
+
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                var email = r.TryGetValue("userEmail", out var ev) ? ev as string : null;
+                if (email == null || !email.Contains(userEmail, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
+            if (!string.IsNullOrEmpty(method))
+            {
+                var m = r.TryGetValue("method", out var mv) ? mv as string : null;
+                if (m == null || !string.Equals(m, method, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
+            if (!string.IsNullOrEmpty(pathContains))
+            {
+                var path = r.TryGetValue("path", out var pv) ? pv as string : null;
+                if (path == null || !path.Contains(pathContains, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
+            if (statusCode.HasValue)
+            {
+                var s = r.TryGetValue("statusCode", out var sv) && sv is int si ? si : 0;
+                if (s != statusCode.Value) return false;
+            }
+
+            if (fromUtc.HasValue || toUtc.HasValue)
+            {
+                var t = RowTimeUtc(r);
+                if (fromUtc.HasValue && t < fromUtc.Value) return false;
+                if (toUtc.HasValue && t > toUtc.Value) return false;
+            }
+
+            return true;
+        }
+
+        private static IEnumerable<Dictionary<string, object?>> SortRows(
+            List<Dictionary<string, object?>> rows, string col, bool desc)
+        {
+            Func<Dictionary<string, object?>, IComparable?> key = col switch
+            {
+                "timeUtc" => r => RowTimeUtc(r),
+                "userId" or "statusCode" or "durationMs" or "requestSizeBytes" or "responseSizeBytes"
+                    or "requestBodyTruncated" or "responseBodyTruncated" => r => ToLong(r, col),
+                _ => r => (r.TryGetValue(col, out var v) ? v as string : null) ?? string.Empty
+            };
+
+            return desc ? rows.OrderByDescending(key) : rows.OrderBy(key);
+        }
+
+        private static long ToLong(Dictionary<string, object?> r, string col)
+        {
+            if (!r.TryGetValue(col, out var v) || v is null) return long.MinValue;
+            return v switch
+            {
+                long l => l,
+                int i => i,
+                bool b => b ? 1 : 0,
+                _ => long.TryParse(v.ToString(), out var p) ? p : long.MinValue
+            };
         }
 
         private static DateTimeOffset RowTimeUtc(Dictionary<string, object?> row)
@@ -337,8 +611,7 @@ namespace FBMMultiMessenger.Api.Controllers
                 ["responseSizeBytes"] = GetInt(row, "responseSizeBytes"),
                 ["requestBodyTruncated"] = GetBool(row, "requestBodyTruncated"),
                 ["responseBodyTruncated"] = GetBool(row, "responseBodyTruncated"),
-                ["requestBody"] = GetString(row, "requestBody"),
-                ["responseBody"] = GetString(row, "responseBody"),
+                // requestBody/responseBody are deliberately NOT included — loaded on demand via /body.
             };
         }
 
@@ -589,13 +862,34 @@ namespace FBMMultiMessenger.Api.Controllers
   th, td { border: 1px solid #2a2f3a; padding: 6px 8px; vertical-align: top; max-width: 420px; }
   th { background: #171a21; position: sticky; top: 0; z-index: 1; text-align: left; white-space: nowrap; }
   th[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
-  td.body { font-family: ui-monospace, Consolas, monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; }
+  td.bodycell { white-space: nowrap; }
+  .viewbtn { background: #2a2f3a; color: #63b3ed; border: 1px solid #343b49; border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; }
+  .viewbtn:hover { filter: brightness(1.25); }
   tr:nth-child(even) { background: #12151c; }
   .trunc { color: #f6ad55; font-size: 11px; }
   .pager { display: flex; gap: 8px; align-items: center; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: #fff; }
+  th .arr { color: #63b3ed; }
+  .totals { font-size: 12px; color: #9aa3b2; }
+  .totals b { color: #d7dae0; }
+  /* modal */
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; z-index: 10; align-items: center; justify-content: center; }
+  #modal.show { display: flex; }
+  #modalCard { background: #12151c; border: 1px solid #2a2f3a; border-radius: 8px; width: min(90vw, 1000px); max-height: 85vh; display: flex; flex-direction: column; }
+  #modalHead { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #2a2f3a; }
+  #modalTitle { font-size: 13px; color: #9aa3b2; margin-right: auto; }
+  #modalBody { margin: 0; padding: 12px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.45; }
+  /* loader */
+  #loader { position: fixed; top: 10px; right: 12px; z-index: 20; display: none; align-items: center; gap: 8px; background: #171a21; border: 1px solid #343b49; border-radius: 20px; padding: 6px 14px 6px 10px; font-size: 12px; color: #cbd2dd; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  #loader.show { display: flex; }
+  #loader .spin { width: 14px; height: 14px; border: 2px solid #343b49; border-top-color: #63b3ed; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .wrap-table.busy { opacity: .5; pointer-events: none; transition: opacity .1s; }
 </style>
 </head>
 <body>
+<div id="loader"><span class="spin"></span><span id="loaderText">Loading…</span></div>
 <header>
   <div class="row">
     <select id="file"></select>
@@ -624,6 +918,7 @@ namespace FBMMultiMessenger.Api.Controllers
     <span id="pageInfo"></span>
     <button id="next" class="secondary">Next</button>
     <label>page size <input type="number" id="pageSize" value="50" min="1" max="200" /></label>
+    <span class="totals" id="totals"></span>
   </div>
   <div class="meta" id="meta"></div>
 </header>
@@ -633,15 +928,51 @@ namespace FBMMultiMessenger.Api.Controllers
     <tbody id="body"></tbody>
   </table>
 </div>
+<div id="modal">
+  <div id="modalCard">
+    <div id="modalHead">
+      <span id="modalTitle"></span>
+      <button id="modalCopy" class="secondary">Copy</button>
+      <button id="modalClose">Close</button>
+    </div>
+    <pre id="modalBody"></pre>
+  </div>
+</div>
 <script>
   const BASE = location.pathname.replace(/\/+$/, '');
   const LOG_BASE = BASE.replace(/\/http-request-audit$/, '');
   const $ = (id) => document.getElementById(id);
   let page = 1;
+  let sortBy = '';      // '' = default (time, controlled by "newest first")
+  let sortDir = 'desc';
+  let currentRows = []; // the rows for the current page (full values, for the modal)
 
   function esc(s) {
     if (s == null) return '';
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Loader shown during fetches so the user can tell a filter/sort is in flight vs already applied.
+  let busyCount = 0;
+  function showLoader(text) {
+    busyCount++;
+    $('loaderText').textContent = text || 'Loading…';
+    $('loader').classList.add('show');
+    document.querySelector('.wrap-table').classList.add('busy');
+  }
+  function hideLoader() {
+    busyCount = Math.max(0, busyCount - 1);
+    if (busyCount === 0) {
+      $('loader').classList.remove('show');
+      document.querySelector('.wrap-table').classList.remove('busy');
+    }
+  }
+
+  function fmtBytes(n) {
+    n = Number(n) || 0;
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(2) + ' MB';
   }
 
   function attrEsc(s) {
@@ -674,10 +1005,9 @@ namespace FBMMultiMessenger.Api.Controllers
 
   function columnHeader(colKey) {
     const meta = COL_META[colKey] || { label: colKey, title: '' };
-    if (meta.title) {
-      return '<th title="' + attrEsc(meta.title) + '">' + esc(meta.label) + '</th>';
-    }
-    return '<th>' + esc(meta.label) + '</th>';
+    const arrow = sortBy === colKey ? ' <span class="arr">' + (sortDir === 'desc' ? '▼' : '▲') + '</span>' : '';
+    const t = meta.title ? ' title="' + attrEsc(meta.title) + ' — click to sort"' : ' title="click to sort"';
+    return '<th class="sortable" data-col="' + attrEsc(colKey) + '"' + t + '>' + esc(meta.label) + arrow + '</th>';
   }
 
   async function loadFiles() {
@@ -722,6 +1052,7 @@ namespace FBMMultiMessenger.Api.Controllers
     p.set('newestFirst', $('newest').checked ? 'true' : 'false');
     const tail = parseInt($('tail').value, 10) || 0;
     if (tail > 0) p.set('tail', String(tail));
+    if (sortBy) { p.set('sortBy', sortBy); p.set('sortDir', sortDir); }
     return p;
   }
 
@@ -733,30 +1064,37 @@ namespace FBMMultiMessenger.Api.Controllers
       $('body').innerHTML = '';
       return;
     }
+    showLoader($('search').value ? 'Searching…' : 'Filtering…');
     try {
       const res = await fetch(BASE + '/rows?' + queryParams().toString());
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       const cols = data.columns || [];
+      currentRows = data.rows || [];
       $('head').innerHTML = '<tr>' + cols.map(c => columnHeader(c)).join('') + '</tr>';
-      $('body').innerHTML = (data.rows || []).map(row => {
+      $('body').innerHTML = currentRows.map((row) => {
         return '<tr>' + cols.map(c => {
-          let v = row[c];
           if (c === 'requestBody' || c === 'responseBody') {
-            let cell = esc(v);
+            // Bodies aren't shipped with the grid — show a light "view" button that loads on click.
+            const which = c === 'requestBody' ? 'request' : 'response';
+            const size = Number(row[which + 'SizeBytes']) || 0;
+            if (size <= 0) return '<td class="bodycell">—</td>';
             const truncKey = c === 'requestBody' ? 'requestBodyTruncated' : 'responseBodyTruncated';
-            if (row[truncKey]) cell += ' <span class="trunc">(truncated in file)</span>';
-            return '<td class="body">' + cell + '</td>';
+            const trunc = row[truncKey] ? ' <span class="trunc">trunc</span>' : '';
+            return '<td class="bodycell"><button class="viewbtn" data-line="' + row.__line + '" data-which="' + which + '">view (' + fmtBytes(size) + ')</button>' + trunc + '</td>';
           }
-          return '<td>' + esc(v) + '</td>';
+          return '<td>' + esc(row[c]) + '</td>';
         }).join('') + '</tr>';
       }).join('');
       const pages = Math.max(1, Math.ceil((data.total || 0) / (data.pageSize || 50)));
       $('pageInfo').textContent = 'Page ' + data.page + ' / ' + pages + ' (' + data.total + ' rows)';
+      $('totals').innerHTML = 'totals (filtered): req <b>' + fmtBytes(data.totalRequestBytes) + '</b> · resp <b>' + fmtBytes(data.totalResponseBytes) + '</b>';
       $('meta').textContent = data.file;
       page = data.page;
     } catch (e) {
       $('meta').textContent = 'Failed: ' + e.message;
+    } finally {
+      hideLoader();
     }
   }
 
@@ -769,6 +1107,61 @@ namespace FBMMultiMessenger.Api.Controllers
   $('pageSize').addEventListener('change', () => { page = 1; loadRows(); });
   $('newest').addEventListener('change', () => { page = 1; loadRows(); });
   $('tail').addEventListener('input', () => { page = 1; loadRows(); });
+
+  // Sort by clicking a column header (toggles asc/desc on the same column).
+  $('head').addEventListener('click', (e) => {
+    const th = e.target.closest('th.sortable');
+    if (!th) return;
+    const col = th.getAttribute('data-col');
+    if (sortBy === col) {
+      sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      sortBy = col;
+      sortDir = 'desc';
+    }
+    page = 1;
+    loadRows();
+  });
+
+  // Click a "view" button to fetch that one body on demand and show it in the modal.
+  $('body').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.viewbtn');
+    if (!btn) return;
+    const lineNo = btn.getAttribute('data-line');
+    const which = btn.getAttribute('data-which');
+    openModal(which + ' body  —  line ' + lineNo, 'Loading…');
+    showLoader('Loading body…');
+    try {
+      const p = new URLSearchParams({ file: $('file').value, line: lineNo, which });
+      const res = await fetch(BASE + '/body?' + p.toString());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      let text = data.body == null ? '(empty)' : String(data.body);
+      if (data.truncated) text += '\n\n--- (truncated in file) ---';
+      $('modalBody').textContent = text;
+    } catch (err) {
+      $('modalBody').textContent = 'Failed to load body: ' + err.message;
+    } finally {
+      hideLoader();
+    }
+  });
+
+  function openModal(title, text) {
+    $('modalTitle').textContent = title;
+    $('modalBody').textContent = text == null ? '' : String(text);
+    $('modal').classList.add('show');
+  }
+  function closeModal() { $('modal').classList.remove('show'); }
+  $('modalClose').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  $('modalCopy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('modalBody').textContent || '');
+      $('modalCopy').textContent = 'Copied';
+      setTimeout(() => { $('modalCopy').textContent = 'Copy'; }, 1200);
+    } catch (e) { /* clipboard blocked */ }
+  });
 
   (async () => { await loadFiles(); await loadRows(); })();
 </script>
