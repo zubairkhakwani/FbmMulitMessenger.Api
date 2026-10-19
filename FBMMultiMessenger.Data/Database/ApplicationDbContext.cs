@@ -76,6 +76,12 @@ namespace FBMMultiMessenger.Data.DB
 
                 );
 
+            modelBuilder.Entity<Subscription>()
+                .HasOne(s => s.LastUpdatedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.LastUpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<Account>()
                 .HasOne(a => a.AccountGroup)
                 .WithMany(g => g.Accounts)

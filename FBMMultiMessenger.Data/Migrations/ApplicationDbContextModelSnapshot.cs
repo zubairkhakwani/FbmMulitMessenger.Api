@@ -800,6 +800,12 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<bool>("IsTrial")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("LastUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("LastUpdatedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("LimitUsed")
                         .HasColumnType("integer");
 
@@ -819,6 +825,8 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastUpdatedByUserId");
 
                     b.HasIndex("UserId");
 
@@ -1247,11 +1255,18 @@ namespace FBMMultiMessenger.Data.Migrations
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Subscription", b =>
                 {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "LastUpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("LastUpdatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
                         .WithMany("Subscriptions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("User");
                 });

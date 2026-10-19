@@ -14,6 +14,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public DateTime StartedAt { get; set; }
         public DateTime ExpiredAt { get; set; }
 
+        /// <summary>When an admin last changed this subscription (limit, expiry, or cancel).</summary>
+        public DateTime? LastUpdatedAt { get; set; }
+
+        [ForeignKey(nameof(LastUpdatedByUser))]
+        public int? LastUpdatedByUserId { get; set; }
+
         /// <remarks>
         /// This property gets mapped to the PostgreSQL xmin system column for the sake of enabling concurrency on the given entity.
         /// </remarks>
@@ -26,8 +32,7 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
 
         //Navigation Properties
-        public User User { get; set; }
+        public User User { get; set; } = null!;
+        public User? LastUpdatedByUser { get; set; }
     }
 }
-
-
