@@ -27,6 +27,9 @@ let pendingMessages = [];
 let messageQueue = [];
 let isProcessingMessage = false;
 
+// Set true when content/background marks this tab as the dedicated Messenger tab (SHOW_FBM_DND).
+let isDedicatedMessengerTab = false;
+
 let globalDefaultTemplate = `{
     "root": {
         "children": [{
@@ -205,6 +208,7 @@ window.addEventListener("message", (event) => {
     }
 
     if (event.data.type === 'SHOW_FBM_DND') {
+        isDedicatedMessengerTab = true;
         showDoNotDisturbBanner();
     }
 });
@@ -1024,7 +1028,8 @@ setTimeout(async () => {
     }
     // Robo injects __FBM_AUTO_OPEN_MESSENGER__ into this file when packing (Browser Launch only).
     console.log(`FBM AUTO OPEN MESSENGER ${__FBM_AUTO_OPEN_MESSENGER__}`)
-    if (typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined' && __FBM_AUTO_OPEN_MESSENGER__) {
+
+    if (isDedicatedMessengerTab &&  typeof __FBM_AUTO_OPEN_MESSENGER__ !== 'undefined' && __FBM_AUTO_OPEN_MESSENGER__) {
 
         const timeToScroll = .2 * 60 * 1000; // 12 seconds
 
