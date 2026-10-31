@@ -1,4 +1,4 @@
-﻿// Import SignalR library
+// Import SignalR library
 
 importScripts("./signalr.min.js");
 
@@ -84,6 +84,7 @@ self.clearLogs = async function () {
 
 console.log('Scrapping Background script running.');
 
+//var remoteApiUrl = "https://localhost:7095";
 //var remoteApiUrl = "https://api.fbmmessenger.com";
 var remoteApiUrl = "https://messenger.ekarobar360.com";
 var remoteAPISignalRUrl = `${remoteApiUrl}/chathub`;
@@ -606,6 +607,11 @@ async function handleMessage(request, sender, sendResponse) {
             return true;
         }
 
+        if (!accountId) {
+            console.log('no account id so not syncing.. returning from sendRawChunkToApi');
+            return;
+        }
+
         console.log("sending sendRawChunkToApi: ", request.detail);
 
         const payload = {
@@ -934,6 +940,15 @@ async function loginToApi(usernameOrKey, password = null) {
 }
 
 
+// Gzip a string in the service worker (CompressionStream is available in MV3). Returns an ArrayBuffer.
+async function gzipString(str) {
+    const stream = new Response(str).body.pipeThrough(new CompressionStream('gzip'));
+    return await new Response(stream).arrayBuffer();
+}
+
+// Only compress bodies large enough to benefit — sync chunks are big; status/register calls are tiny.
+const GZIP_MIN_BODY_CHARS = 1024;
+
 // Helper: authenticated fetch wrapper
 async function apiFetch(url, options = {}) {
     const authHeaders = {};
@@ -943,14 +958,30 @@ async function apiFetch(url, options = {}) {
         authHeaders['Authorization'] = `Bearer ${authToken}`;
     }
 
+    const headers = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...authHeaders,
+        ...(options.headers || {}),
+    };
+
+    // Gzip large JSON request bodies to cut egress (dominated by /api/sync). The server decompresses
+    // transparently. If compression fails for any reason, fall back to the raw string body.
+    let body = options.body;
+    if (typeof body === 'string' && body.length > GZIP_MIN_BODY_CHARS) {
+        try {
+            body = await gzipString(body);
+            headers['Content-Encoding'] = 'gzip';
+        } catch (e) {
+            body = options.body;
+            delete headers['Content-Encoding'];
+        }
+    }
+
     return fetch(url, {
         ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            ...authHeaders,
-            ...(options.headers || {}),
-        },
+        headers,
+        body,
     });
 }
 

@@ -30,6 +30,9 @@ namespace FBMMultiMessenger.Api
 
                 // Add services to the container.
                 builder.Services.AddControllers();
+                // Transparently decompress gzip/brotli/deflate request bodies (the extension gzips large
+                // /api/sync chunks to cut egress). The handler reads the original JSON unchanged.
+                builder.Services.AddRequestDecompression();
                 builder.Services.RegisterDatabase(builder.Configuration);
                 builder.Services.AddSwagger();
                 builder.Services.RegisterMediatR();
@@ -120,6 +123,9 @@ namespace FBMMultiMessenger.Api
                 app.UseAuthentication();
                 app.UseAuthorization();
                 app.UseHttpRequestAudit();
+                // After the audit so it records the real on-the-wire (compressed) request size; before
+                // MapControllers so model binding receives the decompressed JSON.
+                app.UseRequestDecompression();
                 app.UseCors("AllowedOrigins");
                 app.UseStaticFiles();
                 app.MapHub<ChatHub>("/chathub");

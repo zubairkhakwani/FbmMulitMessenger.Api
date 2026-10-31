@@ -867,6 +867,7 @@ namespace FBMMultiMessenger.Api.Controllers
   .viewbtn:hover { filter: brightness(1.25); }
   tr:nth-child(even) { background: #12151c; }
   .trunc { color: #f6ad55; font-size: 11px; }
+  .szhint { color: #7f8896; font-size: 11px; }
   .pager { display: flex; gap: 8px; align-items: center; }
   th.sortable { cursor: pointer; user-select: none; }
   th.sortable:hover { color: #fff; }
@@ -973,6 +974,16 @@ namespace FBMMultiMessenger.Api.Controllers
     if (n < 1024) return n + ' B';
     if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
     return (n / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  // Bracketed KB/MB/GB suffix for a raw byte count, e.g. " (12.3 MB)" — so byte columns/totals are
+  // readable at a glance. Empty for sub-KB values (the raw number already reads fine).
+  function brk(n) {
+    n = Number(n) || 0;
+    if (n >= 1024 * 1024 * 1024) return ' (' + (n / 1024 / 1024 / 1024).toFixed(1) + ' GB)';
+    if (n >= 1024 * 1024) return ' (' + (n / 1024 / 1024).toFixed(1) + ' MB)';
+    if (n >= 1024) return ' (' + (n / 1024).toFixed(1) + ' KB)';
+    return '';
   }
 
   function attrEsc(s) {
@@ -1083,12 +1094,19 @@ namespace FBMMultiMessenger.Api.Controllers
             const trunc = row[truncKey] ? ' <span class="trunc">trunc</span>' : '';
             return '<td class="bodycell"><button class="viewbtn" data-line="' + row.__line + '" data-which="' + which + '">view (' + fmtBytes(size) + ')</button>' + trunc + '</td>';
           }
+          if (c === 'requestSizeBytes' || c === 'responseSizeBytes') {
+            // Raw byte count plus a readable KB/MB/GB suffix so no manual conversion is needed.
+            const b = Number(row[c]) || 0;
+            return '<td>' + esc(row[c]) + '<span class="szhint">' + brk(b) + '</span></td>';
+          }
           return '<td>' + esc(row[c]) + '</td>';
         }).join('') + '</tr>';
       }).join('');
       const pages = Math.max(1, Math.ceil((data.total || 0) / (data.pageSize || 50)));
       $('pageInfo').textContent = 'Page ' + data.page + ' / ' + pages + ' (' + data.total + ' rows)';
-      $('totals').innerHTML = 'totals (filtered): req <b>' + fmtBytes(data.totalRequestBytes) + '</b> · resp <b>' + fmtBytes(data.totalResponseBytes) + '</b>';
+      const trq = Number(data.totalRequestBytes) || 0;
+      const trs = Number(data.totalResponseBytes) || 0;
+      $('totals').innerHTML = 'totals (filtered): req <b>' + trq.toLocaleString() + brk(trq) + '</b> · resp <b>' + trs.toLocaleString() + brk(trs) + '</b>';
       $('meta').textContent = data.file;
       page = data.page;
     } catch (e) {

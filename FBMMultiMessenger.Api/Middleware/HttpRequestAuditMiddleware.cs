@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -105,6 +106,27 @@ public sealed class HttpRequestAuditMiddleware
         var bytes = ms.ToArray();
 
         request.Body.Position = 0;
+
+        // Size is always the on-the-wire bytes (so the audit reflects real bandwidth). This runs before
+        // request-decompression middleware, so a gzipped request is still compressed here: decompress it
+        // for the stored body text only, keeping the reported size as the compressed length.
+        var contentEncoding = request.Headers.ContentEncoding.ToString();
+        if (bytes.Length > 0 && contentEncoding.Contains("gzip", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                using var compressed = new MemoryStream(bytes);
+                using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+                using var decompressed = new MemoryStream();
+                gzip.CopyTo(decompressed);
+                return (DecodeBody(decompressed.ToArray(), request.ContentType), bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                // Fall through to storing the raw (compressed) bytes if decompression fails.
+            }
+        }
+
         return (DecodeBody(bytes, request.ContentType), bytes.Length);
     }
 
