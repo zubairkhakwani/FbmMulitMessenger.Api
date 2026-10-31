@@ -101,6 +101,7 @@ var lastRegistrationLimitExceeded = false;
 var registrationBlocked = false;
 var __FBM_AUTO_OPEN_MESSENGER__ = "%%FBM_AUTO_OPEN_MESSENGER%%";
 var __FBM_ROBO_API_KEY__ = "%%FBM_ROBO_API_KEY%%";
+var messengerTabId = null; // dedicated tab for send/listing — leave other FB tabs alone
 
 function isAuthenticated() {
     return !!(apiKey || authToken);
@@ -386,23 +387,95 @@ async function handleForceDisconnect() {
 }
 
 
+async function setMessengerTabId(tabId) {
+    messengerTabId = tabId;
+    await chrome.storage.local.set({ messengerTabId: tabId });
+}
+
+async function clearMessengerTabId() {
+    messengerTabId = null;
+    await chrome.storage.local.remove('messengerTabId');
+}
+
+async function markManagedMessengerTab(tabId) {
+    try {
+        await chrome.tabs.sendMessage(tabId, { action: 'showDoNotDisturb' });
+    } catch (e) { }
+}
+
+// Wait until the tab finishes loading.
+async function waitForTabLoaded(tabId, timeoutMs = 60000) {
+    return new Promise((resolve) => {
+        let done = false;
+        const finish = () => {
+            if (done) return;
+            done = true;
+            try { chrome.tabs.onUpdated.removeListener(onUpdated); } catch (e) { }
+            resolve();
+        };
+
+        const timer = setTimeout(finish, timeoutMs);
+
+        function onUpdated(id, changeInfo) {
+            if (id === tabId && changeInfo.status === 'complete') {
+                clearTimeout(timer);
+                finish();
+            }
+        }
+
+        chrome.tabs.onUpdated.addListener(onUpdated);
+
+        chrome.tabs.get(tabId).then((tab) => {
+            if (tab && tab.status === 'complete') {
+                clearTimeout(timer);
+                finish();
+            }
+        }).catch(() => {
+            clearTimeout(timer);
+            finish();
+        });
+    });
+}
+
+// One dedicated Messenger tab for send/listing. Create it if missing; do not use other FB tabs.
+async function getMessengerTab(fbChatId) {
+    if (messengerTabId) {
+        try {
+            const existing = await chrome.tabs.get(messengerTabId);
+            if (existing) {
+                console.log('[getMessengerTab] reusing managed tab', messengerTabId, existing.url);
+                await markManagedMessengerTab(messengerTabId);
+                return existing;
+            }
+        } catch (e) {
+            await clearMessengerTabId();
+        }
+    }
+
+    const url = `https://www.facebook.com/messages/t/${fbChatId || ''}`;
+    console.log('[getMessengerTab] creating managed tab', url);
+    const tab = await chrome.tabs.create({ url });
+    await setMessengerTabId(tab.id);
+    await waitForTabLoaded(tab.id);
+    // Brief beat so content/inject scripts attach after 'complete'.
+    await delay(500);
+    await markManagedMessengerTab(tab.id);
+    return tab;
+}
+
 async function GetListingInfoRequest(request) {
     console.log("GetListingInfoRequest");
 
-    const facebookTabs = await chrome.tabs.query({
-        url: "*://*.facebook.com/*",
-    });
+    const tab = await getMessengerTab(request && request.fbChatId);
+    if (!tab?.id) return;
 
-    if (facebookTabs.length > 0) {
-        try {
-            await chrome.tabs.sendMessage(facebookTabs[0].id, {
-                action: "getListingInfoRequest",
-                data: request,
-            });
-            return;
-        } catch (error) {
-            console.log("Could not send default message to first tab:", facebookTabs[0].id);
-        }
+    try {
+        await chrome.tabs.sendMessage(tab.id, {
+            action: "getListingInfoRequest",
+            data: request,
+        });
+    } catch (error) {
+        console.log("Could not send listing info request to tab:", tab.id);
     }
 }
 
@@ -420,21 +493,16 @@ async function handleIncomingMessage(sendChatMessageRequest) {
     }
     console.log("processed media done.");
 
-    const activeTabs = await chrome.tabs.query({
-        url: "*://*.facebook.com/*",
+    const tab = await getMessengerTab(sendChatMessageRequest.fbChatId);
+    if (!tab?.id) return;
 
-    });
-
-    if (activeTabs.length > 0) {
-        try {
-            await chrome.tabs.sendMessage(activeTabs[0].id, {
-                action: "sendMessageToFacebook",
-                data: sendChatMessageRequest,
-            });
-            return;
-        } catch (error) {
-            console.log("Could not send message coming from our app to facebook:", activeTabs[0].id);
-        }
+    try {
+        await chrome.tabs.sendMessage(tab.id, {
+            action: "sendMessageToFacebook",
+            data: sendChatMessageRequest,
+        });
+    } catch (error) {
+        console.log("Could not send message coming from our app to facebook:", tab.id);
     }
 }
 
@@ -447,6 +515,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
 async function handleMessage(request, sender, sendResponse) {
+    if (request.key === 'isManagedMessengerTab') {
+        sendResponse({
+            managed: !!(sender.tab && sender.tab.id === messengerTabId),
+            hasManaged: !!messengerTabId,
+        });
+        return true;
+    }
+
     if (request.key === 'getFbmLogs') {
         let logs = [];
         try {
@@ -890,10 +966,11 @@ async function apiFetch(url, options = {}) {
 
 
 async function loadAccountId() {
-    const result = await chrome.storage.local.get(['accountId', 'fbAccountId']);
+    const result = await chrome.storage.local.get(['accountId', 'fbAccountId', 'messengerTabId']);
     accountId = result.accountId || null;
     currentFbAccountId = result.fbAccountId || null;
-    console.log('Loaded accountId from storage:', accountId, 'fbAccountId:', currentFbAccountId);
+    messengerTabId = result.messengerTabId || null;
+    console.log('Loaded accountId from storage:', accountId, 'fbAccountId:', currentFbAccountId, 'messengerTabId:', messengerTabId);
 }
 
 
@@ -1028,6 +1105,11 @@ async function hasAnyFacebookTab() {
 
 // Disconnect SignalR when all FB tabs are closed
 chrome.tabs.onRemoved.addListener(async (tabId) => {
+    if (tabId === messengerTabId) {
+        console.log('Managed Messenger tab closed.');
+        await clearMessengerTabId();
+    }
+
     const hasFbTab = await hasAnyFacebookTab();
     if (!hasFbTab) {
         console.log('All FB tabs closed, disconnecting SignalR.');

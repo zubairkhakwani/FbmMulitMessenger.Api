@@ -18,18 +18,14 @@ namespace FBMMultiMessenger.Api
             {
                 var builder = WebApplication.CreateBuilder(args);
 
-                var logger = new LoggerConfiguration()
-                                .MinimumLevel.Debug()
-                                .CreateLogger();
                 builder.Logging.ClearProviders();
                 builder.Logging.AddSerilog();
+
                 builder.Host.UseSerilog((ctx, lc) => lc
-               .WriteTo.Console(LogEventLevel.Error)
-               .WriteTo.File(path: "Logs\\debug-.txt", rollingInterval: RollingInterval.Day)
-               .WriteTo.File(path: "Logs\\info-.txt", restrictedToMinimumLevel: LogEventLevel.Information, rollingInterval: RollingInterval.Day)
-               .WriteTo.File(path: "Logs\\error-.txt", restrictedToMinimumLevel: LogEventLevel.Error, rollingInterval: RollingInterval.Day)
-                .WriteTo.File(path: "Logs\\fatal-.txt", restrictedToMinimumLevel: LogEventLevel.Fatal, rollingInterval: RollingInterval.Day)
-               .WriteTo.File("Logs\\log-.txt", rollingInterval: RollingInterval.Day));
+                    .MinimumLevel.Error()
+                    .WriteTo.Console(LogEventLevel.Error)
+                    .WriteTo.File(path: "Logs\\error-.txt", restrictedToMinimumLevel: LogEventLevel.Error, rollingInterval: RollingInterval.Day)
+                    .WriteTo.File(path: "Logs\\fatal-.txt", restrictedToMinimumLevel: LogEventLevel.Fatal, rollingInterval: RollingInterval.Day));
 
 
                 // Add services to the container.

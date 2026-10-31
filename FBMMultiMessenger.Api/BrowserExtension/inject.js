@@ -203,7 +203,28 @@ window.addEventListener("message", (event) => {
         var data = event.data.data;
         SyncListingInfo(data.fbChatId, data.chatId);
     }
+
+    if (event.data.type === 'SHOW_FBM_DND') {
+        showDoNotDisturbBanner();
+    }
 });
+
+function showDoNotDisturbBanner() {
+    if (window.top !== window) return;
+    if (document.getElementById('fbm-dnd-banner')) return;
+
+    const el = document.createElement('div');
+    el.id = 'fbm-dnd-banner';
+    el.innerHTML =
+        '<div style="font-size:18px;font-weight:800;letter-spacing:.02em;margin-bottom:8px;">⚠ DO NOT DISTURB THIS TAB</div>' +
+        '<div style="font-size:15px;font-weight:600;line-height:1.45;">FBM Messenger uses this tab to send your Facebook messages. ' +
+        'Do not close or browse here — open another tab instead. Closing this tab will stop messaging.</div>';
+    el.style.cssText =
+        'position:fixed;top:16px;right:16px;z-index:2147483647;width:420px;max-width:calc(100vw - 32px);' +
+        'padding:18px 20px;background:#b36b00;color:#fff;border:3px solid #ffcc66;border-radius:12px;' +
+        'font-family:Segoe UI,Arial,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.45);';
+    (document.body || document.documentElement).appendChild(el);
+}
 
 async function processMessage(messageData, fbChatId) {
     return new Promise(async (resolve) => {

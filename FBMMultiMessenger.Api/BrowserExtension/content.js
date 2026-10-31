@@ -8,10 +8,16 @@ root.addEventListener("notifyAccountAuthState", function (e) {
     });
 });
 
+// Only the managed Messenger tab may sync chat chunks once it exists (avoids duplicate inserts).
 root.addEventListener("sendRawChunkToApi", function (e) {
-    chrome.runtime.sendMessage({
-        key: "sendRawChunkToApi",
-        detail: e.detail,
+    const detail = e.detail;
+    chrome.runtime.sendMessage({ key: 'isManagedMessengerTab' }, function (resp) {
+        if (chrome.runtime.lastError) return;
+        if (resp && resp.hasManaged && !resp.managed) return;
+        chrome.runtime.sendMessage({
+            key: "sendRawChunkToApi",
+            detail: detail,
+        });
     });
 });
 
@@ -66,7 +72,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         renderFbmLogsOverlay(request.logs || []);
         sendResponse({ success: true });
     }
+
+    if (request.action === 'showDoNotDisturb') {
+        if (window.top === window) {
+            window.postMessage({ type: 'SHOW_FBM_DND' }, '*');
+        }
+        sendResponse({ success: true });
+    }
 });
+
+// After refresh: if this is still the managed Messenger tab, restore the DND banner.
+if (window.top === window) {
+    chrome.runtime.sendMessage({ key: 'isManagedMessengerTab' }, function (resp) {
+        if (resp && resp.managed) {
+            window.postMessage({ type: 'SHOW_FBM_DND' }, '*');
+        }
+    });
+}
 
 
 // Renders the extension's captured background logs as a popup on the page (top frame only). DOM-based, so
