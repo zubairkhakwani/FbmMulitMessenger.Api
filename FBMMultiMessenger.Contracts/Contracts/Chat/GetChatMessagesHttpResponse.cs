@@ -15,6 +15,8 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsImageMessage { get; set; }
         public bool IsAudioMessage { get; set; }
         public bool IsSent { get; set; }
+        /// <summary>True when this outbound message was produced by AI auto-reply.</summary>
+        public bool IsAiMessage { get; set; }
         public string UniqueId { get; set; } = string.Empty;
         public bool Sending { get; set; }
         public MessageReplyHttpResponse? MessageReply { get; set; }

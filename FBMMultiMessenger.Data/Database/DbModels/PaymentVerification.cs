@@ -16,6 +16,10 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         [ForeignKey(nameof(Subscription))]
         public int? SubscriptionId { get; set; }
         public int AccountLimit { get; set; }
+
+        /// <summary>Auto-reply messages requested with this proof (0 = not purchased).</summary>
+        public int AutoReplyMessageLimit { get; set; }
+
         public decimal PurchasePrice { get; set; }
         public decimal ActualPrice { get; set; }
         public decimal BasePricePerMonth { get; set; }

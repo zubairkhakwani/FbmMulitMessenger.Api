@@ -126,6 +126,24 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.ToTable("AccountGroups");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AccountProduct", b =>
+                {
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AccountId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("AccountProducts");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AdminFcmToken", b =>
                 {
                     b.Property<int>("Id")
@@ -203,6 +221,31 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.ToTable("ApiKeys");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AutoReplyPricingTier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AnnualPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("MonthlyPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("SemiAnnualPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("UptoMessages")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AutoReplyPricingTiers");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Chat", b =>
                 {
                     b.Property<int>("Id")
@@ -241,6 +284,9 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<string>("FbUserId")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsAutoReplyActive")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsFavorite")
                         .HasColumnType("boolean");
@@ -306,6 +352,9 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     b.Property<string>("FbMessageReplyId")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsAiMessage")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsAudioMessage")
                         .HasColumnType("boolean");
@@ -537,6 +586,9 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("AutoReplyMessageLimit")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("BasePricePerMonth")
                         .HasColumnType("numeric");
 
@@ -672,6 +724,113 @@ namespace FBMMultiMessenger.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ListingTitles")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ProductQa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IntentKey")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("QuestionVariants")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductQas");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
                 {
                     b.Property<int>("Id")
@@ -765,6 +924,10 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AiSystemPrompt")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -788,11 +951,20 @@ namespace FBMMultiMessenger.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AutoReplyLimitUsed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AutoReplyMaxLimit")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("CanRunOnOurServer")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("ExpiredAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasAutoReply")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -836,8 +1008,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 1,
+                            AutoReplyLimitUsed = 0,
+                            AutoReplyMaxLimit = 0,
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            HasAutoReply = false,
                             IsActive = false,
                             IsTrial = false,
                             LimitUsed = 0,
@@ -849,8 +1024,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 2,
+                            AutoReplyLimitUsed = 0,
+                            AutoReplyMaxLimit = 0,
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            HasAutoReply = false,
                             IsActive = false,
                             IsTrial = false,
                             LimitUsed = 0,
@@ -862,8 +1040,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 3,
+                            AutoReplyLimitUsed = 0,
+                            AutoReplyMaxLimit = 0,
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            HasAutoReply = false,
                             IsActive = false,
                             IsTrial = false,
                             LimitUsed = 0,
@@ -875,8 +1056,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 4,
+                            AutoReplyLimitUsed = 0,
+                            AutoReplyMaxLimit = 0,
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            HasAutoReply = false,
                             IsActive = false,
                             IsTrial = false,
                             LimitUsed = 0,
@@ -888,8 +1072,11 @@ namespace FBMMultiMessenger.Data.Migrations
                         new
                         {
                             Id = 5,
+                            AutoReplyLimitUsed = 0,
+                            AutoReplyMaxLimit = 0,
                             CanRunOnOurServer = false,
                             ExpiredAt = new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            HasAutoReply = false,
                             IsActive = false,
                             IsTrial = false,
                             LimitUsed = 0,
@@ -907,6 +1094,9 @@ namespace FBMMultiMessenger.Data.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AutoReplyMaxLimit")
+                        .HasColumnType("integer");
 
                     b.Property<int>("DurationDays")
                         .HasColumnType("integer");
@@ -1147,6 +1337,25 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.AccountProduct", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Account", "Account")
+                        .WithMany("AccountProducts")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Product", "Product")
+                        .WithMany("AccountProducts")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ApiKey", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -1242,6 +1451,39 @@ namespace FBMMultiMessenger.Data.Migrations
                     b.Navigation("PaymentVerification");
                 });
 
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Product", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ProductImage", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.ProductQa", b =>
+                {
+                    b.HasOne("FBMMultiMessenger.Data.Database.DbModels.Product", "Product")
+                        .WithMany("Qas")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>
                 {
                     b.HasOne("FBMMultiMessenger.Data.Database.DbModels.User", "User")
@@ -1295,6 +1537,8 @@ namespace FBMMultiMessenger.Data.Migrations
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Account", b =>
                 {
+                    b.Navigation("AccountProducts");
+
                     b.Navigation("Chats");
                 });
 
@@ -1321,6 +1565,15 @@ namespace FBMMultiMessenger.Data.Migrations
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.PaymentVerification", b =>
                 {
                     b.Navigation("PaymentVerificationImages");
+                });
+
+            modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Product", b =>
+                {
+                    b.Navigation("AccountProducts");
+
+                    b.Navigation("Images");
+
+                    b.Navigation("Qas");
                 });
 
             modelBuilder.Entity("FBMMultiMessenger.Data.Database.DbModels.Proxy", b =>

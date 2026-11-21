@@ -11,11 +11,7 @@ namespace FBMMultiMessenger.Buisness.Authentication
     {
         private readonly AesEncryptionHelper _aesEncryptionHelper;
 
-        public ApiKeyAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-            ILoggerFactory logger,
-            UrlEncoder encoder,
-            AesEncryptionHelper aesEncryptionHelper)
-            : base(options, logger, encoder)
+        public ApiKeyAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, AesEncryptionHelper aesEncryptionHelper) : base(options, logger, encoder)
         {
             _aesEncryptionHelper = aesEncryptionHelper;
         }

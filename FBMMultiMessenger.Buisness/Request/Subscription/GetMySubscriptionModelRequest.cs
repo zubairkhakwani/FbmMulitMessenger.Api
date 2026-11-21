@@ -17,6 +17,10 @@ namespace FBMMultiMessenger.Buisness.Request.Subscription
         public int MaxLimit { get; set; }
         public int LimitUsed { get; set; }
 
+        public bool HasAutoReply { get; set; }
+        public int AutoReplyMaxLimit { get; set; }
+        public int AutoReplyLimitUsed { get; set; }
+
         public bool HasActiveSubscription { get; set; }
         public bool IsExpired { get; set; }
         public DateTime StartedAt { get; set; }

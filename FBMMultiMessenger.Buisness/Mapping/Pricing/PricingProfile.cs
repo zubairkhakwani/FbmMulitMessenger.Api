@@ -11,6 +11,7 @@ namespace FBMMultiMessenger.Buisness.Mapping.Pricing
         {
             CreateMap<GetAllPricingModelResponse, GetAllPricingHttpResponse>();
             CreateMap<PricingTierModelResponse, PricingTierHttpResponse>();
+            CreateMap<AutoReplyPricingTierModelResponse, AutoReplyPricingTierHttpResponse>();
             CreateMap<AccountDetailsModelResponse, AccountDetailsHttpResponse>();
             CreateMap<PricingTierAvailabilityModelResponse, PricingTierAvailabilityHttpResponse>();
             CreateMap<BaseResponse<GetAllPricingModelResponse>, BaseResponse<GetAllPricingHttpResponse>>();

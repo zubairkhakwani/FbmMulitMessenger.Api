@@ -25,10 +25,18 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
         private readonly ChatHub _chatHub;
         private readonly OneSignalService _oneSignalNotificationService;
         private readonly IMediator mediator;
+        private readonly ChatAutoReplyOrchestrator _chatAutoReplyOrchestrator;
         private static readonly ConcurrentDictionary<string, DateTime> _processedOTIDs = new ConcurrentDictionary<string, DateTime>();
         private static DateTime _lastCleanup = DateTime.UtcNow;
 
-        public HandleChatModeRequestHandler(ApplicationDbContext dbContext, CurrentUserService currentUserService, ISignalRService signalRService, ChatHub chatHub, OneSignalService oneSignalNotificationService, IMediator mediator)
+        public HandleChatModeRequestHandler(
+            ApplicationDbContext dbContext,
+            CurrentUserService currentUserService,
+            ISignalRService signalRService,
+            ChatHub chatHub,
+            OneSignalService oneSignalNotificationService,
+            IMediator mediator,
+            ChatAutoReplyOrchestrator chatAutoReplyOrchestrator)
         {
             this._dbContext = dbContext;
             this._currentUserService=currentUserService;
@@ -36,6 +44,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             this._chatHub = chatHub;
             this._oneSignalNotificationService = oneSignalNotificationService;
             this.mediator = mediator;
+            this._chatAutoReplyOrchestrator = chatAutoReplyOrchestrator;
         }
         public async Task<BaseResponse<HandleChatModelResponse>> Handle(HandleChatModelRequest request, CancellationToken cancellationToken)
         {
@@ -176,6 +185,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsVideoMessage = request.IsVideoMessage,
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
+                IsAiMessage = !request.IsReceived
+                    && ChatMessagesHelper.IsAiOfflineUniqueId(request.OfflineUniqueId),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 FbMessageId = request.FbMessageId,
@@ -209,7 +220,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
             if (!isSubscriptionExpired)
             {
-                await SendMessageToAppAsync(request, chatReference!, newChatMessage.Id, newChatMessage.CreatedAt, newChatMessage.FBTimestamp, dbMessage, cancellationToken);
+                await SendMessageToAppAsync(
+                    request,
+                    chatReference!,
+                    newChatMessage.Id,
+                    newChatMessage.CreatedAt,
+                    newChatMessage.FBTimestamp,
+                    dbMessage,
+                    newChatMessage.IsAiMessage,
+                    cancellationToken);
             }
 
             if (string.IsNullOrWhiteSpace(chatReference.FbListingId) || string.IsNullOrWhiteSpace(chatReference.FBListingImage) || string.IsNullOrWhiteSpace(chatReference.UserProfileImage) || string.IsNullOrWhiteSpace(chatReference.FbListingTitle))
@@ -245,6 +264,25 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
 
                     await mediator.Send(defaultMessageRequest, cancellationToken);
                 }
+            }
+
+            // AI product auto-reply (listing title → product match). Skip welcome-chat default path
+            // and non-text so we don't double-message or invent captions for media-only inbound.
+            if (!isSubscriptionExpired
+                && activeSubscription.HasAutoReply
+                && activeSubscription.AutoReplyLimitUsed < activeSubscription.AutoReplyMaxLimit
+                && request.IsReceived
+                && !request.IsNewChatStarted
+                && request.IsTextMessage
+                && chatReference.IsAutoReplyActive
+                && chatReference.AccountId is int autoAccountId
+                && !string.IsNullOrWhiteSpace(dbMessage))
+            {
+                _chatAutoReplyOrchestrator.Enqueue(
+                    chatReference.Id,
+                    autoAccountId,
+                    currentUser.Id,
+                    dbMessage.Trim());
             }
 
             var responseMessage = isSubscriptionExpired ? "Message received, but the user's subscription has expired." : "Message has been received successfully";
@@ -306,7 +344,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
             }
         }
 
-        private async Task SendMessageToAppAsync(HandleChatModelRequest request, Chat chat, int chatMessageId, DateTime CreatedAt, long? fbTimeStamp, string message, CancellationToken cancellationToken)
+        private async Task SendMessageToAppAsync(
+            HandleChatModelRequest request,
+            Chat chat,
+            int chatMessageId,
+            DateTime CreatedAt,
+            long? fbTimeStamp,
+            string message,
+            bool isAiMessage,
+            CancellationToken cancellationToken)
         {
             var chatMessage = await _dbContext.ChatMessages
                                               .Include(cm => cm.Chat)
@@ -352,6 +398,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                 IsImageMessage = request.IsImageMessage,
                 IsAudioMessage = request.IsAudioMessage,
                 IsReceived = request.IsReceived,
+                IsAiMessage = isAiMessage,
                 MessageReply = messageReply,
                 CreatedAt = CreatedAt,
                 FbTimestamp = fbTimeStamp,

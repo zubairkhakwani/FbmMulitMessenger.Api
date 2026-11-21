@@ -64,6 +64,34 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
 
             userPurchasedPrice = userPurchasedPrice * months;
 
+            var autoReplyMessageLimit = 0;
+
+            if (request.AutoReplyPricingTierId is int autoReplyTierId)
+            {
+                var autoReplyTier = await _dbContext.AutoReplyPricingTiers
+                    .FirstOrDefaultAsync(p => p.Id == autoReplyTierId, cancellationToken);
+
+                if (autoReplyTier is null)
+                {
+                    return BaseResponse<AddPaymentProofModelResponse>.Error(
+                        "Invalid auto-reply plan selected. Please choose a valid plan and try again.");
+                }
+
+                autoReplyMessageLimit = autoReplyTier.UptoMessages;
+
+                // AI pack prices are period totals as stored — do not multiply by months.
+                var autoReplyCyclePrice = request.BillingCylce switch
+                {
+                    BillingCylce.Monthly => autoReplyTier.MonthlyPrice,
+                    BillingCylce.SemiAnnual => autoReplyTier.SemiAnnualPrice,
+                    BillingCylce.Annual => autoReplyTier.AnnualPrice,
+                    _ => 0
+                };
+
+                userPurchasedPrice += autoReplyCyclePrice;
+                actualPurchasePrice += autoReplyCyclePrice;
+            }
+
             if (userPurchasedPrice != request.PurchasedPrice)
             {
                 return BaseResponse<AddPaymentProofModelResponse>.Error("The purchased price does not match the selected pricing tier and billing cycle. Please review your selection and try again.");
@@ -103,6 +131,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Payment
                 var paymentVerification = new PaymentVerification()
                 {
                     AccountLimit = pricingTier.UptoAccounts,
+                    AutoReplyMessageLimit = autoReplyMessageLimit,
                     PurchasePrice = userPurchasedPrice,
                     ActualPrice = actualPurchasePrice,
                     BasePricePerMonth = basePricePerMonth,

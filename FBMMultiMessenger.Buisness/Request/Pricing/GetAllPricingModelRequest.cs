@@ -11,12 +11,21 @@ namespace FBMMultiMessenger.Buisness.Request.Pricing
     {
         public PricingTierAvailabilityModelResponse PricingTierAvailability { get; set; } = new PricingTierAvailabilityModelResponse();
         public List<PricingTierModelResponse> PricingTiers { get; set; } = new List<PricingTierModelResponse>();
+        public List<AutoReplyPricingTierModelResponse> AutoReplyPricingTiers { get; set; } = new List<AutoReplyPricingTierModelResponse>();
         public List<AccountDetailsModelResponse> AccountDetails { get; set; } = new List<AccountDetailsModelResponse>();
     }
     public class PricingTierModelResponse
     {
         public int Id { get; set; }
         public int UptoAccounts { get; set; }
+        public decimal MonthlyPrice { get; set; }
+        public decimal SemiAnnualPrice { get; set; }
+        public decimal AnnualPrice { get; set; }
+    }
+    public class AutoReplyPricingTierModelResponse
+    {
+        public int Id { get; set; }
+        public int UptoMessages { get; set; }
         public decimal MonthlyPrice { get; set; }
         public decimal SemiAnnualPrice { get; set; }
         public decimal AnnualPrice { get; set; }

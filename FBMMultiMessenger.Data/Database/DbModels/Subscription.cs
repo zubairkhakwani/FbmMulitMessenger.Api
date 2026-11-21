@@ -10,6 +10,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public int LimitUsed { get; set; }
         public bool IsActive { get; set; }
         public bool CanRunOnOurServer { get; set; } //tells whether this subscription can run browsers on our server or not.
+
+        /// <summary>True when this subscription includes AI auto-reply.</summary>
+        public bool HasAutoReply { get; set; }
+        public int AutoReplyMaxLimit { get; set; }
+        public int AutoReplyLimitUsed { get; set; }
+
         public bool IsTrial { get; set; }
         public DateTime StartedAt { get; set; }
         public DateTime ExpiredAt { get; set; }

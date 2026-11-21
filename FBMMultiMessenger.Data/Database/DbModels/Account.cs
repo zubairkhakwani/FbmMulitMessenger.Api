@@ -47,5 +47,6 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public Proxy? Proxy { get; set; }
         public AccountGroup? AccountGroup { get; set; }
         public List<Chat> Chats { get; set; } = new List<Chat>();
+        public List<AccountProduct> AccountProducts { get; set; } = new();
     }
 }

@@ -25,6 +25,8 @@ namespace FBMMultiMessenger.Buisness.Service
             var today = DateTime.UtcNow;
             var activeSubscription = subscriptions
                                          .Where(x =>
+                                            x.IsActive
+                                            &&
                                             x.StartedAt <= today
                                             &&
                                             x.ExpiredAt > today)

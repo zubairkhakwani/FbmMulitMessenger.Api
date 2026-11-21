@@ -56,6 +56,7 @@ namespace FBMMultiMessenger.Api
 
                 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
                 builder.Services.Configure<FirebaseSettings>(builder.Configuration.GetSection("Firebase"));
+                builder.Services.Configure<GeminiSettings>(builder.Configuration.GetSection("Gemini"));
 
                 var app = builder.Build();
 
@@ -140,6 +141,18 @@ namespace FBMMultiMessenger.Api
                     DiagnosticFileLogger.Append("app-lifetime.log", $"APP STOPPING  pid={Environment.ProcessId} (graceful shutdown begun)"));
                 app.Lifetime.ApplicationStopped.Register(() =>
                     DiagnosticFileLogger.Append("app-lifetime.log", $"APP STOPPED   pid={Environment.ProcessId}"));
+
+                // Warm Gemini system prompt into memory (seeds Settings.AiSystemPrompt when empty).
+                try
+                {
+                    var promptCache = app.Services.GetRequiredService<GeminiSystemPromptCache>();
+                    promptCache.WarmAsync(app.Services).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticFileLogger.Append("app-lifetime.log", $"AI prompt cache warm failed: {ex.Message}");
+                    SentrySdk.CaptureException(ex);
+                }
 
                 app.Run();
             }

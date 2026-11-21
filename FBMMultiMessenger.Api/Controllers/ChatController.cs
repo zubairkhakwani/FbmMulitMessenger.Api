@@ -90,14 +90,26 @@ namespace FBMMultiMessenger.Api.Controllers
         /// </summary>
         [Authorize]
         [HttpPost("{chatId}/list-organization")]
-        public async Task<BaseResponse<UpsertChatListOrganizationHttpResponse>> UpsertListOrganization(
-            [FromRoute] int chatId,
-            [FromBody] UpsertChatListOrganizationHttpRequest httpRequest)
+        public async Task<BaseResponse<UpsertChatListOrganizationHttpResponse>> UpsertListOrganization([FromRoute] int chatId, [FromBody] UpsertChatListOrganizationHttpRequest httpRequest)
         {
             var request = _mapper.Map<UpsertChatListOrganizationModelRequest>(httpRequest);
             request.ChatId = chatId;
             var response = await _mediator.Send(request);
             return _mapper.Map<BaseResponse<UpsertChatListOrganizationHttpResponse>>(response);
+        }
+
+        /// <summary>Per-chat AI auto-reply on/off.</summary>
+        [Authorize]
+        [HttpPost("{chatId}/auto-reply")]
+        public async Task<BaseResponse<SetChatAutoReplyActiveHttpResponse>> SetAutoReplyActive([FromRoute] int chatId, [FromBody] SetChatAutoReplyActiveHttpRequest httpRequest)
+        {
+            var response = await _mediator.Send(new SetChatAutoReplyActiveModelRequest
+            {
+                ChatId = chatId,
+                IsAutoReplyActive = httpRequest.IsAutoReplyActive,
+            });
+
+            return _mapper.Map<BaseResponse<SetChatAutoReplyActiveHttpResponse>>(response);
         }
     }
 }

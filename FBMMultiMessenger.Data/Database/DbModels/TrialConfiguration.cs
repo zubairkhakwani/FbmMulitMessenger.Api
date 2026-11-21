@@ -9,5 +9,8 @@
         public int MaxAccounts { get; set; }
 
         public int DurationDays { get; set; }
+
+        /// <summary>AI auto reply message quota granted on trial subscriptions. 0 = AI off for trial.</summary>
+        public int AutoReplyMaxLimit { get; set; }
     }
 }
