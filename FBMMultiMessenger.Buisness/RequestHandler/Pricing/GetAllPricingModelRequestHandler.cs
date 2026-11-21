@@ -25,6 +25,11 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
                                          .OrderBy(x => x.UptoAccounts)
                                          .ToListAsync(cancellationToken);
 
+            var autoReplyPricingTiers = await _dbContext
+                                         .AutoReplyPricingTiers
+                                         .OrderBy(x => x.UptoMessages)
+                                         .ToListAsync(cancellationToken);
+
             var response = new GetAllPricingModelResponse()
             {
                 PricingTierAvailability = new PricingTierAvailabilityModelResponse()
@@ -38,6 +43,14 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Pricing
                 {
                     Id = x.Id,
                     UptoAccounts = x.UptoAccounts,
+                    MonthlyPrice = x.MonthlyPrice,
+                    SemiAnnualPrice = x.SemiAnnualPrice,
+                    AnnualPrice = x.AnnualPrice
+                }).ToList(),
+                AutoReplyPricingTiers = autoReplyPricingTiers.Select(x => new AutoReplyPricingTierModelResponse()
+                {
+                    Id = x.Id,
+                    UptoMessages = x.UptoMessages,
                     MonthlyPrice = x.MonthlyPrice,
                     SemiAnnualPrice = x.SemiAnnualPrice,
                     AnnualPrice = x.AnnualPrice

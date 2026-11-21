@@ -46,6 +46,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public decimal? FbListingPrice { get; set; }
 
         public bool IsRead { get; set; }
+        public bool IsAutoReplyActive { get; set; } = true;
         public bool IsPinned { get; set; }
         public bool IsFavorite { get; set; }
         public int? PinOrder { get; set; }
@@ -78,6 +79,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+        public bool IsAiMessage { get; set; }
 
         /// <summary>When the other participant saw this sent message. Null = not seen.</summary>
         public DateTime? SeenAt { get; set; }

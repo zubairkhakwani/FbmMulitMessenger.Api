@@ -7,6 +7,15 @@ namespace FBMMultiMessenger.Buisness.Helpers
 {
     public static class ChatMessagesHelper
     {
+        public const string AiOfflineIdPrefix = "ai-";
+
+        public static string NewAiOfflineUniqueId() => AiOfflineIdPrefix + Guid.NewGuid().ToString();
+
+        public static bool IsAiOfflineUniqueId(string? offlineUniqueId) =>
+                                                                     !string.IsNullOrWhiteSpace(offlineUniqueId)
+                                                                     &&
+                                                                     offlineUniqueId.StartsWith(AiOfflineIdPrefix, StringComparison.OrdinalIgnoreCase);
+
         public static MessagePreviewResult GetMessagePreview(MessagePreviewRequest request)
         {
             var senderName = "You";

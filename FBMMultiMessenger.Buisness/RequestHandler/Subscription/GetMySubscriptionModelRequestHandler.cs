@@ -43,7 +43,10 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
             }
 
             var activeSubscription = userSubscriptions?
-                                                .Where(x => x.StartedAt <= today && x.ExpiredAt > today)
+                                                .Where(x =>
+                                                    x.IsActive
+                                                    && x.StartedAt <= today
+                                                    && x.ExpiredAt > today)
                                                 .OrderByDescending(x => x.StartedAt)
                                                 .FirstOrDefault();
 
@@ -53,6 +56,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Subscription
             {
                 MaxLimit = activeSubscription?.MaxLimit ?? 0,
                 LimitUsed  = activeSubscription?.LimitUsed ?? 0,
+                HasAutoReply = activeSubscription?.HasAutoReply ?? false,
+                AutoReplyMaxLimit = activeSubscription?.AutoReplyMaxLimit ?? 0,
+                AutoReplyLimitUsed = activeSubscription?.AutoReplyLimitUsed ?? 0,
                 StartedAt = activeSubscription?.StartedAt ?? new DateTime(),
                 ExpiredAt = activeSubscription?.ExpiredAt ?? new DateTime(),
             };

@@ -11,6 +11,9 @@ namespace FBMMultiMessenger.Buisness.Request.LocalServer
         public string OfflineUniqueId { get; set; } = string.Empty;
         public string? FbMessageReplyId { get; set; }
         public List<IFormFile>? Files { get; set; }
+
+        /// <summary>Already-stored relative paths under wwwroot (e.g. product photos).</summary>
+        public List<string>? ExistingMediaPaths { get; set; }
     }
 
     public class NotifyLocalServerModelResponse

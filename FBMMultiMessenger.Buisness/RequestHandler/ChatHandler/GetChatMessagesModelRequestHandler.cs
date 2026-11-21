@@ -79,6 +79,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.ChatHandler
                     IsVideoMessage = x.IsVideoMessage,
                     IsAudioMessage = x.IsAudioMessage,
                     IsSent = x.IsSent,
+                    IsAiMessage = x.IsAiMessage,
                     MessageReply = messageReply,
                     CreatedAt = x.CreatedAt,
                     FbTimeStamp = x.FBTimestamp,

@@ -29,6 +29,12 @@ namespace FBMMultiMessenger.Data.Database.DbModels
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
 
+        /// <summary>
+        /// True when this outbound message was produced by AI auto-reply.
+        /// Derived from OfflineUniqueId prefix at insert time; default false = user/app send.
+        /// </summary>
+        public bool IsAiMessage { get; set; }
+
         /// <summary>When the other participant read this (sent) message. Null = not seen yet.</summary>
         public DateTime? SeenAt { get; set; }
 

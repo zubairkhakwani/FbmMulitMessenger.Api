@@ -31,6 +31,9 @@ namespace FBMMultiMessenger.Data.Database.DbModels
 
         public bool IsRead { get; set; }
 
+        /// <summary>When true, AI auto-reply may run for this chat.</summary>
+        public bool IsAutoReplyActive { get; set; } = true;
+
         /// <summary>When true, chat stays at top of the user's list (ordered by PinOrder).</summary>
         public bool IsPinned { get; set; }
 

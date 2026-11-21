@@ -5,11 +5,6 @@ using FBMMultiMessenger.Contracts.Shared;
 using FBMMultiMessenger.Data.DB;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
 {
@@ -44,16 +39,17 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 return BaseResponse<GetMyProfileModelResponse>.Error("Invalid Request, User does not exist");
             }
 
-            var activeSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions)
-                                    ??
-                                    _userAccountService.GetLastActiveSubscription(user.Subscriptions);
+            var currentSubscription = _userAccountService.GetActiveSubscription(user.Subscriptions);
 
-            var formattedStartDate = activeSubscription?.StartedAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
-            var formattedExpiredAt = activeSubscription?.ExpiredAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
-            var hasActiveSubscription = activeSubscription?.ExpiredAt <= DateTime.UtcNow;
+            var displaySubscription = currentSubscription
+                                    ?? _userAccountService.GetLastActiveSubscription(user.Subscriptions);
 
+            var hasActiveSubscription = currentSubscription is not null;
 
-            DateTime? expirationDate = activeSubscription?.ExpiredAt;
+            var formattedStartDate = displaySubscription?.StartedAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
+            var formattedExpiredAt = displaySubscription?.ExpiredAt.ToLocalTime().ToString("MMM d, yyyy") ?? string.Empty;
+
+            DateTime? expirationDate = displaySubscription?.ExpiredAt;
             DateTime currentDate = DateTime.UtcNow;
             TimeSpan? difference = expirationDate - currentDate;
 
@@ -63,7 +59,15 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
             string hourText = hours == 1 ? "hour" : "hours";
             string message = string.Empty;
 
-            if (days < 0 || (days == 0 && hours < 0))
+            if (displaySubscription is null)
+            {
+                message = "No subscription";
+            }
+            else if (!displaySubscription.IsActive && !hasActiveSubscription)
+            {
+                message = "Subscription cancelled";
+            }
+            else if (days < 0 || (days == 0 && hours < 0))
             {
                 message = "Subscription expired";
             }
@@ -80,7 +84,6 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                     : "Less than 1 hour remaining";
             }
 
-
             var response = new GetMyProfileModelResponse()
             {
                 Name = user.Name,
@@ -91,8 +94,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.Profile
                 StartedAt = formattedStartDate,
                 HasActiveSubscription = hasActiveSubscription,
                 RemainingTimeText = message,
-                RemainingDaysCount = days,
-                IsCurrentTrialSubscription = activeSubscription?.IsTrial ?? false,
+                RemainingDaysCount = hasActiveSubscription ? Math.Max(days, 0) : days,
+                IsCurrentTrialSubscription = hasActiveSubscription && (currentSubscription?.IsTrial ?? false),
                 MaxPinnedChats = user.MaxPinnedChats > 0 ? user.MaxPinnedChats : 5,
                 MaxFavoriteChats = user.MaxFavoriteChats > 0 ? user.MaxFavoriteChats : 50,
             };

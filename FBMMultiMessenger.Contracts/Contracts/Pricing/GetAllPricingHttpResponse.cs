@@ -5,12 +5,21 @@
     {
         public PricingTierAvailabilityHttpResponse PricingTierAvailability { get; set; } = new PricingTierAvailabilityHttpResponse();
         public List<PricingTierHttpResponse> PricingTiers { get; set; } = new List<PricingTierHttpResponse>();
+        public List<AutoReplyPricingTierHttpResponse> AutoReplyPricingTiers { get; set; } = new List<AutoReplyPricingTierHttpResponse>();
         public List<AccountDetailsHttpResponse> AccountDetails { get; set; } = new List<AccountDetailsHttpResponse>();
     }
     public class PricingTierHttpResponse
     {
         public int Id { get; set; }
         public int UptoAccounts { get; set; }
+        public decimal MonthlyPrice { get; set; }
+        public decimal SemiAnnualPrice { get; set; }
+        public decimal AnnualPrice { get; set; }
+    }
+    public class AutoReplyPricingTierHttpResponse
+    {
+        public int Id { get; set; }
+        public int UptoMessages { get; set; }
         public decimal MonthlyPrice { get; set; }
         public decimal SemiAnnualPrice { get; set; }
         public decimal AnnualPrice { get; set; }

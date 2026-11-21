@@ -698,11 +698,12 @@ async function handleMessage(request, sender, sendResponse) {
             }
 
 
-            if (isLoggedIn && !messengerTabId)
-            {
-                //doing this will open a dedicated messenger tab..
-                const fbTab = await getMessengerTab();
-            }
+            // Don't open the managed Messenger/DND tab on Facebook login.
+            // It is created lazily on send / listing-info via getMessengerTab().
+            // if (isLoggedIn && !messengerTabId)
+            // {
+            //     const fbTab = await getMessengerTab();
+            // }
 
             var statusRequest = {
                 ...request.detail,

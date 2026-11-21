@@ -9,6 +9,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Payment
         [Required]
         public int PricingTierId { get; set; } //selected pricing tier id
 
+        /// <summary>Optional auto-reply message pack. Null/omit = accounts only.</summary>
+        public int? AutoReplyPricingTierId { get; set; }
+
         [Required(ErrorMessage = "Please provide payment proof")]
         public List<IFormFile> PaymentImages { get; set; } = null!;
 

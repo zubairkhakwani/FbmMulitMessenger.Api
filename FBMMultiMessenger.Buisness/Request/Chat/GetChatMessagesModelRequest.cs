@@ -21,6 +21,7 @@ namespace FBMMultiMessenger.Buisness.Request.Chat
         public bool IsImageMessage { get; set; }
         public bool IsVideoMessage { get; set; }
         public bool IsAudioMessage { get; set; }
+        public bool IsAiMessage { get; set; }
 
         public MessageReplyModelResponse? MessageReply { get; set; }
 

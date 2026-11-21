@@ -20,7 +20,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
                 OfflineUniqueId = request.OfflineUniqueId
             };
 
-            if (string.IsNullOrWhiteSpace(request.Message) && request.Files is null && request?.Files?.Count == 0)
+            var hasFiles = request.Files is { Count: > 0 };
+            var hasExistingMedia = request.ExistingMediaPaths is { Count: > 0 };
+            if (string.IsNullOrWhiteSpace(request.Message) && !hasFiles && !hasExistingMedia)
             {
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Please enter a message or attach a file to send.", result: errorResponse);
             }
@@ -70,6 +72,23 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
             if (request!.Files is not null && request.Files.Count != 0)
             {
                 mediaPaths = HandleMediaFiles(request.Files);
+            }
+
+            if (request.ExistingMediaPaths is { Count: > 0 })
+            {
+                foreach (var path in request.ExistingMediaPaths)
+                {
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        continue;
+                    }
+
+                    var normalized = path.Replace('\\', '/').TrimStart('/');
+                    if (!mediaPaths.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+                    {
+                        mediaPaths.Add(normalized);
+                    }
+                }
             }
 
             var accountLocalServer = chat.Account?.LocalServer;

@@ -47,6 +47,8 @@ namespace FBMMultiMessenger.Buisness.Mapping.Chat
             CreateMap<UpsertChatListOrganizationModelResponse, UpsertChatListOrganizationHttpResponse>();
             CreateMap<BaseResponse<UpsertChatListOrganizationModelResponse>, BaseResponse<UpsertChatListOrganizationHttpResponse>>();
 
+            CreateMap<SetChatAutoReplyActiveModelResponse, SetChatAutoReplyActiveHttpResponse>();
+            CreateMap<BaseResponse<SetChatAutoReplyActiveModelResponse>, BaseResponse<SetChatAutoReplyActiveHttpResponse>>();
         }
     }
 }

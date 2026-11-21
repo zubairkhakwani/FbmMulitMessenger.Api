@@ -16,6 +16,7 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<DefaultMessage> DefaultMessages { get; set; }
         public DbSet<VerificationToken> VerificationTokens { get; set; }
         public DbSet<PricingTier> PricingTiers { get; set; }
+        public DbSet<AutoReplyPricingTier> AutoReplyPricingTiers { get; set; }
         public DbSet<PricingTierAvailability> PricingTierAvailabilities { get; set; }
         public DbSet<PaymentVerification> PaymentVerifications { get; set; }
         public DbSet<PaymentVerificationImage> PaymentVerificationImages { get; set; }
@@ -29,6 +30,10 @@ namespace FBMMultiMessenger.Data.DB
         public DbSet<Settings> Settings { get; set; }
         public DbSet<TrialConfiguration> TrialConfigurations { get; set; }
         public DbSet<AdminFcmToken> AdminFcmTokens { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductQa> ProductQas { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<AccountProduct> AccountProducts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,6 +42,24 @@ namespace FBMMultiMessenger.Data.DB
             modelBuilder.Entity<AdminFcmToken>()
                         .HasIndex(x => x.Token)
                         .IsUnique();
+
+            modelBuilder.Entity<AccountProduct>()
+                        .HasKey(x => new { x.AccountId, x.ProductId });
+
+            modelBuilder.Entity<AccountProduct>()
+                        .HasOne(x => x.Account)
+                        .WithMany(a => a.AccountProducts)
+                        .HasForeignKey(x => x.AccountId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AccountProduct>()
+                        .HasOne(x => x.Product)
+                        .WithMany(p => p.AccountProducts)
+                        .HasForeignKey(x => x.ProductId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AccountProduct>()
+                        .HasIndex(x => x.ProductId);
 
             // Many audit rows per user; only Users.ApiKey holds the live key.
             modelBuilder.Entity<ApiKey>()

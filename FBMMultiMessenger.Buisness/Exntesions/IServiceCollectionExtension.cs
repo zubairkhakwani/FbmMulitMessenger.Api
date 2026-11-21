@@ -131,6 +131,9 @@ namespace FBMMultiMessenger.Buisness.Exntesions
              })
              .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
                  ApiKeyDefaults.AuthenticationScheme,
+                 null)
+             .AddScheme<AuthenticationSchemeOptions, InternalApiKeyAuthenticationHandler>(
+                 InternalApiKeyDefaults.AuthenticationScheme,
                  null);
 
             return services;
@@ -146,6 +149,7 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<AesEncryptionHelper>();
             services.AddSingleton<ExtensionContentCache>();
             services.AddSingleton<ExtensionZipCache>();
+            services.AddSingleton<GeminiSystemPromptCache>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAdminPushNotificationService, FirebaseAdminPushService>();
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
@@ -153,6 +157,8 @@ namespace FBMMultiMessenger.Buisness.Exntesions
             services.AddScoped<ILocalServerService, LocalServerService>();
             services.AddScoped<ISubscriptionServerProviderService, SubscriptionServerProviderService>();
             services.AddScoped<ISignalRService, SignalRService>();
+            services.AddSingleton<GeminiAutoReplyService>();
+            services.AddSingleton<ChatAutoReplyOrchestrator>();
 
             //Batched account status updates (connect/disconnect/auth) to avoid per-event DB connections.
             services.AddSingleton<IAccountStatusQueue, AccountStatusQueue>();

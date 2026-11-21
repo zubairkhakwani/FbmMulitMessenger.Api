@@ -76,6 +76,9 @@ namespace FBMMultiMessenger.Contracts.Contracts.Chat
         public bool IsAudioMessage { get; set; }
         public bool IsReceived { get; set; }
 
+        /// <summary>True when this outbound message was produced by AI auto-reply.</summary>
+        public bool IsAiMessage { get; set; }
+
         //The reply message
         public MessageReplyHttpResponse? MessageReply { get; set; }
 

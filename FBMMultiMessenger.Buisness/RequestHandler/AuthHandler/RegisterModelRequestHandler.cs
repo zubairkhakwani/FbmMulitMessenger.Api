@@ -50,6 +50,7 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
 
             if (canAvailTrial)
             {
+                var trialAutoReplyMax = trialConfig!.AutoReplyMaxLimit;
                 var trialSubscription = new Data.Database.DbModels.Subscription()
                 {
                     IsActive = true,
@@ -57,6 +58,9 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AuthHandler
                     MaxLimit = trialAccounts,
                     StartedAt = DateTime.UtcNow,
                     ExpiredAt = DateTime.UtcNow.AddDays(trialDurationDays),
+                    HasAutoReply = trialAutoReplyMax > 0,
+                    AutoReplyMaxLimit = trialAutoReplyMax > 0 ? trialAutoReplyMax : 0,
+                    AutoReplyLimitUsed = 0,
                 };
 
                 newUser.Subscriptions = new List<Data.Database.DbModels.Subscription> { trialSubscription };
