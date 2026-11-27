@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
+using FBMMultiMessenger.Buisness.Models.SignalR.LocalServer;
 using FBMMultiMessenger.Buisness.Request.LocalServer;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Buisness.Service.IServices;
@@ -93,8 +93,12 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.LocalServer
 
             var accountLocalServer = chat.Account?.LocalServer;
 
-            //if local server is null or offline return error
-            if (!chat.Account!.IsExtensionConnected)
+            // Gate on the live SignalR connection, not the (sometimes stale) DB bit — a stuck
+            // IsExtensionConnected=false would otherwise block sends while the extension is actually
+            // connected. Any DB/live drift is reported to Sentry (throttled) by the resolver.
+            var isExtensionConnected = ExtensionPresenceResolver.ResolveIsConnected(
+                chat.Account!.Id, currentUser.Id, chat.Account.IsExtensionConnected);
+            if (!isExtensionConnected)
             {
                 return BaseResponse<NotifyLocalServerModelResponse>.Error("Failed to send message", result: errorResponse);
             }

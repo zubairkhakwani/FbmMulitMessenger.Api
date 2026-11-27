@@ -8,6 +8,7 @@ using FBMMultiMessenger.Data.DB;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 using Sentry;
 using System.Text.Json;
 
@@ -26,6 +27,10 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
         private const int FlushWindowMs = 500;
         private const int MaxBatchSize = 500;
 
+        // Consecutive failed flushes — drives the retry backoff and throttles failure diagnostics. Only the
+        // single flush loop touches it, so no synchronization is needed.
+        private int _consecutiveFailures;
+
         public AccountStatusFlushService(IAccountStatusQueue queue, IServiceProvider serviceProvider)
         {
             _queue = queue;
@@ -38,6 +43,8 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                List<AccountStatusChange>? batch = null;
+
                 try
                 {
                     // Block until at least one change is available.
@@ -46,12 +53,14 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                         break;
                     }
 
-                    var batch = await CollectBatchAsync(reader, stoppingToken);
+                    batch = await CollectBatchAsync(reader, stoppingToken);
 
                     if (batch.Count > 0)
                     {
                         await FlushAsync(batch, stoppingToken);
                     }
+
+                    _consecutiveFailures = 0; // a clean flush clears the backoff/streak
                 }
                 catch (OperationCanceledException ex) when (stoppingToken.IsCancellationRequested)
                 {
@@ -63,11 +72,83 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                 }
                 catch (Exception ex)
                 {
-                    // Never let a bad flush kill the loop; the next event / heartbeat reconciles.
-                    SentrySdk.CaptureException(ex);
+                    // Never let a bad flush kill the loop. On a transient DB failure the batch is re-queued
+                    // (so status changes aren't lost — that's what leaves IsExtensionConnected stale); a
+                    // permanent failure is logged and dropped.
+                    await HandleFlushFailureAsync(ex, batch, stoppingToken);
                 }
             }
         }
+
+        private async Task HandleFlushFailureAsync(Exception ex, List<AccountStatusChange>? batch, CancellationToken stoppingToken)
+        {
+            _consecutiveFailures++;
+            var transient = IsTransient(ex);
+
+            // Re-queue on a transient failure so a dropped DB connection (e.g. 57P01) doesn't silently lose
+            // the batch. A permanent failure (e.g. a constraint violation) is NOT re-queued — retrying it
+            // forever would hot-loop. The queue is bounded/DropOldest, so re-queueing can't block or grow
+            // without bound.
+            if (transient && batch is { Count: > 0 })
+            {
+                foreach (var change in batch)
+                {
+                    _queue.Enqueue(change);
+                }
+            }
+
+            // Throttle diagnostics so a sustained outage doesn't flood Sentry / the Logs folder: record the
+            // first failure of a streak, then every 20th.
+            if (_consecutiveFailures == 1 || _consecutiveFailures % 20 == 0)
+            {
+                var dataFile = WriteConflictDataToFile(batch ?? new List<AccountStatusChange>(), ex);
+                SentrySdk.CaptureException(ex, scope =>
+                {
+                    scope.SetTag("dataFile", dataFile);
+                    scope.SetTag("transient", transient.ToString());
+                    scope.SetTag("flushConsecutiveFailures", _consecutiveFailures.ToString());
+                });
+            }
+
+            // Back off before the next attempt so we don't hot-spin while the DB is unavailable (capped 30s).
+            var delayMs = Math.Min(30_000, 500 * (int)Math.Pow(2, Math.Min(_consecutiveFailures, 6)));
+            try
+            {
+                await Task.Delay(delayMs, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // shutting down
+            }
+        }
+
+        // Transient = worth retrying (connection dropped, server restarting, too many connections, timeout).
+        private static bool IsTransient(Exception ex)
+        {
+            for (Exception? e = ex; e != null; e = e.InnerException)
+            {
+                switch (e)
+                {
+                    case TimeoutException:
+                        return true;
+                    case PostgresException pg when IsTransientSqlState(pg.SqlState):
+                        return true;
+                    case NpgsqlException npg when npg.IsTransient:
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsTransientSqlState(string? sqlState) => sqlState switch
+        {
+            "57P01" or "57P02" or "57P03"                         // admin shutdown / crash shutdown / cannot connect now
+                or "53300"                                        // too many connections
+                or "08000" or "08001" or "08003" or "08004" or "08006" // connection exceptions
+                => true,
+            _ => false
+        };
 
         // Collect up to MaxBatchSize items, or until FlushWindowMs elapses — whichever comes first.
         private static async Task<List<AccountStatusChange>> CollectBatchAsync(
@@ -204,18 +285,11 @@ namespace FBMMultiMessenger.Buisness.Service.StatusBatching
                     await signalRService.NotifyAppAccountStatus(notificationsByUser.Values.ToList(), cancellationToken);
                 }
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            catch (Exception)
             {
+                // Propagate to ExecuteAsync → HandleFlushFailureAsync, which re-queues + backs off on a
+                // transient DB failure (e.g. 57P01) and logs/drops a permanent one.
                 throw;
-            }
-            catch (Exception ex)
-            {
-                var dataFile = WriteConflictDataToFile(batch, ex);
-
-                SentrySdk.CaptureException(ex, scope =>
-                {
-                    scope.SetTag("dataFile", dataFile);
-                });
             }
         }
 

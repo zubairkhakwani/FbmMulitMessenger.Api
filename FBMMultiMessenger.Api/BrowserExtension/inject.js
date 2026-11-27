@@ -1033,6 +1033,6 @@ setTimeout(async () => {
 
         const timeToScroll = .2 * 60 * 1000; // 12 seconds
 
-        ScrollSideBarToLoadChats(timeToScroll);
+        //ScrollSideBarToLoadChats(timeToScroll);
     }
 }, 2500);

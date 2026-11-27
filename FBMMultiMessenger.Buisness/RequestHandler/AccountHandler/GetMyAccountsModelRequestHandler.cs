@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Helpers;
+using FBMMultiMessenger.Buisness.Helpers;
 using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Enums;
@@ -85,7 +85,8 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
                                          ConnectionStatus = x.ConnectionStatus.GetInfo().Name,
                                          AuthStatus = x.AuthStatus.GetInfo().Name,
                                          Reason = x.Reason.GetInfo().Name,
-                                         IsExtensionConnected = x.IsExtensionConnected,
+                                         // Final value from the live SignalR socket, not the (sometimes stale) DB bit; drift → Sentry.
+                                         IsExtensionConnected = ExtensionPresenceResolver.ResolveIsConnected(x.Id, currentUser.Id, x.IsExtensionConnected),
                                          CreatedAt = x.CreatedAt,
                                          AccountGroupId = x.AccountGroupId,
                                          AccountGroupName = x.AccountGroup?.Name,

@@ -1,4 +1,4 @@
-﻿using FBMMultiMessenger.Buisness.Request.Account;
+using FBMMultiMessenger.Buisness.Request.Account;
 using FBMMultiMessenger.Buisness.Service;
 using FBMMultiMessenger.Contracts.Enums;
 using FBMMultiMessenger.Contracts.Shared;
@@ -23,13 +23,20 @@ namespace FBMMultiMessenger.Buisness.RequestHandler.AccountHandler
         {
             var currentUser = currentUserService.GetCurrentUser();
 
-            var statuses = await dbContext.Accounts.Where(a => a.UserId == currentUser.Id)
+            // Pull the DB's stored bit, but resolve the final value from the live SignalR connection — the
+            // batched status-flush can leave IsExtensionConnected stale (connected extension shown offline).
+            // Any DB/live drift is reported to Sentry (throttled) by the resolver.
+            var accounts = await dbContext.Accounts.Where(a => a.UserId == currentUser.Id)
+                .Select(a => new { a.Id, DbConnected = a.IsExtensionConnected })
+                .ToListAsync(cancellationToken);
+
+            var statuses = accounts
                 .Select(a => new AccountStatusResponse
                 {
                     Id = a.Id,
-                    IsConnected = a.IsExtensionConnected
+                    IsConnected = ExtensionPresenceResolver.ResolveIsConnected(a.Id, currentUser.Id, a.DbConnected)
                 })
-                .ToListAsync();
+                .ToList();
 
             var response = new GetAccountsStatusModelResponse()
             {

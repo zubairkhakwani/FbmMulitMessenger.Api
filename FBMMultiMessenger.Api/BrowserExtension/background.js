@@ -390,12 +390,10 @@ async function handleForceDisconnect() {
 
 async function setMessengerTabId(tabId) {
     messengerTabId = tabId;
-    await chrome.storage.local.set({ messengerTabId: tabId });
 }
 
 async function clearMessengerTabId() {
     messengerTabId = null;
-    await chrome.storage.local.remove('messengerTabId');
 }
 
 async function markManagedMessengerTab(tabId) {
@@ -447,6 +445,9 @@ async function getMessengerTab(fbChatId) {
                 console.log('[getMessengerTab] reusing managed tab', messengerTabId, existing.url);
                 await markManagedMessengerTab(messengerTabId);
                 return existing;
+            }
+            else {
+                await clearMessengerTabId();
             }
         } catch (e) {
             await clearMessengerTabId();
@@ -992,7 +993,6 @@ async function loadAccountId() {
     const result = await chrome.storage.local.get(['accountId', 'fbAccountId', 'messengerTabId']);
     accountId = result.accountId || null;
     currentFbAccountId = result.fbAccountId || null;
-    messengerTabId = result.messengerTabId || null;
     console.log('Loaded accountId from storage:', accountId, 'fbAccountId:', currentFbAccountId, 'messengerTabId:', messengerTabId);
 }
 
